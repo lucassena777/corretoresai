@@ -22,11 +22,26 @@ app/biblioteca.html     acervo com busca e filtros + histórico
 app/perfil.html         perfil do corretor + configurações
 assets/base.css         tokens de design, reset e componentes compartilhados
 assets/site.css         estilos da landing
-assets/app.css          estilos do shell do app
+assets/app.css          estilos do shell do app, modal e avisos
+assets/data.js          sementes, constantes e o gerador de roteiro
+assets/store.js         estado único: conteúdos, perfil, plano e histórico
+assets/ui.js            avisos, modal e o editor completo de conteúdo
 assets/shell.js         injeta sprite de ícones, sidebar e topbar em todas as telas
-assets/data.js          acervo de demonstração + persistência em localStorage
 assets/theme.js         alternância de tema (claro/escuro), salva no navegador
 ```
+
+Os scripts carregam sempre nesta ordem: `theme → data → store → ui → shell → tela`.
+
+## Como o estado funciona
+
+Existe **um estado só**, em `store.js`, salvo na chave `corretoresai-estado-v2` do
+`localStorage`. Ele guarda os conteúdos, o perfil do corretor, o plano ativo, as
+gerações consumidas e o histórico.
+
+Qualquer tela pode chamar `store.subscribe(fn)` para se redesenhar quando algo
+muda. Por isso mudar o nome no Perfil troca o nome na topbar, aprovar uma ideia
+na Central faz o card aparecer no calendário, no Kanban e nas métricas do
+dashboard, e arrastar um card grava uma linha no histórico.
 
 ## Tema
 
@@ -36,20 +51,40 @@ header; a escolha fica salva em `localStorage`.
 
 ## O que já funciona de verdade
 
-- Arrastar cards no calendário para reagendar e entre as colunas do Kanban para
-  mudar o status. Tudo salva sozinho em `localStorage` e o dashboard acompanha.
-- Busca e filtros da biblioteca por área, formato e status.
-- Geração de roteiro na Central de Conteúdo com os 11 campos (título, gancho,
-  desenvolvimento, prova, CTA, legenda, hashtags, objetivo, público, formato e
-  sugestão de gravação).
+**Criar** — a Central gera 3 ideias por vez, cada uma com os 11 campos do roteiro.
+"Aprovar e agendar" cria o conteúdo já no calendário e no Kanban; "Salvar
+rascunho" manda para a Biblioteca.
+
+**Editar** — clicar em qualquer card (calendário, Kanban, Biblioteca ou lista de
+próximos conteúdos) abre o editor completo: título, data, horário, área, formato,
+funil, status, tags e os 11 campos do roteiro. Dá para regerar o roteiro, copiar
+tudo para a área de transferência, duplicar e excluir.
+
+**Mover** — arrastar no calendário reagenda; arrastar entre colunas do Kanban
+muda o status. Clicar no número de um dia abre a Central já com aquela data.
+
+**Filtrar** — busca por título, tag ou área na Biblioteca, mais filtros de área,
+formato, status e ordenação.
+
+**Perfil e plano** — o nome vira as iniciais do avatar, a cidade vira o padrão da
+Central e o tom de voz entra na sugestão de gravação de cada roteiro. Trocar de
+plano muda a cota: o Gratuito trava na 5ª geração, o Pro na 40ª, o Ilimitado não
+trava. Os botões de plano na landing já entram valendo dentro do app.
+
+**Histórico** — cada criação, edição, mudança de data e movimento de card vira
+uma linha, com tempo relativo, no dashboard e na Biblioteca.
+
+Os números do dashboard e do mock da landing são calculados do acervo real — não
+são valores fixos. Publicar mais conteúdo aumenta visualizações e leads.
 
 ## O que ainda é demonstração
 
-- A geração de roteiro é montada no navegador a partir do briefing. A IA de
-  verdade entra quando houver back-end.
-- Não existe autenticação: "Entrar" leva direto ao dashboard da conta de exemplo
-  (Marina Duarte, plano Ilimitado).
-- Métricas de visualizações e leads são estimativas fixas.
+- A geração de roteiro é montada no navegador a partir do briefing, do perfil e
+  de modelos de texto. A IA de verdade entra quando houver back-end.
+- Não existe autenticação: "Entrar" leva direto ao dashboard da conta de exemplo.
+- Visualizações e leads são estimativas derivadas do número de publicados.
+- Tudo vive no navegador. Limpar o `localStorage` (ou usar "Restaurar o acervo
+  original", em Configurações) volta ao acervo de fábrica.
 
 ## Origem deste repositório
 

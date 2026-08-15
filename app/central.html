@@ -18,29 +18,19 @@
         A plataforma
       </p>
       <h1>Sua central de conteúdo imobiliário</h1>
-      <p>Gerações ilimitadas no seu plano</p>
+      <p class="quota" data-quota></p>
     </div>
 
     <div class="segmented" style="margin-left:auto">
       <button type="button" aria-pressed="true"><svg><use href="#i-wand" /></svg>Criar</button>
-      <button type="button" aria-pressed="false" onclick="location.href='calendario.html'"><svg><use href="#i-calendar" /></svg>Calendário</button>
+      <button type="button" aria-pressed="false" data-goto="calendario.html"><svg><use href="#i-calendar" /></svg>Calendário</button>
     </div>
   </div>
 
   <form class="form-card" data-generator>
     <div class="field">
       <label for="area">Área de atuação</label>
-      <select id="area" name="area">
-        <option>Apartamentos</option>
-        <option>Casas</option>
-        <option>Studios</option>
-        <option>Terrenos</option>
-        <option>Condomínios</option>
-        <option>Lançamentos</option>
-        <option>Comercial</option>
-        <option>Alto padrão</option>
-        <option>Rural</option>
-      </select>
+      <select id="area" name="area"></select>
     </div>
 
     <div class="field">
@@ -52,7 +42,7 @@
     <div class="field field-row">
       <div>
         <label for="cidade">Cidade ou região</label>
-        <input id="cidade" name="cidade" value="Campinas" />
+        <input id="cidade" name="cidade" />
       </div>
       <div>
         <label for="foto">Foto do imóvel <small>(link, opcional)</small></label>
@@ -84,22 +74,20 @@
       <svg><use href="#i-wand" /></svg>
       Gerar ideias de conteúdo
     </button>
+
+    <p style="text-align:center;margin:16px 0 0">
+      <button class="btn btn-quiet" type="button" data-limpar>Limpar formulário</button>
+    </p>
   </form>
 
-  <section class="panel" data-result hidden style="max-width:820px;margin-top:24px">
-    <div class="panel-head">
-      <div>
-        <strong>Roteiro gerado</strong>
-        <span data-result-meta></span>
-      </div>
-    </div>
-    <div class="panel-body" data-result-body></div>
-  </section>
+  <section class="ideas" data-ideas style="max-width:820px"></section>
 </main>
 
 <script src="../assets/theme.js"></script>
-<script src="../assets/shell.js"></script>
 <script src="../assets/data.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/ui.js"></script>
+<script src="../assets/shell.js"></script>
 <script src="../assets/central.js"></script>
 </body>
 </html>

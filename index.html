@@ -146,11 +146,7 @@
           <span class="window-url">corretoresai.com.br/app</span>
         </div>
         <div class="window-body">
-          <div class="mini-stats">
-            <div class="mini-stat"><strong>128</strong><span>Conteúdos criados</span></div>
-            <div class="mini-stat"><strong>14</strong><span>Agendados</span></div>
-            <div class="mini-stat"><strong>392</strong><span>Leads gerados</span></div>
-          </div>
+          <div class="mini-stats" data-hero-stats></div>
           <div class="mini-panel">
             <div class="mini-panel-head">
               <strong>Calendário editorial</strong>
@@ -337,7 +333,7 @@
             <li>Gerador de ideias e textos para legendas</li>
             <li>Exportação de texto simples</li>
           </ul>
-          <a class="btn btn-outline btn-block" href="app/central.html">Começar Grátis</a>
+          <button class="btn btn-outline btn-block" type="button" data-plano="gratuito">Começar Grátis</button>
         </article>
 
         <article class="plan is-popular">
@@ -356,7 +352,7 @@
             <li>Filtro por funil personalizado</li>
             <li>Suporte prioritário via WhatsApp</li>
           </ul>
-          <a class="btn btn-primary btn-block" href="app/central.html">Quero Acelerar Minhas Vendas</a>
+          <button class="btn btn-primary btn-block" type="button" data-plano="pro">Quero Acelerar Minhas Vendas</button>
         </article>
 
         <article class="plan">
@@ -377,7 +373,7 @@
             <li>Acesso antecipado a novas ferramentas</li>
             <li>Suporte VIP individual</li>
           </ul>
-          <a class="btn btn-outline btn-block" href="app/dashboard.html">Desbloquear Acesso Ilimitado</a>
+          <button class="btn btn-outline btn-block" type="button" data-plano="ilimitado">Desbloquear Acesso Ilimitado</button>
         </article>
       </div>
 
@@ -458,6 +454,8 @@
 </footer>
 
 <script src="assets/theme.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
 <script src="assets/site.js"></script>
 </body>
 </html>

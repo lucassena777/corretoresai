@@ -1,8 +1,43 @@
-// Central de Conteúdo: seleção de funil/formato e o roteiro de demonstração.
-// A geração ainda é local (sem backend) — monta os 11 campos a partir do briefing.
+// Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
 
 (function central() {
-  // Botões de escolha única
+  const form = document.querySelector("[data-generator]");
+  const elIdeas = document.querySelector("[data-ideas]");
+  const elQuota = document.querySelector("[data-quota]");
+  const params = new URLSearchParams(location.search);
+
+  // Preenche a partir do perfil e de ?data=AAAA-MM-DD (vindo do calendário).
+  form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
+  form.area.value = store.perfil.areas[0] || AREAS[0];
+  form.cidade.value = store.perfil.cidade;
+  const dataAlvo = params.get("data");
+
+  document.querySelectorAll("[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => { location.href = btn.dataset.goto; });
+  });
+
+  function proximaData() {
+    if (dataAlvo) return dataAlvo;
+    const ocupadas = new Set(store.board().map((i) => i.date));
+    const d = new Date(HOJE);
+    for (let n = 0; n < 60; n++) {
+      const iso = toIso(d);
+      if (!ocupadas.has(iso)) return iso;
+      d.setDate(d.getDate() + 1);
+    }
+    return toIso(HOJE);
+  }
+
+  function renderQuota() {
+    const restantes = store.restantes();
+    elQuota.innerHTML = restantes === Infinity
+      ? `<svg class="icon"><use href="#i-crown" /></svg> Gerações ilimitadas no seu plano`
+      : `<svg class="icon"><use href="#i-sparkle" /></svg> <b>${restantes}</b> de ${store.plano.cota} gerações restantes ·
+         <a href="../index.html#planos" style="color:var(--gold-soft)">assine o Ilimitado</a>`;
+  }
+
+  // ---- Escolhas únicas ---------------------------------------------------
+
   document.querySelectorAll("[data-choice]").forEach((row) => {
     row.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
@@ -12,70 +47,106 @@
     });
   });
 
-  const pressed = (selector) =>
-    document.querySelector(`${selector} button[aria-pressed="true"]`)?.textContent.trim() ?? "";
+  const escolhido = (nome) =>
+    document.querySelector(`[data-choice="${nome}"] button[aria-pressed="true"]`)?.textContent.trim() ?? "";
 
-  const form = document.querySelector("[data-generator]");
-  const panel = document.querySelector("[data-result]");
-  const meta = document.querySelector("[data-result-meta]");
-  const body = document.querySelector("[data-result-body]");
+  // ---- Geração -----------------------------------------------------------
 
-  const GANCHOS = {
-    Topo: "Todo mundo procura {area} em {cidade} do jeito errado. Olha o que ninguém te conta.",
-    Meio: "Antes de escolher {area} em {cidade}, tem três coisas que mudam o preço final.",
-    Fundo: "Se você já está decidido por {area} em {cidade}, esse é o momento de agendar a visita.",
-    Personalizado: "{area} em {cidade}: a conversa que eu tenho com todo cliente antes de fechar."
-  };
+  let ideias = [];
 
-  const OBJETIVOS = {
-    Topo: "Alcançar quem ainda não pensou em comprar",
-    Meio: "Convencer quem está comparando opções",
-    Fundo: "Converter quem já está decidido em visita agendada",
-    Personalizado: "Campanha sob medida definida por você"
-  };
+  function gerar() {
+    const area = form.area.value;
+    const cidade = form.cidade.value.trim() || store.perfil.cidade;
+    const briefing = form.briefing.value.trim();
+    const funnel = escolhido("funil");
+    const format = escolhido("formato");
+    const semente = Date.now();
+
+    ideias = [0, 1, 2].map((n) => {
+      const bruto = pick(TITULOS[funnel], semente + n * 7)
+        .replace("{n}", [3, 5, 7][(semente + n) % 3])
+        .replace("{area}", area.toLowerCase())
+        .replace("{cidade}", cidade);
+      const title = bruto[0].toUpperCase() + bruto.slice(1);
+
+      const base = { title, area, format, funnel, city: cidade, briefing, date: proximaData(), time: "10:00",
+        tags: [area, TAGS_FUNIL[funnel], format] };
+
+      return { ...base, script: buildScript(base, store.perfil) };
+    });
+
+    render();
+  }
+
+  function render() {
+    if (!ideias.length) { elIdeas.innerHTML = ""; return; }
+
+    elIdeas.innerHTML = `
+      <h2 class="section-title" style="font-size:20px;margin:8px 0 0">3 ideias prontas</h2>
+      <p class="hint" style="margin:0 0 4px">Aprovar já joga o conteúdo no calendário e no Kanban.</p>
+      ${ideias.map((ideia, n) => `
+        <article class="idea" data-idea="${n}">
+          <div class="idea-head">
+            <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
+            <h3>${ideia.title}</h3>
+          </div>
+          <p><b>Gancho:</b> ${ideia.script.gancho}</p>
+          <p><b>CTA:</b> ${ideia.script.cta}</p>
+          <p><b>Objetivo:</b> ${ideia.script.objetivo}</p>
+          <div class="kan-tags" style="margin-top:14px">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+          <div class="idea-actions">
+            <button class="btn btn-primary" type="button" data-action="aprovar">
+              <svg><use href="#i-check-circle" /></svg>Aprovar e agendar
+            </button>
+            <button class="btn btn-outline" type="button" data-action="rascunho">Salvar rascunho</button>
+            <button class="btn btn-quiet" type="button" data-action="abrir">Ver roteiro completo</button>
+          </div>
+        </article>`).join("")}`;
+  }
+
+  elIdeas.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-action]");
+    if (!btn) return;
+
+    const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
+    const acao = btn.dataset.action;
+
+    const item = store.criar({ ...ideia, status: acao === "aprovar" ? "aprovado" : "rascunho" });
+
+    if (acao === "aprovar") {
+      ui.toast(`Aprovado e agendado para ${formatFull(item.date)}.`);
+    } else if (acao === "rascunho") {
+      ui.toast("Salvo como rascunho na Biblioteca.");
+    } else {
+      ui.openItem(item.id);
+      return;
+    }
+
+    ideias = ideias.filter((i) => i !== ideia);
+    render();
+  });
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const area = form.area.value;
-    const cidade = form.cidade.value.trim() || "sua cidade";
-    const briefing = form.briefing.value.trim();
-    const funil = pressed('[data-choice="funil"]');
-    const formato = pressed('[data-choice="formato"]');
+    if (!store.consumirGeracao()) {
+      ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");
+      return;
+    }
 
-    const gancho = GANCHOS[funil].replace("{area}", area.toLowerCase()).replace("{cidade}", cidade);
-
-    const campos = [
-      ["Título", `${area} em ${cidade}: o que olhar antes de decidir`],
-      ["Gancho (0–3s)", gancho],
-      ["Desenvolvimento (3–20s)", briefing
-        ? `Mostre o imóvel enquanto fala: ${briefing}`
-        : `Mostre o imóvel destacando três diferenciais concretos: localização, planta e custo mensal real.`],
-      ["Prova (20–35s)", "Traga um número: valor do metro quadrado da região, tempo médio de venda ou economia frente ao aluguel."],
-      ["CTA (35–45s)", "Comente “QUERO” que eu mando a ficha completa e a simulação no seu WhatsApp."],
-      ["Legenda", `${gancho}\n\nSalve esse post para quando for visitar ${area.toLowerCase()} em ${cidade}. Qualquer dúvida, chama no direct.`],
-      ["Hashtags", `#${area.toLowerCase().replace(/\s/g, "")} #${cidade.toLowerCase().replace(/\s/g, "")} #corretordeimoveis #imoveis #${formato.toLowerCase()}`],
-      ["Objetivo", OBJETIVOS[funil]],
-      ["Público ideal", `Quem procura ${area.toLowerCase()} em ${cidade} e está na etapa de ${funil.toLowerCase()} do funil`],
-      ["Formato", `${formato} — corte a cada 3 segundos, legenda queimada e áudio em alta`],
-      ["Sugestão de gravação", "Grave na hora dourada, comece já dentro do imóvel e evite plano parado por mais de 4 segundos."]
-    ];
-
-    meta.textContent = `${formato} · funil de ${funil.toLowerCase()} · ${area} · ${cidade}`;
-    body.innerHTML = `<ul class="activity" style="max-height:none">${campos.map(([nome, valor]) => `
-      <li>
-        <span class="icon-tile"><svg><use href="#i-check-circle" /></svg></span>
-        <div>
-          <p><strong>${nome}</strong></p>
-          <p style="color:var(--text-muted);white-space:pre-line">${valor}</p>
-        </div>
-      </li>`).join("")}</ul>
-      <p class="hint" style="margin-top:20px">
-        Roteiro de demonstração montado no navegador. A geração por IA entra quando
-        conectarmos o back-end.
-      </p>`;
-
-    panel.hidden = false;
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    gerar();
+    elIdeas.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+
+  document.querySelector("[data-limpar]")?.addEventListener("click", () => {
+    form.reset();
+    form.cidade.value = store.perfil.cidade;
+    ideias = [];
+    render();
+  });
+
+  store.subscribe(renderQuota);
+  renderQuota();
+
+  if (dataAlvo) ui.toast(`Novo conteúdo para ${formatFull(dataAlvo)}.`);
 })();

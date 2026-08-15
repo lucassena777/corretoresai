@@ -18,44 +18,42 @@
     </div>
   </div>
 
-  <form class="form-card">
+  <form class="form-card" data-perfil>
     <div class="field field-row">
       <div>
         <label for="nome">Nome</label>
-        <input id="nome" value="Marina Duarte" />
+        <input id="nome" name="nome" />
       </div>
       <div>
         <label for="creci">CRECI</label>
-        <input id="creci" value="SP 123.456-F" />
+        <input id="creci" name="creci" />
       </div>
     </div>
 
     <div class="field field-row">
       <div>
-        <label for="cidade-perfil">Cidade de atuação</label>
-        <input id="cidade-perfil" value="Campinas" />
+        <label for="cidade">Cidade de atuação</label>
+        <input id="cidade" name="cidade" />
       </div>
       <div>
         <label for="instagram">Instagram</label>
-        <input id="instagram" value="@marinaduarte.imoveis" />
+        <input id="instagram" name="instagram" />
       </div>
     </div>
 
     <div class="field">
-      <label for="bio">Como você quer soar nos conteúdos</label>
-      <textarea id="bio">Direta, sem jargão de imobiliária e sempre explicando o custo real de morar no imóvel.</textarea>
-      <p class="hint">Esse tom entra no prompt de cada roteiro gerado.</p>
+      <label for="tom">Como você quer soar nos conteúdos</label>
+      <textarea id="tom" name="tom"></textarea>
+      <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
     </div>
 
     <div class="field">
       <label>Áreas em que você atua</label>
-      <div class="choice-row" data-choice="areas">
-        <button type="button" aria-pressed="true">Apartamentos</button>
-        <button type="button" aria-pressed="false">Casas</button>
-        <button type="button" aria-pressed="false">Studios</button>
-        <button type="button" aria-pressed="false">Alto padrão</button>
-      </div>
+      <div class="choice-row" data-areas></div>
+      <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
     </div>
+
+    <button class="btn btn-primary" type="submit">Salvar perfil</button>
   </form>
 
   <section id="configuracoes" style="margin-top:52px">
@@ -77,26 +75,26 @@
 
       <div class="field">
         <label>Plano atual</label>
-        <div class="plan-box" style="max-width:340px">
-          <strong>Plano Ilimitado</strong>
-          <div class="plan-bar"><i style="width:100%"></i></div>
-          <span>Gerações ilimitadas liberadas.</span>
-        </div>
-        <p class="hint"><a href="../index.html#planos" style="color:var(--gold-soft)">Ver todos os planos</a></p>
+        <div class="choice-row" data-planos></div>
+        <p class="hint" data-plano-nota></p>
       </div>
 
       <div class="field">
         <label>Dados da demonstração</label>
         <div class="choice-row">
           <button type="button" data-reset>Restaurar o acervo original</button>
+          <button type="button" data-exportar>Exportar tudo em JSON</button>
         </div>
-        <p class="hint">Desfaz todos os cards que você arrastou no calendário e no Kanban.</p>
+        <p class="hint">Restaurar desfaz tudo o que você criou, editou e arrastou.</p>
       </div>
     </div>
   </section>
 </main>
 
 <script src="../assets/theme.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/ui.js"></script>
 <script src="../assets/shell.js"></script>
 <script src="../assets/perfil.js"></script>
 </body>

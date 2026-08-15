@@ -1,30 +1,16 @@
-// Calendário editorial + Kanban, com arrastar-e-soltar e persistência local.
+// Calendário editorial + Kanban: arrastar-e-soltar, clique para editar, tudo no store.
 
 (function board() {
-  let items = loadItems();
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
+  let arrastou = false;
 
-  const calendar = document.querySelector("[data-calendar]");
-  const kanban = document.querySelector("[data-kanban]");
-  const monthLabel = document.querySelector("[data-month-label]");
-
-  const iso = (date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-  // "Lançamentos" -> "lancamentos": NFD separa o acento e o filtro só mantém a–z.
-  const slug = (text) => text.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
-
-  function commit() {
-    saveItems(items);
-    renderCalendar();
-    renderKanban();
-  }
-
-  // ---- Calendário --------------------------------------------------------
+  const elCalendar = document.querySelector("[data-calendar]");
+  const elKanban = document.querySelector("[data-kanban]");
+  const elMonthLabel = document.querySelector("[data-month-label]");
 
   function renderCalendar() {
-    monthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
+    elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
 
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
     const start = new Date(first);
@@ -33,7 +19,7 @@
     const weeks = [];
     const day = new Date(start);
 
-    while (true) {
+    while (weeks.length < 6) {
       const week = [];
       for (let n = 0; n < 7; n++) {
         week.push(new Date(day));
@@ -41,17 +27,18 @@
       }
       weeks.push(week);
       if (day.getMonth() !== cursor.getMonth() && day > first) break;
-      if (weeks.length >= 6) break;
     }
 
-    calendar.innerHTML = weeks.map((week) => `
+    const itens = store.board();
+
+    elCalendar.innerHTML = weeks.map((week) => `
       <div class="calendar-week">${week.map((date) => {
-        const key = iso(date);
+        const key = toIso(date);
         const classes = ["cal-day"];
         if (date.getMonth() !== cursor.getMonth()) classes.push("is-out");
         if (date.getTime() === HOJE.getTime()) classes.push("is-today");
 
-        const cards = boardItems(items)
+        const cards = itens
           .filter((item) => item.date === key)
           .sort((a, b) => a.time.localeCompare(b.time))
           .map((item) => `
@@ -60,22 +47,23 @@
                 <i class="status-dot" style="color:${STATUSES[item.status].color}"></i>
                 ${item.title}
               </p>
-              <p class="cal-card-meta">${item.time} · Marina</p>
+              <p class="cal-card-meta">${item.time} · ${store.perfil.nome.split(" ")[0]}</p>
               <div class="cal-card-tags">${item.tags.slice(0, 2).map((t) => `<span class="tag">${t}</span>`).join("")}</div>
             </article>`).join("");
 
         return `<div class="${classes.join(" ")}" data-drop-date="${key}">
-          <span class="cal-daynum">${date.getDate()}</span>
+          <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
           ${cards}
         </div>`;
       }).join("")}</div>`).join("");
   }
 
-  // ---- Kanban ------------------------------------------------------------
-
   function renderKanban() {
-    kanban.innerHTML = Object.entries(STATUSES).map(([key, status]) => {
-      const cards = boardItems(items)
+    const itens = store.board();
+
+    elKanban.innerHTML = KANBAN.map((key) => {
+      const status = STATUSES[key];
+      const cards = itens
         .filter((item) => item.status === key)
         .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -88,26 +76,16 @@
             <span class="hint">${status.hint}</span>
           </div>
           <div class="kan-drop" data-drop-status="${key}">
-            ${cards.map((item) => `
-              <article class="kan-card" draggable="true" data-id="${item.id}">
-                <div class="kan-cover t-${slug(item.area)}">
-                  <span class="kan-format">${item.format}</span>
-                  <span class="kan-area">${item.area}</span>
-                </div>
-                <div class="kan-body">
-                  <h4>${item.title}</h4>
-                  <p class="kan-when">${formatDay(item.date)} · ${item.time}</p>
-                  <div class="kan-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
-                  <div class="kan-foot">
-                    <span class="avatar">MD</span>
-                    Marina Duarte
-                    <span class="badge s-${key}"><i class="status-dot"></i>${status.label}</span>
-                  </div>
-                </div>
-              </article>`).join("")}
+            ${cards.map((item) => ui.itemCard(item, { draggable: true })).join("")
+              || '<p class="hint" style="padding:18px;text-align:center">Solte um card aqui.</p>'}
           </div>
         </div>`;
     }).join("");
+  }
+
+  function render() {
+    renderCalendar();
+    renderKanban();
   }
 
   // ---- Arrastar-e-soltar -------------------------------------------------
@@ -116,6 +94,7 @@
     const card = event.target.closest("[data-id]");
     if (!card) return;
     dragId = card.dataset.id;
+    arrastou = true;
     card.classList.add("is-dragging");
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", dragId);
@@ -125,6 +104,7 @@
     event.target.closest("[data-id]")?.classList.remove("is-dragging");
     document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
     dragId = null;
+    setTimeout(() => { arrastou = false; }, 0);
   });
 
   document.addEventListener("dragover", (event) => {
@@ -144,13 +124,29 @@
     event.preventDefault();
 
     const id = dragId || event.dataTransfer.getData("text/plain");
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
+    if (!id) return;
 
-    if (zone.dataset.dropDate) item.date = zone.dataset.dropDate;
-    if (zone.dataset.dropStatus) item.status = zone.dataset.dropStatus;
+    if (zone.dataset.dropDate) {
+      store.mover(id, { date: zone.dataset.dropDate });
+      ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+    }
+    if (zone.dataset.dropStatus) {
+      store.mover(id, { status: zone.dataset.dropStatus });
+      ui.toast(`Movido para ${STATUSES[zone.dataset.dropStatus].label}.`);
+    }
+  });
 
-    commit();
+  // ---- Cliques -----------------------------------------------------------
+
+  document.addEventListener("click", (event) => {
+    const novo = event.target.closest("[data-new-on]");
+    if (novo) {
+      location.href = `central.html?data=${novo.dataset.newOn}`;
+      return;
+    }
+
+    const card = event.target.closest(".cal-card, .kan-card");
+    if (card && !arrastou) ui.openItem(card.dataset.id);
   });
 
   // ---- Controles ---------------------------------------------------------
@@ -178,6 +174,7 @@
       b.setAttribute("aria-pressed", String(b.dataset.view === name)));
     panels.calendario.classList.toggle("is-hidden", name !== "calendario");
     panels.kanban.classList.toggle("is-hidden", name !== "kanban");
+    history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
   }
 
   switcher.addEventListener("click", (event) => {
@@ -185,7 +182,7 @@
     if (btn) showView(btn.dataset.view);
   });
 
-  renderCalendar();
-  renderKanban();
+  store.subscribe(render);
+  render();
   if (location.hash === "#kanban") showView("kanban");
 })();

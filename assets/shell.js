@@ -29,6 +29,11 @@ const ICONS = `
 <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 20c1.1-3.2 3.7-5 7-5 1.2 0 2.3.2 3.3.7"/><path d="M18 14v6M15 17h6"/></symbol>
 <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.4l2.4 2.4 4.6-5"/></symbol>
 <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
 </svg>`;
 
 const NAV = [
@@ -42,8 +47,6 @@ const NAV = [
   { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html" },
   { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes" }
 ];
-
-const USER = { name: "Marina Duarte", plan: "Ilimitado", initials: "MD" };
 
 function icon(id, cls = "") {
   return `<svg class="${cls}"><use href="#${id}" /></svg>`;
@@ -78,11 +81,7 @@ function renderShell() {
       <nav class="side-nav" aria-label="Navegação do app">${links}</nav>
 
       <div class="side-foot">
-        <div class="plan-box">
-          <strong>Plano ${USER.plan}</strong>
-          <div class="plan-bar"><i style="width:100%"></i></div>
-          <span>Gerações ilimitadas liberadas.</span>
-        </div>
+        <div class="plan-box" data-plan-box></div>
         <div class="side-links">
           <a href="../index.html">${icon("i-globe")}<span>Ver o site</span></a>
           <a href="central.html">${icon("i-sparkle")}<span>Introdução</span></a>
@@ -101,13 +100,7 @@ function renderShell() {
           <button class="theme-btn" type="button" data-theme-toggle aria-label="Alternar tema">
             ${icon("i-sun", "icon-sun")}${icon("i-moon", "icon-moon")}
           </button>
-          <div class="user-chip">
-            <div>
-              <b>${USER.name}</b>
-              <span>${USER.plan}</span>
-            </div>
-            <span class="avatar">${USER.initials}</span>
-          </div>
+          <a class="user-chip" href="perfil.html" data-user-chip></a>
         </div>
       </header>
     </div>`;
@@ -115,6 +108,38 @@ function renderShell() {
   const column = shell.lastElementChild;
   body.appendChild(shell);
   if (view) column.appendChild(view);
+
+  renderIdentity();
+  store.subscribe(renderIdentity);
+}
+
+// Nome, plano e cota vêm do estado — mudou no perfil, muda aqui na hora.
+function renderIdentity() {
+  const perfil = store.perfil;
+  const plano = store.plano;
+  const restantes = store.restantes();
+  const ilimitado = restantes === Infinity;
+  const usado = ilimitado ? 1 : 1 - restantes / plano.cota;
+
+  const chip = document.querySelector("[data-user-chip]");
+  if (chip) {
+    chip.innerHTML = `
+      <div>
+        <b>${perfil.nome}</b>
+        <span>${plano.label}</span>
+      </div>
+      <span class="avatar">${ui.initials(perfil.nome)}</span>`;
+  }
+
+  const box = document.querySelector("[data-plan-box]");
+  if (box) {
+    box.innerHTML = `
+      <strong>Plano ${plano.label}</strong>
+      <div class="plan-bar"><i style="width:${Math.round(usado * 100)}%"></i></div>
+      <span>${ilimitado
+        ? "Gerações ilimitadas liberadas."
+        : `${restantes} de ${plano.cota} gerações restantes.`}</span>`;
+  }
 }
 
 renderShell();
