@@ -3,7 +3,8 @@
 Landing page da central de conteúdo imobiliário CorretoresAI.
 
 Site estático — HTML, CSS e um pouco de JS, sem build step. Para ver localmente,
-abra `index.html` no navegador ou rode:
+basta abrir `index.html` no navegador (dois cliques). Se preferir servir por HTTP
+e você tiver Python ou Node instalados:
 
 ```bash
 python -m http.server 5173
