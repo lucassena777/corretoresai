@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biblioteca — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="biblioteca" data-title="Biblioteca" data-subtitle="Todo o seu acervo de conteúdo em um lugar só">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Biblioteca</h1>
+      <p>Busque e filtre por área, formato, funil e status. Nada se perde.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="form-card" style="max-width:none;margin-bottom:24px">
+    <div class="field field-row" style="margin-bottom:18px">
+      <div>
+        <label for="busca">Buscar</label>
+        <input id="busca" data-search placeholder="Título, tag ou bairro…" />
+      </div>
+      <div>
+        <label for="filtro-area">Área de atuação</label>
+        <select id="filtro-area" data-filter="area"><option value="">Todas</option></select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:18px">
+      <label>Formato</label>
+      <div class="choice-row" data-filter-row="format">
+        <button type="button" aria-pressed="true" data-value="">Todos</button>
+        <button type="button" aria-pressed="false" data-value="Reels">Reels</button>
+        <button type="button" aria-pressed="false" data-value="Carrossel">Carrossel</button>
+        <button type="button" aria-pressed="false" data-value="Stories">Stories</button>
+        <button type="button" aria-pressed="false" data-value="TikTok">TikTok</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Status</label>
+      <div class="choice-row" data-filter-row="status">
+        <button type="button" aria-pressed="true" data-value="">Todos</button>
+        <button type="button" aria-pressed="false" data-value="aprovado">Aprovado</button>
+        <button type="button" aria-pressed="false" data-value="agendado">Agendado</button>
+        <button type="button" aria-pressed="false" data-value="publicado">Publicado</button>
+        <button type="button" aria-pressed="false" data-value="rascunho">Rascunho</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint" style="margin:0 0 16px" data-count></p>
+  <div class="kanban" data-library></div>
+
+  <section id="historico" style="margin-top:52px">
+    <div class="view-head">
+      <div>
+        <h1 style="font-size:22px">Histórico</h1>
+        <p>Cada movimento de card, mudança de data e geração fica registrado aqui.</p>
+      </div>
+    </div>
+    <section class="panel">
+      <div class="panel-body">
+        <ul class="activity" style="max-height:none" data-activity></ul>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/biblioteca.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="dashboard" data-title="Dashboard" data-subtitle="Sua operação de conteúdo em um só lugar">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Olá, Marina</h1>
+      <p>Este é o resumo da sua operação de conteúdo. Tudo aqui atualiza em tempo real.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="stat-grid" data-stats></div>
+
+  <div class="panel-grid">
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <strong>Próximos conteúdos</strong>
+          <span>O que sai a seguir, na ordem de publicação</span>
+        </div>
+        <a class="panel-link" href="calendario.html">Ver calendário ↗</a>
+      </div>
+      <div class="panel-body" data-upcoming></div>
+    </section>
+
+    <div style="display:grid;gap:20px">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Calendário resumido</strong>
+            <span>Os pontos marcam dias com post</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="month-head">
+            <strong data-month-label></strong>
+            <div class="month-nav">
+              <button class="nav-btn" type="button" data-month="-1" aria-label="Mês anterior"><svg><use href="#i-chev-left" /></svg></button>
+              <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
+            </div>
+          </div>
+          <div class="mini-month" data-mini-month></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Atividades recentes</strong></div>
+        </div>
+        <div class="panel-body">
+          <ul class="activity" data-activity></ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/dashboard.js"></script>
+</body>
+</html>

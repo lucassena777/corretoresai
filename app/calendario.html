@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendário Editorial — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="calendario" data-title="Calendário Editorial" data-subtitle="Planeje, agende e acompanhe cada publicação">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Calendário Editorial</h1>
+      <p>Planeje o mês inteiro, arraste para reagendar e acompanhe cada card até a publicação. Tudo salva sozinho.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="segmented" data-view-switch>
+    <button type="button" data-view="calendario" aria-pressed="true"><svg><use href="#i-calendar" /></svg>Calendário</button>
+    <button type="button" data-view="kanban" aria-pressed="false"><svg><use href="#i-kanban" /></svg>Kanban</button>
+  </div>
+
+  <!-- ---------------- Calendário ---------------- -->
+  <section data-panel="calendario">
+    <div class="board-bar">
+      <button class="nav-btn" type="button" data-month="-1" aria-label="Mês anterior"><svg><use href="#i-chev-left" /></svg></button>
+      <span class="month-label" data-month-label></span>
+      <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
+
+      <span class="spacer"></span>
+      <span class="drag-hint"><i class="status-dot"></i> Arraste os cards para reagendar</span>
+      <button class="btn btn-outline" type="button" data-today>Hoje</button>
+    </div>
+
+    <div class="calendar-grid">
+      <div class="calendar-head">
+        <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+      </div>
+      <div data-calendar></div>
+    </div>
+  </section>
+
+  <!-- ---------------- Kanban ---------------- -->
+  <section data-panel="kanban" class="is-hidden" id="kanban">
+    <div class="board-bar">
+      <span class="drag-hint"><i class="status-dot"></i> Arraste os cards entre as colunas para mudar o status</span>
+    </div>
+    <div class="kanban" data-kanban></div>
+  </section>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/board.js"></script>
+</body>
+</html>

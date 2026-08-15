@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfil — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="perfil" data-title="Perfil" data-subtitle="Seus dados e as preferências da conta">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Perfil</h1>
+      <p>O que você preenche aqui a IA usa como contexto em todo conteúdo gerado.</p>
+    </div>
+  </div>
+
+  <form class="form-card">
+    <div class="field field-row">
+      <div>
+        <label for="nome">Nome</label>
+        <input id="nome" value="Marina Duarte" />
+      </div>
+      <div>
+        <label for="creci">CRECI</label>
+        <input id="creci" value="SP 123.456-F" />
+      </div>
+    </div>
+
+    <div class="field field-row">
+      <div>
+        <label for="cidade-perfil">Cidade de atuação</label>
+        <input id="cidade-perfil" value="Campinas" />
+      </div>
+      <div>
+        <label for="instagram">Instagram</label>
+        <input id="instagram" value="@marinaduarte.imoveis" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="bio">Como você quer soar nos conteúdos</label>
+      <textarea id="bio">Direta, sem jargão de imobiliária e sempre explicando o custo real de morar no imóvel.</textarea>
+      <p class="hint">Esse tom entra no prompt de cada roteiro gerado.</p>
+    </div>
+
+    <div class="field">
+      <label>Áreas em que você atua</label>
+      <div class="choice-row" data-choice="areas">
+        <button type="button" aria-pressed="true">Apartamentos</button>
+        <button type="button" aria-pressed="false">Casas</button>
+        <button type="button" aria-pressed="false">Studios</button>
+        <button type="button" aria-pressed="false">Alto padrão</button>
+      </div>
+    </div>
+  </form>
+
+  <section id="configuracoes" style="margin-top:52px">
+    <div class="view-head">
+      <div>
+        <h1 style="font-size:22px">Configurações</h1>
+        <p>Aparência, plano e dados da conta.</p>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="field">
+        <label>Tema</label>
+        <div class="choice-row">
+          <button type="button" data-theme-toggle>Alternar entre claro e escuro</button>
+        </div>
+        <p class="hint">A preferência fica salva neste navegador.</p>
+      </div>
+
+      <div class="field">
+        <label>Plano atual</label>
+        <div class="plan-box" style="max-width:340px">
+          <strong>Plano Ilimitado</strong>
+          <div class="plan-bar"><i style="width:100%"></i></div>
+          <span>Gerações ilimitadas liberadas.</span>
+        </div>
+        <p class="hint"><a href="../index.html#planos" style="color:var(--gold-soft)">Ver todos os planos</a></p>
+      </div>
+
+      <div class="field">
+        <label>Dados da demonstração</label>
+        <div class="choice-row">
+          <button type="button" data-reset>Restaurar o acervo original</button>
+        </div>
+        <p class="hint">Desfaz todos os cards que você arrastou no calendário e no Kanban.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/perfil.js"></script>
+</body>
+</html>

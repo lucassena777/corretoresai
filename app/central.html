@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Central de Conteúdo — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="central" data-title="Central de Conteúdo" data-subtitle="Da ideia ao roteiro pronto para gravar">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <p class="chip" style="margin-bottom:14px">
+        <svg><use href="#i-sparkle" /></svg>
+        A plataforma
+      </p>
+      <h1>Sua central de conteúdo imobiliário</h1>
+      <p>Gerações ilimitadas no seu plano</p>
+    </div>
+
+    <div class="segmented" style="margin-left:auto">
+      <button type="button" aria-pressed="true"><svg><use href="#i-wand" /></svg>Criar</button>
+      <button type="button" aria-pressed="false" onclick="location.href='calendario.html'"><svg><use href="#i-calendar" /></svg>Calendário</button>
+    </div>
+  </div>
+
+  <form class="form-card" data-generator>
+    <div class="field">
+      <label for="area">Área de atuação</label>
+      <select id="area" name="area">
+        <option>Apartamentos</option>
+        <option>Casas</option>
+        <option>Studios</option>
+        <option>Terrenos</option>
+        <option>Condomínios</option>
+        <option>Lançamentos</option>
+        <option>Comercial</option>
+        <option>Alto padrão</option>
+        <option>Rural</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="briefing">Descreva o imóvel ou conteúdo <small>(opcional)</small></label>
+      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 2 quartos, 65m², varanda gourmet, próximo ao metrô, condomínio com piscina…"></textarea>
+      <p class="hint">Adicione detalhes do imóvel para que a IA personalize as ideias de conteúdo.</p>
+    </div>
+
+    <div class="field field-row">
+      <div>
+        <label for="cidade">Cidade ou região</label>
+        <input id="cidade" name="cidade" value="Campinas" />
+      </div>
+      <div>
+        <label for="foto">Foto do imóvel <small>(link, opcional)</small></label>
+        <input id="foto" name="foto" placeholder="Cole o link da foto principal" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Estágio do funil de conteúdo</label>
+      <div class="choice-row" data-choice="funil">
+        <button type="button" aria-pressed="true">Topo</button>
+        <button type="button" aria-pressed="false">Meio</button>
+        <button type="button" aria-pressed="false">Fundo</button>
+        <button type="button" aria-pressed="false">Personalizado</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Formato do conteúdo</label>
+      <div class="choice-row" data-choice="formato">
+        <button type="button" aria-pressed="true">Reels</button>
+        <button type="button" aria-pressed="false">Carrossel</button>
+        <button type="button" aria-pressed="false">Stories</button>
+        <button type="button" aria-pressed="false">TikTok</button>
+      </div>
+    </div>
+
+    <button class="generate-btn" type="submit">
+      <svg><use href="#i-wand" /></svg>
+      Gerar ideias de conteúdo
+    </button>
+  </form>
+
+  <section class="panel" data-result hidden style="max-width:820px;margin-top:24px">
+    <div class="panel-head">
+      <div>
+        <strong>Roteiro gerado</strong>
+        <span data-result-meta></span>
+      </div>
+    </div>
+    <div class="panel-body" data-result-body></div>
+  </section>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/central.js"></script>
+</body>
+</html>
