@@ -57,6 +57,11 @@ const store = (() => {
       return () => listeners.delete(fn);
     },
 
+    // Usado pelo roteador do arquivo único ao trocar de tela.
+    dropSubscribers() {
+      listeners.clear();
+    },
+
     find(id) {
       return state.itens.find((item) => item.id === id);
     },

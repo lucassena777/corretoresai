@@ -1,6 +1,9 @@
 // Sementes e constantes da demonstração.
 // O estado vivo (o que o usuário cria, edita, arrasta e apaga) fica em store.js.
 
+// true apenas no build de arquivo único (dist/preview.html), que roteia por hash.
+const SPA = typeof PREVIEW_SPA !== "undefined" && PREVIEW_SPA;
+
 const HOJE = new Date(2026, 7, 15); // 15 de agosto de 2026
 
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",

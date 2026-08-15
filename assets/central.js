@@ -1,19 +1,20 @@
 // Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
 
-(function central() {
-  const form = document.querySelector("[data-generator]");
-  const elIdeas = document.querySelector("[data-ideas]");
-  const elQuota = document.querySelector("[data-quota]");
-  const params = new URLSearchParams(location.search);
+function initCentral(root = document) {
+  const form = root.querySelector("[data-generator]");
+  const elIdeas = root.querySelector("[data-ideas]");
+  const elQuota = root.querySelector("[data-quota]");
 
   // Preenche a partir do perfil e de ?data=AAAA-MM-DD (vindo do calendário).
   form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
   form.area.value = store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
-  const dataAlvo = params.get("data");
+  const dataAlvo = routeParams().get("data");
 
-  document.querySelectorAll("[data-goto]").forEach((btn) => {
-    btn.addEventListener("click", () => { location.href = btn.dataset.goto; });
+  root.querySelectorAll("[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      location.href = SPA ? `#/${btn.dataset.goto.replace(".html", "")}` : btn.dataset.goto;
+    });
   });
 
   function proximaData() {
@@ -38,7 +39,7 @@
 
   // ---- Escolhas únicas ---------------------------------------------------
 
-  document.querySelectorAll("[data-choice]").forEach((row) => {
+  root.querySelectorAll("[data-choice]").forEach((row) => {
     row.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
       if (!btn) return;
@@ -48,7 +49,7 @@
   });
 
   const escolhido = (nome) =>
-    document.querySelector(`[data-choice="${nome}"] button[aria-pressed="true"]`)?.textContent.trim() ?? "";
+    root.querySelector(`[data-choice="${nome}"] button[aria-pressed="true"]`)?.textContent.trim() ?? "";
 
   // ---- Geração -----------------------------------------------------------
 
@@ -138,7 +139,7 @@
     elIdeas.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
-  document.querySelector("[data-limpar]")?.addEventListener("click", () => {
+  root.querySelector("[data-limpar]")?.addEventListener("click", () => {
     form.reset();
     form.cidade.value = store.perfil.cidade;
     ideias = [];
@@ -149,4 +150,6 @@
   renderQuota();
 
   if (dataAlvo) ui.toast(`Novo conteúdo para ${formatFull(dataAlvo)}.`);
-})();
+}
+
+if (!SPA) initCentral();

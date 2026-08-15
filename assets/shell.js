@@ -36,41 +36,49 @@ const ICONS = `
 <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
 </svg>`;
 
+// href: navegação por arquivos (site multipágina).
+// rota: navegação por hash (build de arquivo único).
 const NAV = [
-  { id: "dashboard", label: "Dashboard", icon: "i-grid", href: "dashboard.html" },
-  { id: "central", label: "Central de Conteúdo", icon: "i-wand", href: "central.html" },
-  { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html" },
-  { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban" },
-  { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html" },
-  { id: "historico", label: "Histórico", icon: "i-history", href: "biblioteca.html#historico" },
-  { id: "planos", label: "Planos", icon: "i-card", href: "../index.html#planos" },
-  { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html" },
-  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes" }
+  { id: "dashboard", label: "Dashboard", icon: "i-grid", href: "dashboard.html", rota: "#/dashboard" },
+  { id: "central", label: "Central de Conteúdo", icon: "i-wand", href: "central.html", rota: "#/central" },
+  { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
+  { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
+  { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
+  { id: "historico", label: "Histórico", icon: "i-history", href: "biblioteca.html#historico", rota: "#/historico" },
+  { id: "planos", label: "Planos", icon: "i-card", href: "../index.html#planos", rota: "#/planos" },
+  { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html", rota: "#/perfil" },
+  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes", rota: "#/configuracoes" }
 ];
+
+const LINKS = SPA
+  ? { site: "#/", central: "#/central", perfil: "#/perfil" }
+  : { site: "../index.html", central: "central.html", perfil: "perfil.html" };
 
 function icon(id, cls = "") {
   return `<svg class="${cls}"><use href="#${id}" /></svg>`;
 }
 
-function renderShell() {
-  const body = document.body;
-  const page = body.dataset.page || "";
-  const title = body.dataset.title || "";
-  const subtitle = body.dataset.subtitle || "";
-  const view = body.querySelector(".view");
+// Parâmetros de rota: ?data=... na URL (multipágina) ou depois do hash (SPA).
+function routeParams() {
+  const bruto = SPA ? (location.hash.split("?")[1] || "") : location.search.replace(/^\?/, "");
+  return new URLSearchParams(bruto);
+}
 
+// Abre a Central, opcionalmente já com uma data escolhida.
+function goCentral(data) {
+  const query = data ? `?data=${data}` : "";
+  location.href = SPA ? `#/central${query}` : `central.html${query}`;
+}
+
+function shellHTML({ page, title, subtitle }) {
   const links = NAV.map((item) => {
-    const current = item.id === page ? ' aria-current="page"' : "";
-    return `<a href="${item.href}"${current}>${icon(item.icon)}<span>${item.label}</span></a>`;
+    const atual = item.id === page ? ' aria-current="page"' : "";
+    return `<a href="${SPA ? item.rota : item.href}"${atual}>${icon(item.icon)}<span>${item.label}</span></a>`;
   }).join("");
 
-  body.insertAdjacentHTML("afterbegin", ICONS);
-
-  const shell = document.createElement("div");
-  shell.className = "app";
-  shell.innerHTML = `
+  return `
     <aside class="sidebar">
-      <a class="brand" href="../index.html">
+      <a class="brand" href="${LINKS.site}">
         <span class="brand-mark">${icon("i-building")}</span>
         <span class="brand-stack">
           <span>Corretores<span class="brand-ai">AI</span></span>
@@ -83,14 +91,14 @@ function renderShell() {
       <div class="side-foot">
         <div class="plan-box" data-plan-box></div>
         <div class="side-links">
-          <a href="../index.html">${icon("i-globe")}<span>Ver o site</span></a>
-          <a href="central.html">${icon("i-sparkle")}<span>Introdução</span></a>
-          <a href="../index.html">${icon("i-logout")}<span>Sair</span></a>
+          <a href="${LINKS.site}">${icon("i-globe")}<span>Ver o site</span></a>
+          <a href="${LINKS.central}">${icon("i-sparkle")}<span>Introdução</span></a>
+          <a href="${LINKS.site}">${icon("i-logout")}<span>Sair</span></a>
         </div>
       </div>
     </aside>
 
-    <div>
+    <div class="app-col">
       <header class="topbar">
         <div class="topbar-title">
           <strong>${title}</strong>
@@ -100,14 +108,28 @@ function renderShell() {
           <button class="theme-btn" type="button" data-theme-toggle aria-label="Alternar tema">
             ${icon("i-sun", "icon-sun")}${icon("i-moon", "icon-moon")}
           </button>
-          <a class="user-chip" href="perfil.html" data-user-chip></a>
+          <a class="user-chip" href="${LINKS.perfil}" data-user-chip></a>
         </div>
       </header>
     </div>`;
+}
 
-  const column = shell.lastElementChild;
+function renderShell() {
+  const body = document.body;
+  const view = body.querySelector(".view");
+
+  body.insertAdjacentHTML("afterbegin", ICONS);
+
+  const shell = document.createElement("div");
+  shell.className = "app";
+  shell.innerHTML = shellHTML({
+    page: body.dataset.page || "",
+    title: body.dataset.title || "",
+    subtitle: body.dataset.subtitle || ""
+  });
+
   body.appendChild(shell);
-  if (view) column.appendChild(view);
+  if (view) shell.querySelector(".app-col").appendChild(view);
 
   renderIdentity();
   store.subscribe(renderIdentity);
@@ -142,4 +164,4 @@ function renderIdentity() {
   }
 }
 
-renderShell();
+if (!SPA) renderShell();

@@ -1,11 +1,11 @@
 // Dashboard: tudo lido do store e redesenhado a cada mudança.
 
-(function dashboard() {
-  const elStats = document.querySelector("[data-stats]");
-  const elUpcoming = document.querySelector("[data-upcoming]");
-  const elActivity = document.querySelector("[data-activity]");
-  const elMonthLabel = document.querySelector("[data-month-label]");
-  const elMiniMonth = document.querySelector("[data-mini-month]");
+function initDashboard(root = document) {
+  const elStats = root.querySelector("[data-stats]");
+  const elUpcoming = root.querySelector("[data-upcoming]");
+  const elActivity = root.querySelector("[data-activity]");
+  const elMonthLabel = root.querySelector("[data-month-label]");
+  const elMiniMonth = root.querySelector("[data-mini-month]");
 
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
 
@@ -115,7 +115,7 @@
       </li>`).join("");
   }
 
-  document.querySelectorAll("[data-month]").forEach((btn) => {
+  root.querySelectorAll("[data-month]").forEach((btn) => {
     btn.addEventListener("click", () => {
       cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
       render();
@@ -129,4 +129,6 @@
 
   store.subscribe(render);
   render();
-})();
+}
+
+if (!SPA) initDashboard();

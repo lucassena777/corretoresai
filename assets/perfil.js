@@ -1,10 +1,10 @@
 // Perfil e configurações — grava no store, e o resto do app reage na hora.
 
-(function perfil() {
-  const form = document.querySelector("[data-perfil]");
-  const elAreas = document.querySelector("[data-areas]");
-  const elPlanos = document.querySelector("[data-planos]");
-  const elNota = document.querySelector("[data-plano-nota]");
+function initPerfil(root = document) {
+  const form = root.querySelector("[data-perfil]");
+  const elAreas = root.querySelector("[data-areas]");
+  const elPlanos = root.querySelector("[data-planos]");
+  const elNota = root.querySelector("[data-plano-nota]");
 
   function preencher() {
     const p = store.perfil;
@@ -60,25 +60,23 @@
     ui.toast("Perfil salvo.");
   });
 
-  document.querySelector("[data-reset]").addEventListener("click", () => {
+  root.querySelector("[data-reset]").addEventListener("click", () => {
     if (!confirm("Restaurar o acervo original? Tudo o que você criou e editou será perdido.")) return;
     store.reset();
     preencher();
     ui.toast("Acervo restaurado.");
   });
 
-  document.querySelector("[data-exportar]").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(store.state, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "corretoresai-dados.json";
-    link.click();
-    URL.revokeObjectURL(url);
-    ui.toast("Arquivo gerado.");
+  // Cópia em vez de download: funciona tanto no arquivo local quanto na prévia publicada.
+  root.querySelector("[data-exportar]").addEventListener("click", () => {
+    navigator.clipboard?.writeText(JSON.stringify(store.state, null, 2))
+      .then(() => ui.toast("Dados copiados como JSON."))
+      .catch(() => ui.toast("Não foi possível copiar.", "erro"));
   });
 
   store.subscribe(renderPlanos);
   preencher();
   renderPlanos();
-})();
+}
+
+if (!SPA) initPerfil();

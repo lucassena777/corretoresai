@@ -32,6 +32,23 @@ assets/theme.js         alternância de tema (claro/escuro), salva no navegador
 
 Os scripts carregam sempre nesta ordem: `theme → data → store → ui → shell → tela`.
 
+## Prévia publicada
+
+O site inteiro cabe num arquivo só, com rotas por hash, para poder ser
+compartilhado como link:
+
+```bash
+powershell -ExecutionPolicy Bypass -File tools/build-preview.ps1
+```
+
+Isso gera `dist/preview.html` (abre direto no navegador) e `dist/artifact.html`
+(mesmo conteúdo, sem `<html>`/`<head>`, para publicar como Artifact). Rode o
+build depois de qualquer mudança e publique de novo para atualizar o link.
+
+Cada tela é uma função `initX(root)` escopada ao seu container, então o mesmo
+código roda no site multipágina e dentro do arquivo único. O que decide é a
+constante `SPA`, ligada só no build.
+
 ## Como o estado funciona
 
 Existe **um estado só**, em `store.js`, salvo na chave `corretoresai-estado-v2` do

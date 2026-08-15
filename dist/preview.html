@@ -1,0 +1,3996 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CorretoresAI</title>
+</head>
+<body>
+<style>
+/* CorretoresAI — tokens, reset e componentes compartilhados (tema preto e dourado) */
+
+:root {
+  --bg: #0e1012;
+  --bg-alt: #121417;
+  --bg-deep: #0a0c0d;
+  --surface: #15181b;
+  --surface-2: #1a1e22;
+  --surface-3: #20252a;
+  --border: #262b31;
+  --border-soft: #1c2126;
+
+  --text: #f3f5f6;
+  --text-muted: #9aa1a8;
+  --text-dim: #6b7379;
+
+  --gold: #c9a227;
+  --gold-soft: #ddc074;
+  --gold-bright: #e3cb8a;
+  --gold-deep: #8c6d1f;
+  --on-gold: #17130a;
+
+  --ok: #4ade80;
+  --info: #60a5fa;
+  --warn: #fbbf24;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --container: 1180px;
+
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.85);
+  --shadow-gold: 0 12px 34px -14px rgba(201, 162, 39, 0.45);
+}
+
+:root[data-theme="light"] {
+  --bg: #faf8f4;
+  --bg-alt: #f4f1ea;
+  --bg-deep: #efebe1;
+  --surface: #ffffff;
+  --surface-2: #faf8f4;
+  --surface-3: #f2eee5;
+  --border: #e3ded2;
+  --border-soft: #ece8dd;
+
+  --text: #17150f;
+  --text-muted: #5c584e;
+  --text-dim: #8a857a;
+
+  --gold: #a8801d;
+  --gold-soft: #8a6a19;
+  --gold-bright: #7a5d15;
+  --gold-deep: #6b5214;
+  --on-gold: #fffdf7;
+
+  --shadow: 0 20px 46px -30px rgba(60, 50, 20, 0.35);
+  --shadow-gold: 0 12px 30px -14px rgba(168, 128, 29, 0.35);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button { font: inherit; }
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.icon { width: 1em; height: 1em; flex: none; }
+
+/* ---------- Marca ---------- */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--gold-deep);
+  color: var(--gold);
+  background: linear-gradient(155deg, rgba(201, 162, 39, 0.2), transparent 70%);
+}
+
+.brand-mark svg { width: 20px; height: 20px; }
+.brand-ai { color: var(--gold-soft); }
+
+.brand-stack { display: grid; gap: 1px; }
+
+.brand-tag {
+  color: var(--text-dim);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ---------- Botões ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.btn svg { width: 16px; height: 16px; }
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary {
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 48%, var(--gold-deep));
+  color: var(--on-gold);
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-primary:hover { filter: brightness(1.07); }
+
+.btn-outline {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.btn-outline:hover { border-color: var(--gold-deep); }
+
+.btn-quiet {
+  background: transparent;
+  color: var(--text-muted);
+  padding-inline: 8px;
+}
+
+.btn-quiet:hover { color: var(--text); }
+
+.btn-lg { padding: 14px 28px; font-size: 15.5px; }
+.btn-block { width: 100%; }
+
+/* ---------- Peças reutilizadas ---------- */
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--gold-soft);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--gold-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chip svg { width: 13px; height: 13px; }
+
+.card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.icon-tile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--gold-soft);
+}
+
+.icon-tile svg { width: 19px; height: 19px; }
+.icon-tile.is-gold {
+  border-color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+}
+
+.theme-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--gold-soft);
+  cursor: pointer;
+}
+
+.theme-btn svg { width: 17px; height: 17px; }
+.theme-btn:hover { border-color: var(--gold-deep); }
+:root:not([data-theme="light"]) .theme-btn .icon-moon { display: none; }
+:root[data-theme="light"] .theme-btn .icon-sun { display: none; }
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+
+.tag {
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* CorretoresAI — landing page */
+
+/* ---------- Header ---------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 74px;
+}
+
+.site-nav {
+  display: flex;
+  gap: 30px;
+  margin-inline: auto;
+  font-size: 14.5px;
+  color: var(--text-muted);
+}
+
+.site-nav a { position: relative; padding: 4px 0; }
+.site-nav a:hover { color: var(--text); }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---------- Hero ---------- */
+
+.hero { padding: 118px 0 0; }
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  gap: 60px;
+  align-items: center;
+}
+
+.hero-badge { margin-bottom: 28px; }
+
+.hero-title {
+  margin: 0 0 24px;
+  font-size: clamp(34px, 3.5vw, 51px);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.hero-title .accent { color: var(--gold-soft); }
+
+.lead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 16.5px;
+  line-height: 1.75;
+}
+
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 32px 0 20px;
+}
+
+.check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.check-list li { display: flex; align-items: center; gap: 8px; }
+
+.check-list li::before {
+  content: "";
+  width: 11px;
+  height: 6px;
+  border-left: 1.8px solid var(--gold);
+  border-bottom: 1.8px solid var(--gold);
+  transform: rotate(-45deg) translateY(-2px);
+}
+
+/* Mock da plataforma */
+
+.window {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.window-bar .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.window-url {
+  margin-left: 14px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.window-body { display: grid; gap: 16px; padding: 18px; }
+
+.mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.mini-stat {
+  padding: 15px 17px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.mini-stat strong {
+  display: block;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.mini-stat span { color: var(--text-dim); font-size: 12px; }
+
+.mini-panel {
+  padding: 16px 18px 20px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.mini-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.mini-panel-head strong { font-size: 13.5px; font-weight: 600; }
+
+.pill-gold {
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.mini-calendar .day {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.mini-calendar .day.is-marked {
+  border-color: var(--gold-deep);
+  color: var(--gold-soft);
+  font-weight: 600;
+}
+
+.mini-calendar .day.is-today {
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  border-color: transparent;
+  color: var(--on-gold);
+  font-weight: 700;
+}
+
+/* Faixa de números */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 80px;
+  padding: 42px 0 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.facts strong {
+  display: block;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.facts span { color: var(--text-muted); font-size: 13.5px; }
+
+/* ---------- Seções ---------- */
+
+.section { padding: 104px 0; }
+.section-alt { background: var(--bg-alt); }
+
+.section-head { max-width: 720px; margin-bottom: 48px; }
+.section-head.is-center { margin-inline: auto; text-align: center; }
+
+.section-title {
+  margin: 0 0 16px;
+  font-size: clamp(28px, 2.7vw, 39px);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+.section-title .accent { color: var(--gold-soft); }
+
+/* Recursos */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.feature {
+  padding: 26px 26px 28px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.feature:hover { border-color: var(--gold-deep); transform: translateY(-2px); }
+
+.feature h3 {
+  margin: 22px 0 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.feature p { margin: 0; color: var(--text-muted); font-size: 14.5px; }
+
+/* Como funciona */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+}
+
+.step { padding-top: 22px; border-top: 1px solid var(--border); }
+
+.step-num {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--gold-soft);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.step h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
+.step p { margin: 0; color: var(--text-muted); font-size: 14.5px; }
+
+.callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 52px;
+  padding: 22px 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+
+.callout p {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14.5px;
+}
+
+.callout p svg { width: 18px; height: 18px; color: var(--gold-soft); flex: none; }
+
+/* Planos */
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 28px 30px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+
+.plan.is-popular {
+  border-color: var(--gold-deep);
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.18), var(--shadow);
+}
+
+.plan-flag {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.plan-head { display: flex; align-items: center; gap: 14px; }
+.plan-head h3 { margin: 0; font-size: 19px; font-weight: 700; }
+
+.plan-note {
+  margin: 16px 0 22px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 24px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.plan-price span {
+  color: var(--text-dim);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.plan-features {
+  display: grid;
+  gap: 13px;
+  margin-bottom: 28px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.plan-features li { display: flex; gap: 11px; }
+
+.plan-features li::before {
+  content: "";
+  margin-top: 6px;
+  width: 10px;
+  height: 5.5px;
+  flex: none;
+  border-left: 1.8px solid var(--gold);
+  border-bottom: 1.8px solid var(--gold);
+  transform: rotate(-45deg);
+}
+
+.plan .btn { margin-top: auto; }
+
+.plans-note {
+  margin: 34px 0 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13.5px;
+}
+
+/* Depoimentos */
+
+.quotes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.quote {
+  padding: 26px 26px 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.quote-mark { color: var(--gold-soft); font-size: 26px; line-height: 1; }
+
+.quote blockquote {
+  margin: 16px 0 22px;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  font-style: italic;
+}
+
+.quote footer { padding-top: 18px; border-top: 1px solid var(--border-soft); }
+.quote strong { display: block; font-size: 14.5px; font-weight: 600; }
+.quote span { color: var(--gold-soft); font-size: 13px; }
+
+/* CTA final */
+
+.final-cta { padding: 104px 0; background: var(--bg-deep); text-align: center; }
+
+.final-cta .section-title { max-width: 780px; margin-inline: auto; }
+.final-cta .lead { max-width: 620px; margin: 0 auto 32px; }
+
+/* Rodapé */
+
+.site-footer {
+  padding: 34px 0;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-deep);
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.footer-copy { color: var(--text-dim); font-size: 13.5px; }
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.footer-links a:hover { color: var(--gold-soft); }
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 1000px) {
+  .site-nav { display: none; }
+  .hero { padding-top: 64px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+  .facts { grid-template-columns: 1fr; gap: 24px; margin-top: 56px; }
+  .feature-grid, .steps, .plans, .quotes { grid-template-columns: 1fr; }
+  .section { padding: 72px 0; }
+  .plan.is-popular { margin-top: 14px; }
+}
+
+@media (max-width: 560px) {
+  .header-actions .btn-quiet { display: none; }
+  .mini-stats { grid-template-columns: 1fr; }
+  .callout { flex-direction: column; align-items: flex-start; }
+}
+
+/* CorretoresAI — shell do aplicativo (dashboard, central, calendário, kanban) */
+
+.app {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 22px 18px;
+  border-right: 1px solid var(--border-soft);
+  background: var(--bg-deep);
+}
+
+.sidebar .brand { margin: 4px 6px 26px; font-size: 18px; }
+
+.side-nav { display: grid; gap: 3px; }
+
+.side-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 14.5px;
+}
+
+.side-nav a svg { width: 18px; height: 18px; flex: none; }
+.side-nav a:hover { background: var(--surface); color: var(--text); }
+
+.side-nav a[aria-current="page"] {
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.side-nav a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  border-radius: 0 3px 3px 0;
+  background: var(--gold);
+}
+
+.side-foot { margin-top: auto; display: grid; gap: 16px; }
+
+.plan-box {
+  padding: 15px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.plan-box strong { display: block; font-size: 13.5px; font-weight: 600; }
+
+.plan-bar {
+  height: 4px;
+  margin: 11px 0 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.plan-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-bright), var(--gold-deep));
+}
+
+.plan-box span { color: var(--text-dim); font-size: 12px; }
+
+.side-links {
+  display: grid;
+  gap: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.side-links a {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.side-links a svg { width: 17px; height: 17px; flex: none; }
+.side-links a:hover { color: var(--text); background: var(--surface); }
+
+/* ---------- Topbar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 34px;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.topbar-title strong { display: block; font-size: 15px; font-weight: 700; }
+.topbar-title span { color: var(--text-dim); font-size: 12.5px; }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.user-chip:hover { border-color: var(--gold-deep); }
+.user-chip b { display: block; font-size: 13px; font-weight: 600; }
+.user-chip span { color: var(--gold-soft); font-size: 11.5px; }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- Área de conteúdo ---------- */
+
+.view { padding: 34px 34px 60px; }
+
+.view-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.view-head h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.view-head p { margin: 0; color: var(--text-muted); font-size: 14.5px; }
+.view-head .btn { margin-left: auto; }
+
+/* Cartões de métrica */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 22px 24px 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.stat-card .icon-tile { margin-bottom: 26px; }
+
+.stat-card b {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.stat-card em { display: block; margin-top: 4px; font-size: 14px; font-style: normal; }
+.stat-card span { color: var(--text-dim); font-size: 12.5px; }
+
+/* Painéis */
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 22px 0;
+}
+
+.panel-head strong { display: block; font-size: 15px; font-weight: 700; }
+.panel-head span { color: var(--text-dim); font-size: 12.5px; }
+
+.panel-link {
+  margin-left: auto;
+  color: var(--gold-soft);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.panel-body { padding: 20px 22px 22px; }
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 56px 20px 60px;
+  text-align: center;
+}
+
+.empty .icon-tile { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 10px; }
+.empty .icon-tile svg { width: 24px; height: 24px; }
+.empty strong { font-size: 15.5px; }
+.empty p { margin: 0 0 18px; color: var(--text-dim); font-size: 13.5px; }
+
+/* Calendário resumido */
+
+.month-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.month-head strong { font-size: 14.5px; font-weight: 700; }
+.month-nav { margin-left: auto; display: flex; gap: 6px; }
+
+.nav-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.nav-btn svg { width: 14px; height: 14px; }
+.nav-btn:hover { color: var(--text); border-color: var(--gold-deep); }
+
+.mini-month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+.mini-month .wd {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mini-month .d {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.mini-month .d.is-out { color: var(--text-dim); opacity: 0.5; }
+.mini-month .d.has-post::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.mini-month .d.is-week { background: var(--surface-2); }
+.mini-month .d.is-today {
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-weight: 700;
+}
+.mini-month .d.is-today::after { background: var(--on-gold); }
+
+/* Atividades */
+
+.activity { display: grid; gap: 18px; max-height: 320px; overflow-y: auto; }
+.activity li { display: flex; gap: 13px; }
+
+.activity.is-clickable { max-height: none; overflow: visible; gap: 6px; }
+
+.activity.is-clickable li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.activity.is-clickable li:hover { background: var(--surface-2); }
+.activity .icon-tile { width: 30px; height: 30px; border-radius: 9px; }
+.activity .icon-tile svg { width: 15px; height: 15px; }
+.activity p { margin: 0; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.activity li > div { min-width: 0; }
+.activity time { color: var(--text-dim); font-size: 12px; }
+
+/* ---------- Formulário da central ---------- */
+
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button svg { width: 15px; height: 15px; }
+
+.segmented button[aria-pressed="true"] {
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+}
+
+.form-card {
+  max-width: 820px;
+  padding: 28px 30px 30px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.field { margin-bottom: 22px; }
+.field:last-child { margin-bottom: 0; }
+
+.field > label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.field > label small { color: var(--text-dim); font-weight: 400; }
+
+.field .hint { margin: 8px 0 0; color: var(--text-dim); font-size: 12.5px; }
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.field textarea { min-height: 108px; resize: vertical; }
+.field input::placeholder, .field textarea::placeholder { color: var(--text-dim); }
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--gold-deep);
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+.choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.choice-row button {
+  padding: 9px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.choice-row button[aria-pressed="true"] {
+  border-color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-weight: 600;
+}
+
+.generate-btn {
+  width: 100%;
+  margin-top: 28px;
+  padding: 17px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 45%, var(--gold-deep));
+  color: var(--on-gold);
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.generate-btn svg { width: 18px; height: 18px; }
+.generate-btn:hover { filter: brightness(1.06); }
+
+/* ---------- Calendário editorial ---------- */
+
+.board-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0 18px;
+}
+
+.board-bar .month-label { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.board-bar .spacer { margin-left: auto; }
+
+.drag-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+}
+
+.drag-hint .status-dot { color: var(--gold); }
+
+.calendar-grid {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.calendar-head, .calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-head span {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.cal-day {
+  min-height: 148px;
+  padding: 10px;
+  border-right: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.cal-day:nth-child(7n) { border-right: 0; }
+.calendar-week:last-child .cal-day { border-bottom: 0; }
+.cal-day.is-out { background: var(--bg-deep); }
+.cal-day.is-over { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--gold-deep); }
+
+.cal-daynum {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cal-daynum:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.cal-day.is-today .cal-daynum {
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-weight: 700;
+}
+
+.cal-card {
+  margin-bottom: 8px;
+  padding: 8px 9px 9px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: var(--surface-2);
+  cursor: grab;
+}
+
+.cal-card:active { cursor: grabbing; }
+.cal-card.is-dragging { opacity: 0.4; }
+
+.cal-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cal-card-title .status-dot { margin-top: 5px; }
+.cal-card-meta { margin-top: 5px; color: var(--text-dim); font-size: 11px; }
+.cal-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.cal-card-tags .tag { font-size: 10px; padding: 2px 7px; }
+
+/* ---------- Kanban ---------- */
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.kan-col { display: grid; gap: 14px; }
+
+.kan-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kan-head .count { color: var(--text-dim); font-weight: 500; }
+.kan-head .hint { margin-left: auto; color: var(--text-dim); font-size: 12px; font-weight: 400; }
+
+.kan-drop {
+  display: grid;
+  gap: 14px;
+  min-height: 140px;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+}
+
+.kan-drop.is-over { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--gold-deep); }
+
+.kan-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.kan-card:active { cursor: grabbing; }
+.kan-card.is-dragging { opacity: 0.4; }
+
+.kan-cover {
+  position: relative;
+  height: 96px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--surface-3), var(--surface-2));
+}
+
+.kan-cover.t-apartamentos { background: linear-gradient(135deg, #2b3138, #1d2228); }
+.kan-cover.t-casas { background: linear-gradient(135deg, #38312a, #241f1a); }
+.kan-cover.t-terrenos { background: linear-gradient(135deg, #2c3329, #1e231c); }
+.kan-cover.t-studios { background: linear-gradient(135deg, #2a303a, #1c2027); }
+.kan-cover.t-comercial { background: linear-gradient(135deg, #313138, #212126); }
+.kan-cover.t-lancamentos { background: linear-gradient(135deg, #34303c, #222028); }
+
+.kan-format {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 7px;
+  background: rgba(10, 12, 13, 0.68);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kan-area { color: var(--text-muted); font-size: 11.5px; }
+
+.kan-body { padding: 14px 15px 15px; }
+
+.kan-body h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.kan-when { color: var(--text-dim); font-size: 12.5px; }
+.kan-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+
+.kan-foot {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.kan-foot .avatar { width: 24px; height: 24px; font-size: 10px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badge.s-aprovado { color: var(--warn); }
+.badge.s-agendado { color: var(--info); }
+.badge.s-publicado { color: var(--ok); }
+
+.is-hidden { display: none !important; }
+
+/* ---------- Avisos ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 90;
+  transform: translate(-50%, 20px);
+  padding: 13px 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+.toast[data-kind="erro"] { border-color: #7f2b2b; color: #ffb4b4; }
+
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(4, 6, 7, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 56px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-alt);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.modal-head h2 {
+  margin: 12px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.modal-head .theme-btn { margin-left: auto; flex: none; }
+
+.modal-body { padding: 24px 26px; overflow-y: auto; }
+
+.modal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px 26px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.modal-foot .btn-primary { margin-left: auto; }
+
+.btn-outline.is-danger { color: #ff9b9b; }
+.btn-outline.is-danger:hover { border-color: #7f2b2b; }
+
+.roteiro {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.roteiro summary {
+  margin-bottom: 18px;
+  color: var(--gold-soft);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.roteiro textarea { min-height: 0; }
+
+/* ---------- Cartões de ideia geradas ---------- */
+
+.ideas { display: grid; gap: 16px; margin-top: 24px; }
+
+.idea {
+  padding: 22px 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.idea-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.idea-head h3 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.35; }
+.idea p { margin: 0 0 6px; color: var(--text-muted); font-size: 14px; }
+.idea p b { color: var(--text); font-weight: 600; }
+.idea-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+.quota {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+}
+
+.quota b { color: var(--gold-soft); }
+
+@media (max-width: 640px) {
+  .modal-foot { flex-direction: column; }
+  .modal-foot .btn { width: 100%; margin-left: 0; }
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 1180px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .panel-grid { grid-template-columns: 1fr; }
+  .kanban { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .side-foot { margin-top: 24px; }
+  .view { padding: 24px 20px 48px; }
+  .topbar { padding: 14px 20px; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+  .calendar-head, .calendar-week { grid-template-columns: 1fr; }
+  .cal-day { min-height: auto; border-right: 0; }
+  .calendar-head span { display: none; }
+}
+
+</style>
+<script>
+  const PREVIEW_SPA = true;
+  document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";
+</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20V8l6-4v16" /><path d="M10 20h10V11l-6-2" /><path d="M14 14h2M14 17h2M7 11h1M7 14h1" />
+  </symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 3l1.7 4.6L17.5 9l-4.8 1.4L11 15l-1.7-4.6L4.5 9l4.8-1.4z" /><path d="M18 14.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12h13M13 6l6 6-6 6" />
+  </symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z" />
+  </symbol>
+  <symbol id="i-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" /><path d="M15 12H9M12 9l3 3-3 3" />
+  </symbol>
+  <symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 4l5 5L9 20l-5-5z" /><path d="M14 5l5 5M6 4l.8 2L9 6.8 6.8 7.6 6 10l-.8-2.4L3 6.8 5.2 6z" />
+  </symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M3 10h18M8 3v4M16 3v4" />
+  </symbol>
+  <symbol id="i-kanban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="17" rx="2.5" /><path d="M9 4v17M15 4v17" />
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5z" />
+  </symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+    <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" />
+  </symbol>
+  <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 10h18M8 5v5M16 5v5" />
+  </symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9" /><path d="M8.5 12.4l2.4 2.4 4.6-5" />
+  </symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7" /><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5" />
+  </symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18" />
+  </symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" />
+  </symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9" /><path d="M12 7v5.3l3.3 2" />
+  </symbol>
+  <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="9" r="5.5" /><path d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5" />
+  </symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" />
+  </symbol>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V8l6-4v16"/><path d="M10 20h10V11l-6-2"/><path d="M14 14h2M14 17h2M7 11h1M7 14h1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l5 5L9 20l-5-5z"/><path d="M14 5l5 5M6 4l.8 2L9 6.8 6.8 7.6 6 10l-.8-2.4L3 6.8 5.2 6z"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="i-calendar-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V7.5A2.5 2.5 0 0 0 18.5 5h-13A2.5 2.5 0 0 0 3 7.5v11A2.5 2.5 0 0 0 5.5 21H12"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M17.5 16v1.7l1.2.8"/></symbol>
+<symbol id="i-kanban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M9 4v17M15 4v17"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5z"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v4h4"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-3-1.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.3-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 3 1.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.6 3.6 5.6 3.6 9S14.4 18.4 12 21c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l1.7 4.6L17.5 9l-4.8 1.4L11 15l-1.7-4.6L4.5 9l4.8-1.4z"/><path d="M18 14.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 12h11M17 9l3 3-3 3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+<symbol id="i-chev-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></symbol>
+<symbol id="i-chev-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10.5 13.5M21 3l-6.8 18-3.7-7.5L3 9.8z"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 20c1.1-3.2 3.7-5 7-5 1.2 0 2.3.2 3.3.7"/><path d="M18 14v6M15 17h6"/></symbol>
+<symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.4l2.4 2.4 4.6-5"/></symbol>
+<symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
+</svg>
+
+<div data-landing>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><svg><use href="#i-building" /></svg></span>
+      <span>Corretores<span class="brand-ai">AI</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="Principal">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#beneficios">Benefícios</a>
+      <a href="#depoimentos">Depoimentos</a>
+      <a href="#planos">Planos</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="theme-btn" type="button" data-theme-toggle aria-label="Alternar tema">
+        <svg class="icon-sun"><use href="#i-sun" /></svg>
+        <svg class="icon-moon"><use href="#i-moon" /></svg>
+      </button>
+      <a class="btn btn-quiet" href="app/dashboard.html">
+        <svg><use href="#i-login" /></svg>
+        Entrar
+      </a>
+      <a class="btn btn-primary" href="app/central.html">Começar grátis</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="chip hero-badge">
+          <svg><use href="#i-sparkle" /></svg>
+          Central de conteúdo imobiliário
+        </p>
+
+        <h1 class="hero-title">
+          Construa autoridade<br />
+          <span class="accent">na sua cidade</span>
+        </h1>
+
+        <p class="lead">
+          O CorretoresAI escreve os roteiros, organiza o calendário e acompanha
+          cada publicação para você. Em vez de travar na frente da câmera
+          pensando no que postar, você grava — e o resto já está pronto.
+        </p>
+
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="app/central.html">
+            Começar grátis
+            <svg><use href="#i-arrow" /></svg>
+          </a>
+          <a class="btn btn-outline btn-lg" href="#recursos">Ver a plataforma</a>
+        </div>
+
+        <ul class="check-list">
+          <li>Sem cartão de crédito</li>
+          <li>5 gerações grátis por mês</li>
+          <li>Cancele quando quiser</li>
+        </ul>
+      </div>
+
+      <div class="window" aria-hidden="true">
+        <div class="window-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="window-url">corretoresai.com.br/app</span>
+        </div>
+        <div class="window-body">
+          <div class="mini-stats" data-hero-stats></div>
+          <div class="mini-panel">
+            <div class="mini-panel-head">
+              <strong>Calendário editorial</strong>
+              <span class="pill-gold">Kanban</span>
+            </div>
+            <div class="mini-calendar" data-mini-calendar></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <ul class="facts">
+        <li><strong>4 formatos</strong><span>Reels, Carrossel, Stories e TikTok</span></li>
+        <li><strong>9 áreas</strong><span>De studios a alto padrão</span></li>
+        <li><strong>11 campos</strong><span>Entregues em cada conteúdo</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= RECURSOS ================= -->
+  <section class="section section-alt" id="recursos">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Recursos</p>
+        <h2 class="section-title">Tudo o que a sua operação<br />de conteúdo precisa</h2>
+        <p class="lead">
+          Não é um gerador de textos soltos. É a plataforma inteira: da ideia ao
+          post publicado, com o histórico de cada decisão.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-sparkle" /></svg></span>
+          <h3>Roteiros prontos para gravar</h3>
+          <p>Escolha a área, o funil e o formato. A IA devolve título, gancho, roteiro completo, legenda, CTA e hashtags — com sugestão de gravação.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-calendar" /></svg></span>
+          <h3>Calendário editorial de verdade</h3>
+          <p>Visão mensal, semana atual destacada e arrastar-e-soltar para reagendar. Cada mudança salva sozinha, sem recarregar a página.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile is-gold"><svg><use href="#i-kanban" /></svg></span>
+          <h3>Kanban da produção</h3>
+          <p>Aprovado, Agendado e Publicado. Arraste o card entre as colunas e o status, o calendário e o dashboard acompanham na hora.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-book" /></svg></span>
+          <h3>Biblioteca com filtros</h3>
+          <p>Todo o acervo em um lugar só, com busca e filtros por categoria, data, formato, funil e status. Nada se perde.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-target" /></svg></span>
+          <h3>Conteúdo por etapa de funil</h3>
+          <p>Topo para alcançar, meio para convencer, fundo para converter. E o funil personalizado para campanhas sob medida.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-film" /></svg></span>
+          <h3>Todos os formatos que importam</h3>
+          <p>Reels, Carrossel, Stories e TikTok — cada um com a estrutura certa de roteiro, não um texto genérico adaptado.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMO FUNCIONA ================= -->
+  <section class="section" id="como-funciona">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Como funciona</p>
+        <h2 class="section-title">Do briefing ao calendário<br />em menos de um minuto</h2>
+      </div>
+
+      <div class="steps">
+        <article class="step">
+          <span class="step-num">01</span>
+          <h3>Descreva o que você vende</h3>
+          <p>Área de atuação, etapa do funil e formato. Três cliques, sem formulário longo e sem prompt para escrever.</p>
+        </article>
+
+        <article class="step">
+          <span class="step-num">02</span>
+          <h3>Receba o roteiro completo</h3>
+          <p>Título, gancho, roteiro cortado por tempo, legenda, CTA, hashtags, objetivo e público ideal. Edite o que quiser.</p>
+        </article>
+
+        <article class="step">
+          <span class="step-num">03</span>
+          <h3>Aprove e acompanhe</h3>
+          <p>Ao aprovar, o conteúdo entra no calendário, vira card no Kanban e atualiza o dashboard. Instantaneamente.</p>
+        </article>
+      </div>
+
+      <div class="callout">
+        <p>
+          <svg><use href="#i-check-circle" /></svg>
+          Ao aprovar, o conteúdo entra no calendário, vira card no Kanban e atualiza o dashboard.
+        </p>
+        <a class="btn btn-primary" href="app/central.html">
+          Experimentar agora
+          <svg><use href="#i-arrow" /></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BENEFÍCIOS ================= -->
+  <section class="section section-alt" id="beneficios">
+    <div class="container">
+      <div class="section-head is-center">
+        <h2 class="section-title">Benefícios para você, <span class="accent">corretor!</span></h2>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-eye" /></svg></span>
+          <h3>Mais visualizações para seus imóveis</h3>
+          <p>Conteúdo pensado para quem realmente busca comprar ou alugar — não só para impressionar outros corretores.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-clock" /></svg></span>
+          <h3>Economize tempo todos os dias</h3>
+          <p>Crie roteiros e legendas em minutos, não em horas perdidas tentando ser roteirista ou designer.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-award" /></svg></span>
+          <h3>Construa autoridade na sua cidade</h3>
+          <p>Publique com consistência e se torne a referência imobiliária da sua região.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-trend" /></svg></span>
+          <h3>Mais leads e mais fechamentos</h3>
+          <p>Conteúdo estratégico por estágio de funil que atrai, nutre e converte contatos em visitas e vendas.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-wand" /></svg></span>
+          <h3>Nunca mais fique sem ideia</h3>
+          <p>Escolha a área de atuação e, em segundos, saem roteiros completos com gancho, desenvolvimento, valor e CTA.</p>
+        </article>
+
+        <article class="feature">
+          <span class="icon-tile"><svg><use href="#i-rocket" /></svg></span>
+          <h3>Publique com confiança</h3>
+          <p>Mantenha a presença digital ativa e nunca perca uma oportunidade de mostrar um imóvel.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PLANOS ================= -->
+  <section class="section" id="planos">
+    <div class="container">
+      <div class="section-head is-center">
+        <p class="eyebrow">Planos</p>
+        <h2 class="section-title">Comece de graça. Cresça<br />quando fizer sentido.</h2>
+        <p class="lead">
+          Sem fidelidade, sem burocracia. O plano muda na hora e todo o seu acervo
+          continua no lugar.
+        </p>
+      </div>
+
+      <div class="plans">
+        <article class="plan">
+          <div class="plan-head">
+            <span class="icon-tile"><svg><use href="#i-sparkle" /></svg></span>
+            <h3>Gratuito</h3>
+          </div>
+          <p class="plan-note">Perfeito para testar e conhecer a plataforma.</p>
+          <p class="plan-price">R$ 0 <span>/mês</span></p>
+          <ul class="plan-features">
+            <li>5 gerações de conteúdo com IA por mês</li>
+            <li>Acesso completo à Central de Planejamento (Calendário e Kanban)</li>
+            <li>Gerador de ideias e textos para legendas</li>
+            <li>Exportação de texto simples</li>
+          </ul>
+          <button class="btn btn-outline btn-block" type="button" data-plano="gratuito">Começar Grátis</button>
+        </article>
+
+        <article class="plan is-popular">
+          <span class="plan-flag">MAIS POPULAR</span>
+          <div class="plan-head">
+            <span class="icon-tile is-gold"><svg><use href="#i-rocket" /></svg></span>
+            <h3>Corretor Pro</h3>
+          </div>
+          <p class="plan-note">Para corretores que buscam consistência e mais vendas.</p>
+          <p class="plan-price">R$ 29,90 <span>/mês</span></p>
+          <ul class="plan-features">
+            <li>40 gerações de conteúdo com IA por mês</li>
+            <li>Acesso ao Estágio do funil de conteúdo</li>
+            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
+            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
+            <li>Filtro por funil personalizado</li>
+            <li>Suporte prioritário via WhatsApp</li>
+          </ul>
+          <button class="btn btn-primary btn-block" type="button" data-plano="pro">Quero Acelerar Minhas Vendas</button>
+        </article>
+
+        <article class="plan">
+          <div class="plan-head">
+            <span class="icon-tile"><svg><use href="#i-crown" /></svg></span>
+            <h3>Ilimitado</h3>
+          </div>
+          <p class="plan-note">Para alta performance, equipes e imobiliárias.</p>
+          <p class="plan-price">R$ 49,90 <span>/mês</span></p>
+          <ul class="plan-features">
+            <li>Gerações de conteúdo 100% ILIMITADAS</li>
+            <li>Acesso ao Estágio do funil de conteúdo</li>
+            <li>Filtro por funil personalizado</li>
+            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
+            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
+            <li>Gerador automático de legenda por link/foto do imóvel</li>
+            <li>Exportação e agendamento em 1 clique</li>
+            <li>Acesso antecipado a novas ferramentas</li>
+            <li>Suporte VIP individual</li>
+          </ul>
+          <button class="btn btn-outline btn-block" type="button" data-plano="ilimitado">Desbloquear Acesso Ilimitado</button>
+        </article>
+      </div>
+
+      <p class="plans-note">Cancele a qualquer momento. Sem fidelidade ou taxas escondidas.</p>
+    </div>
+  </section>
+
+  <!-- ================= DEPOIMENTOS ================= -->
+  <section class="section section-alt" id="depoimentos">
+    <div class="container">
+      <div class="section-head is-center">
+        <h2 class="section-title">O que dizem corretores que já usam a <span class="accent">CorretoresAI</span></h2>
+      </div>
+
+      <div class="quotes">
+        <article class="quote">
+          <span class="quote-mark">&rdquo;</span>
+          <blockquote>“Antes eu perdia horas pensando em legenda. Hoje monto meu calendário da semana inteira em 20 minutos.”</blockquote>
+          <footer>
+            <strong>Marcos Ferreira</strong>
+            <span>Corretor de Apartamentos</span>
+          </footer>
+</div>
+
+<div data-app hidden></div>
+
+<template data-tela="dashboard"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Olá, Marina</h1>
+      <p>Este é o resumo da sua operação de conteúdo. Tudo aqui atualiza em tempo real.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="stat-grid" data-stats></div>
+
+  <div class="panel-grid">
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <strong>Próximos conteúdos</strong>
+          <span>O que sai a seguir, na ordem de publicação</span>
+        </div>
+        <a class="panel-link" href="calendario.html">Ver calendário ↗</a>
+      </div>
+      <div class="panel-body" data-upcoming></div>
+    </section>
+
+    <div style="display:grid;gap:20px">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Calendário resumido</strong>
+            <span>Os pontos marcam dias com post</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="month-head">
+            <strong data-month-label></strong>
+            <div class="month-nav">
+              <button class="nav-btn" type="button" data-month="-1" aria-label="Mês anterior"><svg><use href="#i-chev-left" /></svg></button>
+              <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
+            </div>
+          </div>
+          <div class="mini-month" data-mini-month></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Atividades recentes</strong></div>
+        </div>
+        <div class="panel-body">
+          <ul class="activity" data-activity></ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</main></template>
+<template data-tela="central"><main class="view">
+  <div class="view-head">
+    <div>
+      <p class="chip" style="margin-bottom:14px">
+        <svg><use href="#i-sparkle" /></svg>
+        A plataforma
+      </p>
+      <h1>Sua central de conteúdo imobiliário</h1>
+      <p class="quota" data-quota></p>
+    </div>
+
+    <div class="segmented" style="margin-left:auto">
+      <button type="button" aria-pressed="true"><svg><use href="#i-wand" /></svg>Criar</button>
+      <button type="button" aria-pressed="false" data-goto="calendario.html"><svg><use href="#i-calendar" /></svg>Calendário</button>
+    </div>
+  </div>
+
+  <form class="form-card" data-generator>
+    <div class="field">
+      <label for="area">Área de atuação</label>
+      <select id="area" name="area"></select>
+    </div>
+
+    <div class="field">
+      <label for="briefing">Descreva o imóvel ou conteúdo <small>(opcional)</small></label>
+      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 2 quartos, 65m², varanda gourmet, próximo ao metrô, condomínio com piscina…"></textarea>
+      <p class="hint">Adicione detalhes do imóvel para que a IA personalize as ideias de conteúdo.</p>
+    </div>
+
+    <div class="field field-row">
+      <div>
+        <label for="cidade">Cidade ou região</label>
+        <input id="cidade" name="cidade" />
+      </div>
+      <div>
+        <label for="foto">Foto do imóvel <small>(link, opcional)</small></label>
+        <input id="foto" name="foto" placeholder="Cole o link da foto principal" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Estágio do funil de conteúdo</label>
+      <div class="choice-row" data-choice="funil">
+        <button type="button" aria-pressed="true">Topo</button>
+        <button type="button" aria-pressed="false">Meio</button>
+        <button type="button" aria-pressed="false">Fundo</button>
+        <button type="button" aria-pressed="false">Personalizado</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Formato do conteúdo</label>
+      <div class="choice-row" data-choice="formato">
+        <button type="button" aria-pressed="true">Reels</button>
+        <button type="button" aria-pressed="false">Carrossel</button>
+        <button type="button" aria-pressed="false">Stories</button>
+        <button type="button" aria-pressed="false">TikTok</button>
+      </div>
+    </div>
+
+    <button class="generate-btn" type="submit">
+      <svg><use href="#i-wand" /></svg>
+      Gerar ideias de conteúdo
+    </button>
+
+    <p style="text-align:center;margin:16px 0 0">
+      <button class="btn btn-quiet" type="button" data-limpar>Limpar formulário</button>
+    </p>
+  </form>
+
+  <section class="ideas" data-ideas style="max-width:820px"></section>
+</main></template>
+<template data-tela="calendario"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Calendário Editorial</h1>
+      <p>Planeje o mês inteiro, arraste para reagendar e acompanhe cada card até a publicação. Tudo salva sozinho.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="segmented" data-view-switch>
+    <button type="button" data-view="calendario" aria-pressed="true"><svg><use href="#i-calendar" /></svg>Calendário</button>
+    <button type="button" data-view="kanban" aria-pressed="false"><svg><use href="#i-kanban" /></svg>Kanban</button>
+  </div>
+
+  <!-- ---------------- Calendário ---------------- -->
+  <section data-panel="calendario">
+    <div class="board-bar">
+      <button class="nav-btn" type="button" data-month="-1" aria-label="Mês anterior"><svg><use href="#i-chev-left" /></svg></button>
+      <span class="month-label" data-month-label></span>
+      <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
+
+      <span class="spacer"></span>
+      <span class="drag-hint"><i class="status-dot"></i> Arraste os cards para reagendar</span>
+      <button class="btn btn-outline" type="button" data-today>Hoje</button>
+    </div>
+
+    <div class="calendar-grid">
+      <div class="calendar-head">
+        <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+      </div>
+      <div data-calendar></div>
+    </div>
+  </section>
+
+  <!-- ---------------- Kanban ---------------- -->
+  <section data-panel="kanban" class="is-hidden" id="kanban">
+    <div class="board-bar">
+      <span class="drag-hint"><i class="status-dot"></i> Arraste os cards entre as colunas para mudar o status</span>
+    </div>
+    <div class="kanban" data-kanban></div>
+  </section>
+</main></template>
+<template data-tela="biblioteca"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Biblioteca</h1>
+      <p>Busque, filtre e clique em qualquer card para abrir o roteiro completo.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar novo conteúdo
+    </a>
+  </div>
+
+  <div class="form-card" style="max-width:none;margin-bottom:24px">
+    <div class="field field-row" style="margin-bottom:18px">
+      <div>
+        <label for="busca">Buscar</label>
+        <input id="busca" data-search placeholder="Título, tag ou bairro…" />
+      </div>
+      <div>
+        <label for="filtro-area">Área de atuação</label>
+        <select id="filtro-area" data-filter="area"></select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:18px">
+      <label>Formato</label>
+      <div class="choice-row" data-filter-row="format">
+        <button type="button" aria-pressed="true" data-value="">Todos</button>
+        <button type="button" aria-pressed="false" data-value="Reels">Reels</button>
+        <button type="button" aria-pressed="false" data-value="Carrossel">Carrossel</button>
+        <button type="button" aria-pressed="false" data-value="Stories">Stories</button>
+        <button type="button" aria-pressed="false" data-value="TikTok">TikTok</button>
+      </div>
+    </div>
+
+    <div class="field field-row">
+      <div>
+        <label>Status</label>
+        <div class="choice-row" data-filter-row="status">
+          <button type="button" aria-pressed="true" data-value="">Todos</button>
+          <button type="button" aria-pressed="false" data-value="rascunho">Rascunho</button>
+          <button type="button" aria-pressed="false" data-value="aprovado">Aprovado</button>
+          <button type="button" aria-pressed="false" data-value="agendado">Agendado</button>
+          <button type="button" aria-pressed="false" data-value="publicado">Publicado</button>
+        </div>
+      </div>
+      <div>
+        <label for="ordem">Ordenar por</label>
+        <select id="ordem" data-order>
+          <option value="recentes">Data — mais recentes</option>
+          <option value="antigos">Data — mais antigos</option>
+          <option value="titulo">Título (A–Z)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 16px">
+    <p class="hint" style="margin:0" data-count></p>
+    <button class="btn btn-quiet" type="button" data-limpar>Limpar filtros</button>
+  </div>
+
+  <div class="kanban" data-library></div>
+
+  <section id="historico" style="margin-top:52px">
+    <div class="view-head">
+      <div>
+        <h1 style="font-size:22px">Histórico</h1>
+        <p>Cada geração, mudança de data e movimento de card fica registrado aqui.</p>
+      </div>
+    </div>
+    <section class="panel">
+      <div class="panel-body">
+        <ul class="activity" style="max-height:420px" data-activity></ul>
+      </div>
+    </section>
+  </section>
+</main></template>
+<template data-tela="perfil"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Perfil</h1>
+      <p>O que você preenche aqui a IA usa como contexto em todo conteúdo gerado.</p>
+    </div>
+  </div>
+
+  <form class="form-card" data-perfil>
+    <div class="field field-row">
+      <div>
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" />
+      </div>
+      <div>
+        <label for="creci">CRECI</label>
+        <input id="creci" name="creci" />
+      </div>
+    </div>
+
+    <div class="field field-row">
+      <div>
+        <label for="cidade">Cidade de atuação</label>
+        <input id="cidade" name="cidade" />
+      </div>
+      <div>
+        <label for="instagram">Instagram</label>
+        <input id="instagram" name="instagram" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="tom">Como você quer soar nos conteúdos</label>
+      <textarea id="tom" name="tom"></textarea>
+      <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
+    </div>
+
+    <div class="field">
+      <label>Áreas em que você atua</label>
+      <div class="choice-row" data-areas></div>
+      <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Salvar perfil</button>
+  </form>
+
+  <section id="configuracoes" style="margin-top:52px">
+    <div class="view-head">
+      <div>
+        <h1 style="font-size:22px">Configurações</h1>
+        <p>Aparência, plano e dados da conta.</p>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="field">
+        <label>Tema</label>
+        <div class="choice-row">
+          <button type="button" data-theme-toggle>Alternar entre claro e escuro</button>
+        </div>
+        <p class="hint">A preferência fica salva neste navegador.</p>
+      </div>
+
+      <div class="field">
+        <label>Plano atual</label>
+        <div class="choice-row" data-planos></div>
+        <p class="hint" data-plano-nota></p>
+      </div>
+
+      <div class="field">
+        <label>Dados da demonstração</label>
+        <div class="choice-row">
+          <button type="button" data-reset>Restaurar o acervo original</button>
+          <button type="button" data-exportar>Copiar meus dados em JSON</button>
+        </div>
+        <p class="hint">Restaurar desfaz tudo o que você criou, editou e arrastou.</p>
+      </div>
+    </div>
+  </section>
+</main></template>
+
+<script>
+// Sementes e constantes da demonstração.
+// O estado vivo (o que o usuário cria, edita, arrasta e apaga) fica em store.js.
+
+// true apenas no build de arquivo único (dist/preview.html), que roteia por hash.
+const SPA = typeof PREVIEW_SPA !== "undefined" && PREVIEW_SPA;
+
+const HOJE = new Date(2026, 7, 15); // 15 de agosto de 2026
+
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez"];
+
+const AREAS = ["Apartamentos", "Casas", "Studios", "Terrenos", "Condomínios",
+  "Lançamentos", "Comercial", "Alto padrão", "Rural"];
+
+const FORMATOS = ["Reels", "Carrossel", "Stories", "TikTok"];
+
+const FUNIS = ["Topo", "Meio", "Fundo", "Personalizado"];
+
+const STATUSES = {
+  rascunho: { label: "Rascunho", hint: "Ainda sem data confirmada", color: "var(--text-dim)" },
+  aprovado: { label: "Aprovado", hint: "Pronto para produzir", color: "var(--warn)" },
+  agendado: { label: "Agendado", hint: "Com data confirmada", color: "var(--info)" },
+  publicado: { label: "Publicado", hint: "Já está no ar", color: "var(--ok)" }
+};
+
+// Colunas que aparecem no Kanban, nesta ordem.
+const KANBAN = ["aprovado", "agendado", "publicado"];
+
+const PLANOS = {
+  gratuito: { label: "Gratuito", cota: 5, preco: "R$ 0" },
+  pro: { label: "Corretor Pro", cota: 40, preco: "R$ 29,90" },
+  ilimitado: { label: "Ilimitado", cota: Infinity, preco: "R$ 49,90" }
+};
+
+const PERFIL_PADRAO = {
+  nome: "Marina Duarte",
+  creci: "SP 123.456-F",
+  cidade: "Campinas",
+  instagram: "@marinaduarte.imoveis",
+  tom: "Direta, sem jargão de imobiliária e sempre explicando o custo real de morar no imóvel.",
+  areas: ["Apartamentos", "Casas"]
+};
+
+const SEED_ITENS = [
+  { id: "c1", title: "3 perguntas para fazer antes de fechar um imóvel comercial",
+    area: "Comercial", format: "Reels", funnel: "Meio", status: "aprovado",
+    date: "2026-07-24", time: "17:00", tags: ["Comercial", "Renda", "Reels"] },
+
+  { id: "c2", title: "Pronto ou na planta: o comparativo honesto para casas",
+    area: "Casas", format: "TikTok", funnel: "Meio", status: "aprovado",
+    date: "2026-07-31", time: "20:30", tags: ["Casas", "Família", "TikTok"] },
+
+  { id: "c3", title: "Laje corporativa com piso elevado e ar central — agende sua visita",
+    area: "Comercial", format: "Carrossel", funnel: "Fundo", status: "aprovado",
+    date: "2026-08-07", time: "11:00", tags: ["Comercial", "Visita", "Carrossel"] },
+
+  { id: "c4", title: "Disponível agora: 2 dormitórios com suíte e varanda",
+    area: "Apartamentos", format: "Stories", funnel: "Fundo", status: "agendado",
+    date: "2026-07-26", time: "10:00", tags: ["Apartamentos", "Localização", "Stories"] },
+
+  { id: "c5", title: "Por que construir a casa exatamente como sonhou ficou mais possível em Campinas",
+    area: "Terrenos", format: "Carrossel", funnel: "Topo", status: "agendado",
+    date: "2026-07-27", time: "15:30", tags: ["Terrenos", "Construção", "Carrossel"] },
+
+  { id: "c6", title: "Planta compacta com marcenaria já inclusa: vale a pena?",
+    area: "Studios", format: "Reels", funnel: "Meio", status: "agendado",
+    date: "2026-07-29", time: "19:30", tags: ["Studios", "Primeiro imóvel", "Reels"] },
+
+  { id: "c7", title: "Pronto ou na planta: o comparativo honesto para condomínios",
+    area: "Condomínios", format: "Reels", funnel: "Meio", status: "agendado",
+    date: "2026-08-05", time: "09:00", tags: ["Condomínios", "Família", "Reels"] },
+
+  { id: "c8", title: "7 coisas que ninguém te conta sobre apartamentos em Campinas",
+    area: "Apartamentos", format: "Reels", funnel: "Topo", status: "publicado",
+    date: "2026-07-11", time: "19:00", tags: ["Apartamentos", "Sair do aluguel", "Reels"] },
+
+  { id: "c9", title: "5 perguntas para fazer antes de fechar um studio",
+    area: "Studios", format: "Carrossel", funnel: "Meio", status: "publicado",
+    date: "2026-07-14", time: "12:30", tags: ["Studios", "Investimento", "Carrossel"] },
+
+  { id: "c10", title: "Últimas unidades: lançamento na planta com entrada facilitada",
+    area: "Lançamentos", format: "Reels", funnel: "Fundo", status: "publicado",
+    date: "2026-08-02", time: "18:00", tags: ["Lançamentos", "Planta", "Reels"] },
+
+  { id: "c11", title: "Por que ter fim de semana completo dentro do condomínio muda a rotina",
+    area: "Condomínios", format: "Carrossel", funnel: "Topo", status: "publicado",
+    date: "2026-08-05", time: "13:00", tags: ["Condomínios", "Segurança", "Carrossel"] },
+
+  { id: "c12", title: "Quanto custa de verdade receber convidados com estrutura à altura em Campinas",
+    area: "Casas", format: "Stories", funnel: "Topo", status: "publicado",
+    date: "2026-08-09", time: "16:00", tags: ["Casas", "Lazer", "Stories"] },
+
+  { id: "c13", title: "O bairro certo muda o preço do metro quadrado — e ninguém te explica",
+    area: "Apartamentos", format: "TikTok", funnel: "Topo", status: "publicado",
+    date: "2026-07-21", time: "20:00", tags: ["Apartamentos", "Localização", "TikTok"] },
+
+  { id: "c14", title: "Terreno em condomínio fechado: o que checar antes de assinar",
+    area: "Terrenos", format: "Carrossel", funnel: "Meio", status: "rascunho",
+    date: "2026-08-19", time: "10:00", tags: ["Terrenos", "Documentação"] },
+
+  { id: "c15", title: "Sair do aluguel em 2026: a conta que todo inquilino deveria fazer",
+    area: "Apartamentos", format: "Reels", funnel: "Fundo", status: "rascunho",
+    date: "2026-08-21", time: "18:30", tags: ["Apartamentos", "Sair do aluguel"] }
+];
+
+const SEED_ATIVIDADES = [
+  { icon: "i-calendar", text: '"Pronto ou na planta: o comparativo honesto para condomínios" mudou de data', dias: 19 },
+  { icon: "i-kanban", text: '"3 perguntas para fazer antes de fechar um imóvel comercial" foi movido para Aprovado', dias: 19 },
+  { icon: "i-calendar-clock", text: '"3 perguntas para fazer antes de fechar um imóvel comercial" foi movido para Agendado', dias: 19 },
+  { icon: "i-sparkle", text: '"Laje corporativa com piso elevado e ar central — agende sua visita" foi criado', dias: 22 },
+  { icon: "i-sparkle", text: '"Quanto custa de verdade receber convidados com estrutura à altura em Campinas" foi criado', dias: 26 },
+  { icon: "i-send", text: '"7 coisas que ninguém te conta sobre apartamentos em Campinas" foi publicado', dias: 35 }
+];
+
+/* ---------------- Gerador de roteiro ---------------- */
+
+const GANCHOS = {
+  Topo: "Todo mundo procura {area} em {cidade} do jeito errado. Olha o que ninguém te conta.",
+  Meio: "Antes de escolher {area} em {cidade}, tem três coisas que mudam o preço final.",
+  Fundo: "Se você já está decidido por {area} em {cidade}, esse é o momento de agendar a visita.",
+  Personalizado: "{area} em {cidade}: a conversa que eu tenho com todo cliente antes de fechar."
+};
+
+const OBJETIVOS = {
+  Topo: "Alcançar quem ainda não pensou em comprar",
+  Meio: "Convencer quem está comparando opções",
+  Fundo: "Converter quem já está decidido em visita agendada",
+  Personalizado: "Campanha sob medida definida por você"
+};
+
+const TITULOS = {
+  Topo: [
+    "{n} coisas que ninguém te conta sobre {area} em {cidade}",
+    "O erro que quase todo mundo comete ao procurar {area} em {cidade}",
+    "{area} em {cidade}: o que muda o preço do metro quadrado"
+  ],
+  Meio: [
+    "{n} perguntas para fazer antes de fechar {area} em {cidade}",
+    "Pronto ou na planta: o comparativo honesto para {area}",
+    "{area} em {cidade}: o que comparar antes de decidir"
+  ],
+  Fundo: [
+    "Disponível agora: {area} em {cidade} — agende sua visita",
+    "Últimas unidades de {area} em {cidade} com entrada facilitada",
+    "{area} em {cidade}: marque a visita ainda esta semana"
+  ],
+  Personalizado: [
+    "{area} em {cidade}: a campanha que eu faria hoje",
+    "O que eu explico para todo cliente de {area} em {cidade}",
+    "{area} em {cidade}: a conversa antes da proposta"
+  ]
+};
+
+const TAGS_FUNIL = { Topo: "Alcance", Meio: "Comparação", Fundo: "Visita", Personalizado: "Campanha" };
+
+function pick(list, seed) {
+  return list[Math.abs(seed) % list.length];
+}
+
+// Monta os 11 campos entregues em cada conteúdo.
+function buildScript(item, perfil) {
+  const area = item.area.toLowerCase();
+  const cidade = item.city || perfil.cidade || "sua cidade";
+  const gancho = GANCHOS[item.funnel]
+    .replace("{area}", area)
+    .replace("{cidade}", cidade);
+
+  return {
+    titulo: item.title,
+    gancho,
+    desenvolvimento: item.briefing
+      ? `Mostre o imóvel enquanto fala: ${item.briefing}`
+      : "Mostre o imóvel destacando três diferenciais concretos: localização, planta e custo mensal real.",
+    prova: "Traga um número: valor do metro quadrado da região, tempo médio de venda ou economia frente ao aluguel.",
+    cta: "Comente “QUERO” que eu mando a ficha completa e a simulação no seu WhatsApp.",
+    legenda: `${gancho}\n\nSalve esse post para quando for visitar ${area} em ${cidade}. Qualquer dúvida, chama no direct.`,
+    hashtags: `#${area.replace(/\s/g, "")} #${cidade.toLowerCase().replace(/\s/g, "")} #corretordeimoveis #imoveis #${item.format.toLowerCase()}`,
+    objetivo: OBJETIVOS[item.funnel],
+    publico: `Quem procura ${area} em ${cidade} e está na etapa de ${item.funnel.toLowerCase()} do funil`,
+    formatoNota: `${item.format} — corte a cada 3 segundos, legenda queimada e áudio em alta`,
+    gravacao: perfil.tom
+      ? `Tom de voz: ${perfil.tom} Grave na hora dourada e evite plano parado por mais de 4 segundos.`
+      : "Grave na hora dourada, comece já dentro do imóvel e evite plano parado por mais de 4 segundos."
+  };
+}
+
+const CAMPOS_ROTEIRO = [
+  ["titulo", "Título"],
+  ["gancho", "Gancho (0–3s)"],
+  ["desenvolvimento", "Desenvolvimento (3–20s)"],
+  ["prova", "Prova (20–35s)"],
+  ["cta", "CTA (35–45s)"],
+  ["legenda", "Legenda"],
+  ["hashtags", "Hashtags"],
+  ["objetivo", "Objetivo"],
+  ["publico", "Público ideal"],
+  ["formatoNota", "Formato"],
+  ["gravacao", "Sugestão de gravação"]
+];
+
+/* ---------------- Utilidades de data ---------------- */
+
+function toIso(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatDay(iso) {
+  const [, month, day] = iso.split("-").map(Number);
+  return `${day} de ${MESES_CURTOS[month - 1]}`;
+}
+
+function formatFull(iso) {
+  const [year, month, day] = iso.split("-").map(Number);
+  return `${day} de ${MESES[month - 1].toLowerCase()} de ${year}`;
+}
+
+function relativeTime(ts) {
+  const dias = Math.round((HOJE.getTime() - ts) / 86400000);
+  if (dias <= 0) return "agora há pouco";
+  if (dias === 1) return "ontem";
+  if (dias < 30) return `há ${dias} dias`;
+  const meses = Math.round(dias / 30);
+  return meses === 1 ? "há 1 mês" : `há ${meses} meses`;
+}
+
+function slugArea(text) {
+  return text.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+}
+
+// Estado único da aplicação: conteúdos, perfil, plano e histórico.
+// Tudo persiste em localStorage e qualquer tela pode ouvir mudanças.
+
+const store = (() => {
+  const KEY = "corretoresai-estado-v2";
+  const listeners = new Set();
+
+  function seedState() {
+    return {
+      itens: SEED_ITENS.map((item) => ({ ...item, tags: [...item.tags] })),
+      perfil: { ...PERFIL_PADRAO, areas: [...PERFIL_PADRAO.areas] },
+      plano: "ilimitado",
+      usadas: 0,
+      atividades: SEED_ATIVIDADES.map((a) => ({
+        icon: a.icon,
+        text: a.text,
+        at: HOJE.getTime() - a.dias * 86400000
+      }))
+    };
+  }
+
+  let state = load();
+
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY));
+      if (!saved || !Array.isArray(saved.itens)) return seedState();
+      return { ...seedState(), ...saved };
+    } catch {
+      return seedState();
+    }
+  }
+
+  function persist() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    listeners.forEach((fn) => fn(state));
+  }
+
+  function log(icon, text) {
+    state.atividades.unshift({ icon, text, at: Date.now() });
+    state.atividades = state.atividades.slice(0, 40);
+  }
+
+  function nextId() {
+    return `n${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
+  }
+
+  return {
+    get state() { return state; },
+    get itens() { return state.itens; },
+    get perfil() { return state.perfil; },
+    get plano() { return PLANOS[state.plano]; },
+    get planoId() { return state.plano; },
+
+    subscribe(fn) {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+
+    // Usado pelo roteador do arquivo único ao trocar de tela.
+    dropSubscribers() {
+      listeners.clear();
+    },
+
+    find(id) {
+      return state.itens.find((item) => item.id === id);
+    },
+
+    // Só o que aparece no Kanban / calendário.
+    board() {
+      return state.itens.filter((item) => KANBAN.includes(item.status));
+    },
+
+    restantes() {
+      const cota = PLANOS[state.plano].cota;
+      return cota === Infinity ? Infinity : Math.max(0, cota - state.usadas);
+    },
+
+    consumirGeracao() {
+      if (this.restantes() <= 0) return false;
+      if (PLANOS[state.plano].cota !== Infinity) state.usadas += 1;
+      persist();
+      return true;
+    },
+
+    criar(dados) {
+      const item = {
+        id: nextId(),
+        status: "rascunho",
+        time: "10:00",
+        tags: [],
+        ...dados
+      };
+      item.script = item.script || buildScript(item, state.perfil);
+      state.itens.unshift(item);
+      log("i-sparkle", `"${item.title}" foi criado`);
+      persist();
+      return item;
+    },
+
+    atualizar(id, patch) {
+      const item = this.find(id);
+      if (!item) return null;
+
+      const antesStatus = item.status;
+      const antesData = item.date;
+      Object.assign(item, patch);
+
+      if (patch.status && patch.status !== antesStatus) {
+        log("i-kanban", `"${item.title}" foi movido para ${STATUSES[patch.status].label}`);
+      } else if (patch.date && patch.date !== antesData) {
+        log("i-calendar", `"${item.title}" mudou de data`);
+      } else {
+        log("i-wand", `"${item.title}" foi editado`);
+      }
+
+      persist();
+      return item;
+    },
+
+    // Move sem gerar log de edição genérico (usado no arrastar-e-soltar).
+    mover(id, patch) {
+      const item = this.find(id);
+      if (!item) return null;
+
+      if (patch.status && patch.status !== item.status) {
+        item.status = patch.status;
+        log("i-kanban", `"${item.title}" foi movido para ${STATUSES[patch.status].label}`);
+      }
+      if (patch.date && patch.date !== item.date) {
+        item.date = patch.date;
+        log("i-calendar", `"${item.title}" mudou de data`);
+      }
+
+      persist();
+      return item;
+    },
+
+    duplicar(id) {
+      const original = this.find(id);
+      if (!original) return null;
+      const copia = {
+        ...structuredClone(original),
+        id: nextId(),
+        title: `${original.title} (cópia)`,
+        status: "rascunho"
+      };
+      state.itens.unshift(copia);
+      log("i-copy", `"${original.title}" foi duplicado`);
+      persist();
+      return copia;
+    },
+
+    remover(id) {
+      const item = this.find(id);
+      if (!item) return;
+      state.itens = state.itens.filter((i) => i.id !== id);
+      log("i-trash", `"${item.title}" foi excluído`);
+      persist();
+    },
+
+    salvarPerfil(patch) {
+      Object.assign(state.perfil, patch);
+      log("i-user", "Perfil atualizado");
+      persist();
+    },
+
+    trocarPlano(id) {
+      if (!PLANOS[id]) return;
+      state.plano = id;
+      log("i-card", `Plano alterado para ${PLANOS[id].label}`);
+      persist();
+    },
+
+    roteiro(item) {
+      if (!item.script) {
+        item.script = buildScript(item, state.perfil);
+        persist();
+      }
+      return item.script;
+    },
+
+    reset() {
+      localStorage.removeItem(KEY);
+      state = seedState();
+      persist();
+    }
+  };
+})();
+
+// Peças de interface compartilhadas: avisos, modal e o editor de conteúdo.
+
+const ui = (() => {
+  let toastTimer = null;
+
+  function toast(message, kind = "ok") {
+    let box = document.querySelector(".toast");
+    if (!box) {
+      box = document.createElement("div");
+      box.className = "toast";
+      document.body.appendChild(box);
+    }
+    box.textContent = message;
+    box.dataset.kind = kind;
+    box.classList.add("is-on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => box.classList.remove("is-on"), 2600);
+  }
+
+  function closeModal() {
+    document.querySelector(".modal-backdrop")?.remove();
+    document.body.style.overflow = "";
+  }
+
+  function openModal(html, onMount) {
+    closeModal();
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
+    backdrop.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+    document.body.appendChild(backdrop);
+    document.body.style.overflow = "hidden";
+
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop || event.target.closest("[data-close]")) closeModal();
+    });
+    document.addEventListener("keydown", function esc(event) {
+      if (event.key === "Escape") { closeModal(); document.removeEventListener("keydown", esc); }
+    });
+
+    onMount?.(backdrop.firstElementChild);
+    return closeModal;
+  }
+
+  // ---- Editor completo de um conteúdo ------------------------------------
+
+  function openItem(id) {
+    const item = store.find(id);
+    if (!item) return;
+    const script = store.roteiro(item);
+
+    const options = (list, atual) => list
+      .map((v) => `<option value="${v}"${v === atual ? " selected" : ""}>${v}</option>`)
+      .join("");
+
+    const statusOptions = Object.entries(STATUSES)
+      .map(([key, s]) => `<option value="${key}"${key === item.status ? " selected" : ""}>${s.label}</option>`)
+      .join("");
+
+    openModal(`
+      <header class="modal-head">
+        <div>
+          <span class="chip"><svg><use href="#i-${item.format === "Carrossel" ? "book" : "film"}" /></svg>${item.format}</span>
+          <h2 data-live-title>${item.title}</h2>
+        </div>
+        <button class="theme-btn" type="button" data-close aria-label="Fechar">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="m-title">Título</label>
+          <input id="m-title" name="title" value="${item.title.replace(/"/g, "&quot;")}" />
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="m-date">Data</label>
+            <input id="m-date" name="date" type="date" value="${item.date}" />
+          </div>
+          <div>
+            <label for="m-time">Horário</label>
+            <input id="m-time" name="time" type="time" value="${item.time}" />
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="m-area">Área</label>
+            <select id="m-area" name="area">${options(AREAS, item.area)}</select>
+          </div>
+          <div>
+            <label for="m-format">Formato</label>
+            <select id="m-format" name="format">${options(FORMATOS, item.format)}</select>
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="m-funnel">Etapa do funil</label>
+            <select id="m-funnel" name="funnel">${options(FUNIS, item.funnel || "Topo")}</select>
+          </div>
+          <div>
+            <label for="m-status">Status</label>
+            <select id="m-status" name="status">${statusOptions}</select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="m-tags">Tags <small>(separadas por vírgula)</small></label>
+          <input id="m-tags" name="tags" value="${item.tags.join(", ")}" />
+        </div>
+
+        <details class="roteiro" open>
+          <summary>Roteiro completo — 11 campos</summary>
+          ${CAMPOS_ROTEIRO.map(([key, label]) => `
+            <div class="field">
+              <label for="m-${key}">${label}</label>
+              <textarea id="m-${key}" name="script.${key}" rows="${key === "legenda" ? 4 : 2}">${script[key] ?? ""}</textarea>
+            </div>`).join("")}
+        </details>
+      </div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-outline" type="button" data-action="regenerar">
+          <svg><use href="#i-wand" /></svg>Regerar roteiro
+        </button>
+        <button class="btn btn-outline" type="button" data-action="copiar">
+          <svg><use href="#i-copy" /></svg>Copiar
+        </button>
+        <button class="btn btn-outline" type="button" data-action="duplicar">Duplicar</button>
+        <button class="btn btn-outline is-danger" type="button" data-action="excluir">
+          <svg><use href="#i-trash" /></svg>Excluir
+        </button>
+        <button class="btn btn-primary" type="button" data-action="salvar">Salvar alterações</button>
+      </footer>
+    `, (modal) => {
+      const field = (name) => modal.querySelector(`[name="${name}"]`);
+
+      field("title").addEventListener("input", (event) => {
+        modal.querySelector("[data-live-title]").textContent = event.target.value;
+      });
+
+      modal.addEventListener("click", (event) => {
+        const action = event.target.closest("[data-action]")?.dataset.action;
+        if (!action) return;
+
+        if (action === "salvar") {
+          const patch = {
+            title: field("title").value.trim() || item.title,
+            date: field("date").value || item.date,
+            time: field("time").value || item.time,
+            area: field("area").value,
+            format: field("format").value,
+            funnel: field("funnel").value,
+            status: field("status").value,
+            tags: field("tags").value.split(",").map((t) => t.trim()).filter(Boolean),
+            script: Object.fromEntries(CAMPOS_ROTEIRO.map(([key]) => [key, field(`script.${key}`).value]))
+          };
+          store.atualizar(id, patch);
+          closeModal();
+          toast("Conteúdo salvo.");
+        }
+
+        if (action === "regenerar") {
+          const base = { ...item, area: field("area").value, format: field("format").value, funnel: field("funnel").value };
+          const novo = buildScript({ ...base, title: field("title").value }, store.perfil);
+          CAMPOS_ROTEIRO.forEach(([key]) => { field(`script.${key}`).value = novo[key] ?? ""; });
+          toast("Roteiro regerado. Salve para manter.");
+        }
+
+        if (action === "copiar") {
+          const texto = CAMPOS_ROTEIRO
+            .map(([key, label]) => `${label}\n${field(`script.${key}`).value}`)
+            .join("\n\n");
+          navigator.clipboard?.writeText(texto)
+            .then(() => toast("Roteiro copiado."))
+            .catch(() => toast("Não foi possível copiar.", "erro"));
+        }
+
+        if (action === "duplicar") {
+          store.duplicar(id);
+          closeModal();
+          toast("Cópia criada como rascunho.");
+        }
+
+        if (action === "excluir") {
+          if (!confirm(`Excluir "${item.title}"? Não dá para desfazer.`)) return;
+          store.remover(id);
+          closeModal();
+          toast("Conteúdo excluído.");
+        }
+      });
+    });
+  }
+
+  // ---- Cartão de conteúdo reutilizado em Kanban e Biblioteca -------------
+
+  function itemCard(item, { draggable = false } = {}) {
+    const status = STATUSES[item.status];
+    return `
+      <article class="kan-card" data-id="${item.id}"${draggable ? ' draggable="true"' : ""}>
+        <div class="kan-cover t-${slugArea(item.area)}">
+          <span class="kan-format">${item.format}</span>
+          <span class="kan-area">${item.area}</span>
+        </div>
+        <div class="kan-body">
+          <h4>${item.title}</h4>
+          <p class="kan-when">${formatDay(item.date)} · ${item.time}</p>
+          <div class="kan-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+          <div class="kan-foot">
+            <span class="avatar">${initials(store.perfil.nome)}</span>
+            ${store.perfil.nome}
+            <span class="badge" style="color:${status.color}"><i class="status-dot"></i>${status.label}</span>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function initials(nome) {
+    return nome.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+  }
+
+  // Abre o editor ao clicar em qualquer cartão com data-id (mas não ao arrastar).
+  function wireCardClicks(root = document) {
+    root.addEventListener("click", (event) => {
+      const card = event.target.closest("[data-id]");
+      if (!card || event.target.closest("[data-action]")) return;
+      openItem(card.dataset.id);
+    });
+  }
+
+  return { toast, openModal, closeModal, openItem, itemCard, initials, wireCardClicks };
+})();
+
+// Shell do app: injeta o sprite de ícones, a sidebar e a topbar em todas as telas.
+// Cada página só declara data-page / data-title / data-subtitle no <body>.
+
+const ICONS = `
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V8l6-4v16"/><path d="M10 20h10V11l-6-2"/><path d="M14 14h2M14 17h2M7 11h1M7 14h1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l5 5L9 20l-5-5z"/><path d="M14 5l5 5M6 4l.8 2L9 6.8 6.8 7.6 6 10l-.8-2.4L3 6.8 5.2 6z"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="i-calendar-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V7.5A2.5 2.5 0 0 0 18.5 5h-13A2.5 2.5 0 0 0 3 7.5v11A2.5 2.5 0 0 0 5.5 21H12"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M17.5 16v1.7l1.2.8"/></symbol>
+<symbol id="i-kanban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M9 4v17M15 4v17"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5z"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v4h4"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c1.2-3.4 4-5.2 7.5-5.2s6.3 1.8 7.5 5.2"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-3-1.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.3-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 3 1.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.6 3.6 5.6 3.6 9S14.4 18.4 12 21c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l1.7 4.6L17.5 9l-4.8 1.4L11 15l-1.7-4.6L4.5 9l4.8-1.4z"/><path d="M18 14.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 12h11M17 9l3 3-3 3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+<symbol id="i-chev-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></symbol>
+<symbol id="i-chev-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10.5 13.5M21 3l-6.8 18-3.7-7.5L3 9.8z"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 20c1.1-3.2 3.7-5 7-5 1.2 0 2.3.2 3.3.7"/><path d="M18 14v6M15 17h6"/></symbol>
+<symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.4l2.4 2.4 4.6-5"/></symbol>
+<symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
+</svg>`;
+
+// href: navegação por arquivos (site multipágina).
+// rota: navegação por hash (build de arquivo único).
+const NAV = [
+  { id: "dashboard", label: "Dashboard", icon: "i-grid", href: "dashboard.html", rota: "#/dashboard" },
+  { id: "central", label: "Central de Conteúdo", icon: "i-wand", href: "central.html", rota: "#/central" },
+  { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
+  { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
+  { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
+  { id: "historico", label: "Histórico", icon: "i-history", href: "biblioteca.html#historico", rota: "#/historico" },
+  { id: "planos", label: "Planos", icon: "i-card", href: "../index.html#planos", rota: "#/planos" },
+  { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html", rota: "#/perfil" },
+  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes", rota: "#/configuracoes" }
+];
+
+const LINKS = SPA
+  ? { site: "#/", central: "#/central", perfil: "#/perfil" }
+  : { site: "../index.html", central: "central.html", perfil: "perfil.html" };
+
+function icon(id, cls = "") {
+  return `<svg class="${cls}"><use href="#${id}" /></svg>`;
+}
+
+// Parâmetros de rota: ?data=... na URL (multipágina) ou depois do hash (SPA).
+function routeParams() {
+  const bruto = SPA ? (location.hash.split("?")[1] || "") : location.search.replace(/^\?/, "");
+  return new URLSearchParams(bruto);
+}
+
+// Abre a Central, opcionalmente já com uma data escolhida.
+function goCentral(data) {
+  const query = data ? `?data=${data}` : "";
+  location.href = SPA ? `#/central${query}` : `central.html${query}`;
+}
+
+function shellHTML({ page, title, subtitle }) {
+  const links = NAV.map((item) => {
+    const atual = item.id === page ? ' aria-current="page"' : "";
+    return `<a href="${SPA ? item.rota : item.href}"${atual}>${icon(item.icon)}<span>${item.label}</span></a>`;
+  }).join("");
+
+  return `
+    <aside class="sidebar">
+      <a class="brand" href="${LINKS.site}">
+        <span class="brand-mark">${icon("i-building")}</span>
+        <span class="brand-stack">
+          <span>Corretores<span class="brand-ai">AI</span></span>
+          <span class="brand-tag">Central de conteúdo imobiliário</span>
+        </span>
+      </a>
+
+      <nav class="side-nav" aria-label="Navegação do app">${links}</nav>
+
+      <div class="side-foot">
+        <div class="plan-box" data-plan-box></div>
+        <div class="side-links">
+          <a href="${LINKS.site}">${icon("i-globe")}<span>Ver o site</span></a>
+          <a href="${LINKS.central}">${icon("i-sparkle")}<span>Introdução</span></a>
+          <a href="${LINKS.site}">${icon("i-logout")}<span>Sair</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="app-col">
+      <header class="topbar">
+        <div class="topbar-title">
+          <strong>${title}</strong>
+          <span>${subtitle}</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="theme-btn" type="button" data-theme-toggle aria-label="Alternar tema">
+            ${icon("i-sun", "icon-sun")}${icon("i-moon", "icon-moon")}
+          </button>
+          <a class="user-chip" href="${LINKS.perfil}" data-user-chip></a>
+        </div>
+      </header>
+    </div>`;
+}
+
+function renderShell() {
+  const body = document.body;
+  const view = body.querySelector(".view");
+
+  body.insertAdjacentHTML("afterbegin", ICONS);
+
+  const shell = document.createElement("div");
+  shell.className = "app";
+  shell.innerHTML = shellHTML({
+    page: body.dataset.page || "",
+    title: body.dataset.title || "",
+    subtitle: body.dataset.subtitle || ""
+  });
+
+  body.appendChild(shell);
+  if (view) shell.querySelector(".app-col").appendChild(view);
+
+  renderIdentity();
+  store.subscribe(renderIdentity);
+}
+
+// Nome, plano e cota vêm do estado — mudou no perfil, muda aqui na hora.
+function renderIdentity() {
+  const perfil = store.perfil;
+  const plano = store.plano;
+  const restantes = store.restantes();
+  const ilimitado = restantes === Infinity;
+  const usado = ilimitado ? 1 : 1 - restantes / plano.cota;
+
+  const chip = document.querySelector("[data-user-chip]");
+  if (chip) {
+    chip.innerHTML = `
+      <div>
+        <b>${perfil.nome}</b>
+        <span>${plano.label}</span>
+      </div>
+      <span class="avatar">${ui.initials(perfil.nome)}</span>`;
+  }
+
+  const box = document.querySelector("[data-plan-box]");
+  if (box) {
+    box.innerHTML = `
+      <strong>Plano ${plano.label}</strong>
+      <div class="plan-bar"><i style="width:${Math.round(usado * 100)}%"></i></div>
+      <span>${ilimitado
+        ? "Gerações ilimitadas liberadas."
+        : `${restantes} de ${plano.cota} gerações restantes.`}</span>`;
+  }
+}
+
+if (!SPA) renderShell();
+
+// Landing: mock do hero alimentado pelos dados reais e escolha de plano.
+
+function initLanding(root = document) {
+  const grid = root.querySelector("[data-mini-calendar]");
+  const board = store.board();
+
+  // No arquivo único não existem app/*.html — os links viram rotas de hash.
+  if (SPA) {
+    root.querySelectorAll('a[href^="app/"]').forEach((a) => {
+      const rota = a.getAttribute("href").replace("app/", "").replace(".html", "");
+      a.setAttribute("href", `#/${rota}`);
+    });
+  }
+
+  if (grid && !grid.children.length) {
+    const mesAtual = `${HOJE.getFullYear()}-${String(HOJE.getMonth() + 1).padStart(2, "0")}`;
+    const comPost = new Set(
+      board.filter((i) => i.date.startsWith(mesAtual)).map((i) => Number(i.date.slice(-2)))
+    );
+
+    for (let day = 1; day <= 28; day++) {
+      const cell = document.createElement("span");
+      cell.className = "day";
+      if (comPost.has(day)) cell.classList.add("is-marked");
+      if (day === HOJE.getDate()) cell.classList.add("is-today");
+      cell.textContent = String(day);
+      grid.appendChild(cell);
+    }
+  }
+
+  // Os números do mock refletem o acervo da conta de demonstração.
+  const alvo = root.querySelector("[data-hero-stats]");
+  if (alvo) {
+    const publicados = board.filter((i) => i.status === "publicado").length;
+    const stats = [
+      [store.itens.length, "Conteúdos criados"],
+      [board.filter((i) => i.status === "agendado").length, "Agendados"],
+      [Math.round(publicados * 29.5), "Leads gerados"]
+    ];
+    alvo.innerHTML = stats.map(([valor, rotulo]) =>
+      `<div class="mini-stat"><strong>${valor}</strong><span>${rotulo}</span></div>`).join("");
+  }
+
+  // Escolher um plano na landing já entra valendo dentro do app.
+  root.querySelectorAll("[data-plano]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.trocarPlano(btn.dataset.plano);
+      location.href = SPA ? "#/central" : "app/central.html";
+    });
+  });
+}
+
+if (!SPA) initLanding();
+
+// Dashboard: tudo lido do store e redesenhado a cada mudança.
+
+function initDashboard(root = document) {
+  const elStats = root.querySelector("[data-stats]");
+  const elUpcoming = root.querySelector("[data-upcoming]");
+  const elActivity = root.querySelector("[data-activity]");
+  const elMonthLabel = root.querySelector("[data-month-label]");
+  const elMiniMonth = root.querySelector("[data-mini-month]");
+
+  let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
+
+  function startOfWeek(date) {
+    const d = new Date(date);
+    d.setDate(d.getDate() - d.getDay());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function render() {
+    const itens = store.itens;
+    const board = store.board();
+    const publicados = board.filter((i) => i.status === "publicado");
+    const agendados = board.filter((i) => i.status === "agendado");
+    const doMes = board.filter((i) => {
+      const [y, m] = i.date.split("-").map(Number);
+      return y === cursor.getFullYear() && m === cursor.getMonth() + 1;
+    });
+
+    // Estimativas: proporcionais ao que já foi publicado, para reagirem às edições.
+    const views = publicados.length * 3100;
+    const leads = Math.round(publicados.length * 29.5);
+
+    const stats = [
+      { icon: "i-copy", value: itens.length, label: "Conteúdos criados", note: "Total na sua conta" },
+      { icon: "i-send", value: publicados.length, label: "Conteúdos publicados", note: "Já estão no ar" },
+      { icon: "i-calendar-clock", value: agendados.length, label: "Conteúdos agendados", note: "Com data confirmada" },
+      { icon: "i-eye", value: `${(views / 1000).toFixed(1).replace(".", ",")} mil`, label: "Visualizações estimadas", note: "Projeção do que já foi publicado" },
+      { icon: "i-user-plus", value: leads, label: "Leads gerados", note: "Estimativa por conversão de funil" },
+      { icon: "i-calendar", value: doMes.length, label: "Posts do mês", note: `Programados para ${MESES[cursor.getMonth()].toLowerCase()}` }
+    ];
+
+    elStats.innerHTML = stats.map((s) => `
+      <article class="stat-card">
+        <span class="icon-tile"><svg><use href="#${s.icon}" /></svg></span>
+        <b>${s.value}</b>
+        <em>${s.label}</em>
+        <span>${s.note}</span>
+      </article>`).join("");
+
+    // ---- Próximos conteúdos ---------------------------------------------
+
+    const hojeIso = toIso(HOJE);
+    const proximos = board
+      .filter((i) => i.status !== "publicado" && i.date >= hojeIso)
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+      .slice(0, 6);
+
+    if (!proximos.length) {
+      elUpcoming.innerHTML = `
+        <div class="empty">
+          <span class="icon-tile"><svg><use href="#i-calendar" /></svg></span>
+          <strong>Nada agendado por enquanto</strong>
+          <p>Gere um conteúdo e aprove: ele entra no calendário na hora.</p>
+          <a class="btn btn-primary" href="central.html"><svg><use href="#i-plus" /></svg>Criar conteúdo</a>
+        </div>`;
+    } else {
+      elUpcoming.innerHTML = `<ul class="activity is-clickable">${proximos.map((i) => `
+        <li data-id="${i.id}">
+          <span class="icon-tile"><svg><use href="#i-${i.status === "agendado" ? "calendar-clock" : "check-circle"}" /></svg></span>
+          <div>
+            <p>${i.title}</p>
+            <time>${formatDay(i.date)} · ${i.time} · ${i.format} · ${STATUSES[i.status].label}</time>
+          </div>
+        </li>`).join("")}</ul>`;
+    }
+
+    // ---- Calendário resumido --------------------------------------------
+
+    elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
+
+    const comPost = new Set(board.map((i) => i.date));
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const start = startOfWeek(first);
+    const weekStart = startOfWeek(HOJE);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    let html = ["D", "S", "T", "Q", "Q", "S", "S"].map((d) => `<span class="wd">${d}</span>`).join("");
+
+    for (let n = 0; n < 42; n++) {
+      const day = new Date(start);
+      day.setDate(start.getDate() + n);
+      if (n >= 35 && day.getMonth() !== cursor.getMonth()) break;
+
+      const classes = ["d"];
+      if (day.getMonth() !== cursor.getMonth()) classes.push("is-out");
+      if (comPost.has(toIso(day))) classes.push("has-post");
+      if (day >= weekStart && day <= weekEnd) classes.push("is-week");
+      if (day.getTime() === HOJE.getTime()) classes.push("is-today");
+
+      html += `<span class="${classes.join(" ")}">${day.getDate()}</span>`;
+    }
+
+    elMiniMonth.innerHTML = html;
+
+    // ---- Atividades ------------------------------------------------------
+
+    elActivity.innerHTML = store.state.atividades.slice(0, 12).map((a) => `
+      <li>
+        <span class="icon-tile"><svg><use href="#${a.icon}" /></svg></span>
+        <div>
+          <p>${a.text}</p>
+          <time>${relativeTime(a.at)}</time>
+        </div>
+      </li>`).join("");
+  }
+
+  root.querySelectorAll("[data-month]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
+      render();
+    });
+  });
+
+  elUpcoming.addEventListener("click", (event) => {
+    const row = event.target.closest("[data-id]");
+    if (row) ui.openItem(row.dataset.id);
+  });
+
+  store.subscribe(render);
+  render();
+}
+
+if (!SPA) initDashboard();
+
+// Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
+
+function initCentral(root = document) {
+  const form = root.querySelector("[data-generator]");
+  const elIdeas = root.querySelector("[data-ideas]");
+  const elQuota = root.querySelector("[data-quota]");
+
+  // Preenche a partir do perfil e de ?data=AAAA-MM-DD (vindo do calendário).
+  form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
+  form.area.value = store.perfil.areas[0] || AREAS[0];
+  form.cidade.value = store.perfil.cidade;
+  const dataAlvo = routeParams().get("data");
+
+  root.querySelectorAll("[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      location.href = SPA ? `#/${btn.dataset.goto.replace(".html", "")}` : btn.dataset.goto;
+    });
+  });
+
+  function proximaData() {
+    if (dataAlvo) return dataAlvo;
+    const ocupadas = new Set(store.board().map((i) => i.date));
+    const d = new Date(HOJE);
+    for (let n = 0; n < 60; n++) {
+      const iso = toIso(d);
+      if (!ocupadas.has(iso)) return iso;
+      d.setDate(d.getDate() + 1);
+    }
+    return toIso(HOJE);
+  }
+
+  function renderQuota() {
+    const restantes = store.restantes();
+    elQuota.innerHTML = restantes === Infinity
+      ? `<svg class="icon"><use href="#i-crown" /></svg> Gerações ilimitadas no seu plano`
+      : `<svg class="icon"><use href="#i-sparkle" /></svg> <b>${restantes}</b> de ${store.plano.cota} gerações restantes ·
+         <a href="../index.html#planos" style="color:var(--gold-soft)">assine o Ilimitado</a>`;
+  }
+
+  // ---- Escolhas únicas ---------------------------------------------------
+
+  root.querySelectorAll("[data-choice]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      const btn = event.target.closest("button");
+      if (!btn) return;
+      row.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+    });
+  });
+
+  const escolhido = (nome) =>
+    root.querySelector(`[data-choice="${nome}"] button[aria-pressed="true"]`)?.textContent.trim() ?? "";
+
+  // ---- Geração -----------------------------------------------------------
+
+  let ideias = [];
+
+  function gerar() {
+    const area = form.area.value;
+    const cidade = form.cidade.value.trim() || store.perfil.cidade;
+    const briefing = form.briefing.value.trim();
+    const funnel = escolhido("funil");
+    const format = escolhido("formato");
+    const semente = Date.now();
+
+    ideias = [0, 1, 2].map((n) => {
+      const bruto = pick(TITULOS[funnel], semente + n * 7)
+        .replace("{n}", [3, 5, 7][(semente + n) % 3])
+        .replace("{area}", area.toLowerCase())
+        .replace("{cidade}", cidade);
+      const title = bruto[0].toUpperCase() + bruto.slice(1);
+
+      const base = { title, area, format, funnel, city: cidade, briefing, date: proximaData(), time: "10:00",
+        tags: [area, TAGS_FUNIL[funnel], format] };
+
+      return { ...base, script: buildScript(base, store.perfil) };
+    });
+
+    render();
+  }
+
+  function render() {
+    if (!ideias.length) { elIdeas.innerHTML = ""; return; }
+
+    elIdeas.innerHTML = `
+      <h2 class="section-title" style="font-size:20px;margin:8px 0 0">3 ideias prontas</h2>
+      <p class="hint" style="margin:0 0 4px">Aprovar já joga o conteúdo no calendário e no Kanban.</p>
+      ${ideias.map((ideia, n) => `
+        <article class="idea" data-idea="${n}">
+          <div class="idea-head">
+            <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
+            <h3>${ideia.title}</h3>
+          </div>
+          <p><b>Gancho:</b> ${ideia.script.gancho}</p>
+          <p><b>CTA:</b> ${ideia.script.cta}</p>
+          <p><b>Objetivo:</b> ${ideia.script.objetivo}</p>
+          <div class="kan-tags" style="margin-top:14px">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+          <div class="idea-actions">
+            <button class="btn btn-primary" type="button" data-action="aprovar">
+              <svg><use href="#i-check-circle" /></svg>Aprovar e agendar
+            </button>
+            <button class="btn btn-outline" type="button" data-action="rascunho">Salvar rascunho</button>
+            <button class="btn btn-quiet" type="button" data-action="abrir">Ver roteiro completo</button>
+          </div>
+        </article>`).join("")}`;
+  }
+
+  elIdeas.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-action]");
+    if (!btn) return;
+
+    const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
+    const acao = btn.dataset.action;
+
+    const item = store.criar({ ...ideia, status: acao === "aprovar" ? "aprovado" : "rascunho" });
+
+    if (acao === "aprovar") {
+      ui.toast(`Aprovado e agendado para ${formatFull(item.date)}.`);
+    } else if (acao === "rascunho") {
+      ui.toast("Salvo como rascunho na Biblioteca.");
+    } else {
+      ui.openItem(item.id);
+      return;
+    }
+
+    ideias = ideias.filter((i) => i !== ideia);
+    render();
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    if (!store.consumirGeracao()) {
+      ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");
+      return;
+    }
+
+    gerar();
+    elIdeas.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  root.querySelector("[data-limpar]")?.addEventListener("click", () => {
+    form.reset();
+    form.cidade.value = store.perfil.cidade;
+    ideias = [];
+    render();
+  });
+
+  store.subscribe(renderQuota);
+  renderQuota();
+
+  if (dataAlvo) ui.toast(`Novo conteúdo para ${formatFull(dataAlvo)}.`);
+}
+
+if (!SPA) initCentral();
+
+// Calendário editorial + Kanban: arrastar-e-soltar, clique para editar, tudo no store.
+
+function initBoard(root = document, opts = {}) {
+  let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
+  let dragId = null;
+  let arrastou = false;
+
+  const elCalendar = root.querySelector("[data-calendar]");
+  const elKanban = root.querySelector("[data-kanban]");
+  const elMonthLabel = root.querySelector("[data-month-label]");
+
+  function renderCalendar() {
+    elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
+
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+
+    const weeks = [];
+    const day = new Date(start);
+
+    while (weeks.length < 6) {
+      const week = [];
+      for (let n = 0; n < 7; n++) {
+        week.push(new Date(day));
+        day.setDate(day.getDate() + 1);
+      }
+      weeks.push(week);
+      if (day.getMonth() !== cursor.getMonth() && day > first) break;
+    }
+
+    const itens = store.board();
+
+    elCalendar.innerHTML = weeks.map((week) => `
+      <div class="calendar-week">${week.map((date) => {
+        const key = toIso(date);
+        const classes = ["cal-day"];
+        if (date.getMonth() !== cursor.getMonth()) classes.push("is-out");
+        if (date.getTime() === HOJE.getTime()) classes.push("is-today");
+
+        const cards = itens
+          .filter((item) => item.date === key)
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .map((item) => `
+            <article class="cal-card" draggable="true" data-id="${item.id}">
+              <p class="cal-card-title">
+                <i class="status-dot" style="color:${STATUSES[item.status].color}"></i>
+                ${item.title}
+              </p>
+              <p class="cal-card-meta">${item.time} · ${store.perfil.nome.split(" ")[0]}</p>
+              <div class="cal-card-tags">${item.tags.slice(0, 2).map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+            </article>`).join("");
+
+        return `<div class="${classes.join(" ")}" data-drop-date="${key}">
+          <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
+          ${cards}
+        </div>`;
+      }).join("")}</div>`).join("");
+  }
+
+  function renderKanban() {
+    const itens = store.board();
+
+    elKanban.innerHTML = KANBAN.map((key) => {
+      const status = STATUSES[key];
+      const cards = itens
+        .filter((item) => item.status === key)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      return `
+        <div class="kan-col">
+          <div class="kan-head">
+            <i class="status-dot" style="color:${status.color}"></i>
+            ${status.label}
+            <span class="count">${cards.length}</span>
+            <span class="hint">${status.hint}</span>
+          </div>
+          <div class="kan-drop" data-drop-status="${key}">
+            ${cards.map((item) => ui.itemCard(item, { draggable: true })).join("")
+              || '<p class="hint" style="padding:18px;text-align:center">Solte um card aqui.</p>'}
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function render() {
+    renderCalendar();
+    renderKanban();
+  }
+
+  // ---- Arrastar-e-soltar -------------------------------------------------
+
+  root.addEventListener("dragstart", (event) => {
+    const card = event.target.closest("[data-id]");
+    if (!card) return;
+    dragId = card.dataset.id;
+    arrastou = true;
+    card.classList.add("is-dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", dragId);
+  });
+
+  root.addEventListener("dragend", (event) => {
+    event.target.closest("[data-id]")?.classList.remove("is-dragging");
+    document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
+    dragId = null;
+    setTimeout(() => { arrastou = false; }, 0);
+  });
+
+  root.addEventListener("dragover", (event) => {
+    const zone = event.target.closest("[data-drop-date], [data-drop-status]");
+    if (!zone) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (!zone.classList.contains("is-over")) {
+      document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
+      zone.classList.add("is-over");
+    }
+  });
+
+  root.addEventListener("drop", (event) => {
+    const zone = event.target.closest("[data-drop-date], [data-drop-status]");
+    if (!zone) return;
+    event.preventDefault();
+
+    const id = dragId || event.dataTransfer.getData("text/plain");
+    if (!id) return;
+
+    if (zone.dataset.dropDate) {
+      store.mover(id, { date: zone.dataset.dropDate });
+      ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+    }
+    if (zone.dataset.dropStatus) {
+      store.mover(id, { status: zone.dataset.dropStatus });
+      ui.toast(`Movido para ${STATUSES[zone.dataset.dropStatus].label}.`);
+    }
+  });
+
+  // ---- Cliques -----------------------------------------------------------
+
+  root.addEventListener("click", (event) => {
+    const novo = event.target.closest("[data-new-on]");
+    if (novo) {
+      goCentral(novo.dataset.newOn);
+      return;
+    }
+
+    const card = event.target.closest(".cal-card, .kan-card");
+    if (card && !arrastou) ui.openItem(card.dataset.id);
+  });
+
+  // ---- Controles ---------------------------------------------------------
+
+  root.querySelectorAll("[data-month]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
+      renderCalendar();
+    });
+  });
+
+  root.querySelector("[data-today]").addEventListener("click", () => {
+    cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
+    renderCalendar();
+  });
+
+  const switcher = root.querySelector("[data-view-switch]");
+  const panels = {
+    calendario: root.querySelector('[data-panel="calendario"]'),
+    kanban: root.querySelector('[data-panel="kanban"]')
+  };
+
+  function showView(name) {
+    switcher.querySelectorAll("button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+    panels.calendario.classList.toggle("is-hidden", name !== "calendario");
+    panels.kanban.classList.toggle("is-hidden", name !== "kanban");
+    if (!SPA) history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
+  }
+
+  switcher.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (btn) showView(btn.dataset.view);
+  });
+
+  store.subscribe(render);
+  render();
+
+  const inicial = opts.view || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
+  if (inicial === "kanban") showView("kanban");
+}
+
+if (!SPA) initBoard();
+
+// Biblioteca: busca, filtros, ações em massa e o histórico completo.
+
+function initBiblioteca(root = document) {
+  const grid = root.querySelector("[data-library]");
+  const count = root.querySelector("[data-count]");
+  const search = root.querySelector("[data-search]");
+  const areaSelect = root.querySelector('[data-filter="area"]');
+  const ordem = root.querySelector("[data-order]");
+  const elActivity = root.querySelector("[data-activity]");
+
+  const filtros = { text: "", area: "", format: "", status: "" };
+
+  areaSelect.innerHTML = `<option value="">Todas</option>` +
+    AREAS.map((a) => `<option value="${a}">${a}</option>`).join("");
+
+  function filtrados() {
+    const lista = store.itens.filter((item) => {
+      if (filtros.area && item.area !== filtros.area) return false;
+      if (filtros.format && item.format !== filtros.format) return false;
+      if (filtros.status && item.status !== filtros.status) return false;
+      if (filtros.text) {
+        const alvo = `${item.title} ${item.area} ${item.tags.join(" ")}`.toLowerCase();
+        if (!alvo.includes(filtros.text)) return false;
+      }
+      return true;
+    });
+
+    if (ordem.value === "antigos") lista.sort((a, b) => a.date.localeCompare(b.date));
+    else if (ordem.value === "titulo") lista.sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
+    else lista.sort((a, b) => b.date.localeCompare(a.date));
+
+    return lista;
+  }
+
+  function render() {
+    const lista = filtrados();
+
+    count.textContent = lista.length === 1
+      ? "1 conteúdo encontrado"
+      : `${lista.length} conteúdos encontrados`;
+
+    grid.innerHTML = lista.length
+      ? lista.map((item) => ui.itemCard(item)).join("")
+      : `<div class="empty" style="grid-column:1/-1">
+           <span class="icon-tile"><svg><use href="#i-book" /></svg></span>
+           <strong>Nada por aqui</strong>
+           <p>Ajuste a busca ou limpe os filtros.</p>
+           <button class="btn btn-outline" type="button" data-limpar>Limpar filtros</button>
+         </div>`;
+
+    elActivity.innerHTML = store.state.atividades.map((a) => `
+      <li>
+        <span class="icon-tile"><svg><use href="#${a.icon}" /></svg></span>
+        <div>
+          <p>${a.text}</p>
+          <time>${relativeTime(a.at)}</time>
+        </div>
+      </li>`).join("") || '<li><p class="hint">Sem movimentações ainda.</p></li>';
+  }
+
+  function limpar() {
+    filtros.text = filtros.area = filtros.format = filtros.status = "";
+    search.value = "";
+    areaSelect.value = "";
+    root.querySelectorAll("[data-filter-row]").forEach((row) => {
+      row.querySelectorAll("button").forEach((b, n) => b.setAttribute("aria-pressed", String(n === 0)));
+    });
+    render();
+  }
+
+  search.addEventListener("input", () => {
+    filtros.text = search.value.trim().toLowerCase();
+    render();
+  });
+
+  areaSelect.addEventListener("change", () => {
+    filtros.area = areaSelect.value;
+    render();
+  });
+
+  ordem.addEventListener("change", render);
+
+  root.querySelectorAll("[data-filter-row]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      const btn = event.target.closest("button");
+      if (!btn) return;
+      row.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      filtros[row.dataset.filterRow] = btn.dataset.value;
+      render();
+    });
+  });
+
+  root.addEventListener("click", (event) => {
+    if (event.target.closest("[data-limpar]")) { limpar(); return; }
+    const card = event.target.closest(".kan-card");
+    if (card) ui.openItem(card.dataset.id);
+  });
+
+  store.subscribe(render);
+  render();
+}
+
+if (!SPA) initBiblioteca();
+
+// Perfil e configurações — grava no store, e o resto do app reage na hora.
+
+function initPerfil(root = document) {
+  const form = root.querySelector("[data-perfil]");
+  const elAreas = root.querySelector("[data-areas]");
+  const elPlanos = root.querySelector("[data-planos]");
+  const elNota = root.querySelector("[data-plano-nota]");
+
+  function preencher() {
+    const p = store.perfil;
+    form.nome.value = p.nome;
+    form.creci.value = p.creci;
+    form.cidade.value = p.cidade;
+    form.instagram.value = p.instagram;
+    form.tom.value = p.tom;
+
+    elAreas.innerHTML = AREAS.map((area) => `
+      <button type="button" data-area="${area}" aria-pressed="${p.areas.includes(area)}">${area}</button>
+    `).join("");
+  }
+
+  function renderPlanos() {
+    elPlanos.innerHTML = Object.entries(PLANOS).map(([id, plano]) => `
+      <button type="button" data-plano="${id}" aria-pressed="${id === store.planoId}">
+        ${plano.label} · ${plano.preco}
+      </button>`).join("");
+
+    const restantes = store.restantes();
+    elNota.innerHTML = restantes === Infinity
+      ? "Gerações ilimitadas liberadas."
+      : `${restantes} de ${store.plano.cota} gerações restantes neste ciclo.`;
+  }
+
+  elAreas.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-area]");
+    if (!btn) return;
+    btn.setAttribute("aria-pressed", String(btn.getAttribute("aria-pressed") !== "true"));
+  });
+
+  elPlanos.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-plano]");
+    if (!btn) return;
+    store.trocarPlano(btn.dataset.plano);
+    ui.toast(`Plano alterado para ${PLANOS[btn.dataset.plano].label}.`);
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const areas = [...elAreas.querySelectorAll('[aria-pressed="true"]')].map((b) => b.dataset.area);
+
+    store.salvarPerfil({
+      nome: form.nome.value.trim() || PERFIL_PADRAO.nome,
+      creci: form.creci.value.trim(),
+      cidade: form.cidade.value.trim() || PERFIL_PADRAO.cidade,
+      instagram: form.instagram.value.trim(),
+      tom: form.tom.value.trim(),
+      areas: areas.length ? areas : [AREAS[0]]
+    });
+
+    ui.toast("Perfil salvo.");
+  });
+
+  root.querySelector("[data-reset]").addEventListener("click", () => {
+    if (!confirm("Restaurar o acervo original? Tudo o que você criou e editou será perdido.")) return;
+    store.reset();
+    preencher();
+    ui.toast("Acervo restaurado.");
+  });
+
+  // Cópia em vez de download: funciona tanto no arquivo local quanto na prévia publicada.
+  root.querySelector("[data-exportar]").addEventListener("click", () => {
+    navigator.clipboard?.writeText(JSON.stringify(store.state, null, 2))
+      .then(() => ui.toast("Dados copiados como JSON."))
+      .catch(() => ui.toast("Não foi possível copiar.", "erro"));
+  });
+
+  store.subscribe(renderPlanos);
+  preencher();
+  renderPlanos();
+}
+
+if (!SPA) initPerfil();
+
+</script>
+
+<script>
+// Roteador por hash: #/ Ã© a landing, o resto monta uma tela dentro do shell.
+(function router() {
+  const elLanding = document.querySelector("[data-landing]");
+  const elApp = document.querySelector("[data-app]");
+
+  const METAS = {
+  dashboard: { title: "Dashboard", subtitle: "Sua operação de conteúdo em um só lugar" },
+  central: { title: "Central de Conteúdo", subtitle: "Da ideia ao roteiro pronto para gravar" },
+  calendario: { title: "Calendário Editorial", subtitle: "Planeje, agende e acompanhe cada publicação" },
+  biblioteca: { title: "Biblioteca", subtitle: "Todo o seu acervo de conteúdo em um lugar só" },
+  perfil: { title: "Perfil", subtitle: "Seus dados e as preferências da conta" }
+  };
+
+  // Rotas que reaproveitam uma tela existente.
+  const ALIAS = {
+    kanban: { tela: "calendario", view: "kanban" },
+    historico: { tela: "biblioteca", ancora: "historico" },
+    configuracoes: { tela: "perfil", ancora: "configuracoes" },
+    planos: { landing: true, ancora: "planos" }
+  };
+
+  const INITS = {
+    dashboard: (root) => initDashboard(root),
+    central: (root) => initCentral(root),
+    calendario: (root, opts) => initBoard(root, opts),
+    biblioteca: (root) => initBiblioteca(root),
+    perfil: (root) => initPerfil(root)
+  };
+
+  let landingPronta = false;
+
+  function mostrarLanding(ancora) {
+    elApp.hidden = true;
+    elApp.className = "";
+    elApp.innerHTML = "";
+    elLanding.hidden = false;
+
+    store.dropSubscribers();
+    if (!landingPronta) { initLanding(elLanding); landingPronta = true; }
+
+    const alvo = ancora && elLanding.querySelector("#" + ancora);
+    if (alvo) alvo.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }
+
+  function mostrarTela(nome, opts) {
+    const molde = document.querySelector('[data-tela="' + nome + '"]');
+    if (!molde) return mostrarLanding();
+
+    elLanding.hidden = true;
+    store.dropSubscribers();
+
+    const meta = METAS[nome] || { title: "", subtitle: "" };
+    elApp.hidden = false;
+    elApp.className = "app";
+    elApp.innerHTML = shellHTML({ page: opts.page || nome, title: meta.title, subtitle: meta.subtitle });
+
+    const view = molde.content.cloneNode(true);
+    const coluna = elApp.querySelector(".app-col");
+    coluna.appendChild(view);
+
+    renderIdentity();
+    store.subscribe(renderIdentity);
+    INITS[nome](coluna.querySelector(".view"), opts);
+
+    const alvo = opts.ancora && coluna.querySelector("#" + opts.ancora);
+    if (alvo) alvo.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }
+
+  function rotear() {
+    const bruto = location.hash.replace(/^#\//, "").split("?")[0];
+
+    // Ancoras da landing (#recursos, #planos...) continuam funcionando.
+    if (!location.hash.startsWith("#/")) {
+      const ancora = location.hash.slice(1);
+      if (elLanding.hidden || !landingPronta) mostrarLanding(ancora);
+      return;
+    }
+
+    if (!bruto) return mostrarLanding();
+
+    const alias = ALIAS[bruto];
+    if (alias?.landing) return mostrarLanding(alias.ancora);
+
+    const nome = alias?.tela || bruto;
+    if (!INITS[nome]) return mostrarLanding();
+
+    mostrarTela(nome, { page: bruto, view: alias?.view, ancora: alias?.ancora });
+  }
+
+  window.addEventListener("hashchange", rotear);
+  rotear();
+})();
+</script>
+</body>
+</html>

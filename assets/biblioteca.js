@@ -1,12 +1,12 @@
 // Biblioteca: busca, filtros, ações em massa e o histórico completo.
 
-(function biblioteca() {
-  const grid = document.querySelector("[data-library]");
-  const count = document.querySelector("[data-count]");
-  const search = document.querySelector("[data-search]");
-  const areaSelect = document.querySelector('[data-filter="area"]');
-  const ordem = document.querySelector("[data-order]");
-  const elActivity = document.querySelector("[data-activity]");
+function initBiblioteca(root = document) {
+  const grid = root.querySelector("[data-library]");
+  const count = root.querySelector("[data-count]");
+  const search = root.querySelector("[data-search]");
+  const areaSelect = root.querySelector('[data-filter="area"]');
+  const ordem = root.querySelector("[data-order]");
+  const elActivity = root.querySelector("[data-activity]");
 
   const filtros = { text: "", area: "", format: "", status: "" };
 
@@ -62,7 +62,7 @@
     filtros.text = filtros.area = filtros.format = filtros.status = "";
     search.value = "";
     areaSelect.value = "";
-    document.querySelectorAll("[data-filter-row]").forEach((row) => {
+    root.querySelectorAll("[data-filter-row]").forEach((row) => {
       row.querySelectorAll("button").forEach((b, n) => b.setAttribute("aria-pressed", String(n === 0)));
     });
     render();
@@ -80,7 +80,7 @@
 
   ordem.addEventListener("change", render);
 
-  document.querySelectorAll("[data-filter-row]").forEach((row) => {
+  root.querySelectorAll("[data-filter-row]").forEach((row) => {
     row.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
       if (!btn) return;
@@ -91,7 +91,7 @@
     });
   });
 
-  document.addEventListener("click", (event) => {
+  root.addEventListener("click", (event) => {
     if (event.target.closest("[data-limpar]")) { limpar(); return; }
     const card = event.target.closest(".kan-card");
     if (card) ui.openItem(card.dataset.id);
@@ -99,4 +99,6 @@
 
   store.subscribe(render);
   render();
-})();
+}
+
+if (!SPA) initBiblioteca();

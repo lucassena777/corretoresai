@@ -1,13 +1,13 @@
 // Calendário editorial + Kanban: arrastar-e-soltar, clique para editar, tudo no store.
 
-(function board() {
+function initBoard(root = document, opts = {}) {
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
   let arrastou = false;
 
-  const elCalendar = document.querySelector("[data-calendar]");
-  const elKanban = document.querySelector("[data-kanban]");
-  const elMonthLabel = document.querySelector("[data-month-label]");
+  const elCalendar = root.querySelector("[data-calendar]");
+  const elKanban = root.querySelector("[data-kanban]");
+  const elMonthLabel = root.querySelector("[data-month-label]");
 
   function renderCalendar() {
     elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
@@ -90,7 +90,7 @@
 
   // ---- Arrastar-e-soltar -------------------------------------------------
 
-  document.addEventListener("dragstart", (event) => {
+  root.addEventListener("dragstart", (event) => {
     const card = event.target.closest("[data-id]");
     if (!card) return;
     dragId = card.dataset.id;
@@ -100,14 +100,14 @@
     event.dataTransfer.setData("text/plain", dragId);
   });
 
-  document.addEventListener("dragend", (event) => {
+  root.addEventListener("dragend", (event) => {
     event.target.closest("[data-id]")?.classList.remove("is-dragging");
     document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
     dragId = null;
     setTimeout(() => { arrastou = false; }, 0);
   });
 
-  document.addEventListener("dragover", (event) => {
+  root.addEventListener("dragover", (event) => {
     const zone = event.target.closest("[data-drop-date], [data-drop-status]");
     if (!zone) return;
     event.preventDefault();
@@ -118,7 +118,7 @@
     }
   });
 
-  document.addEventListener("drop", (event) => {
+  root.addEventListener("drop", (event) => {
     const zone = event.target.closest("[data-drop-date], [data-drop-status]");
     if (!zone) return;
     event.preventDefault();
@@ -138,10 +138,10 @@
 
   // ---- Cliques -----------------------------------------------------------
 
-  document.addEventListener("click", (event) => {
+  root.addEventListener("click", (event) => {
     const novo = event.target.closest("[data-new-on]");
     if (novo) {
-      location.href = `central.html?data=${novo.dataset.newOn}`;
+      goCentral(novo.dataset.newOn);
       return;
     }
 
@@ -151,22 +151,22 @@
 
   // ---- Controles ---------------------------------------------------------
 
-  document.querySelectorAll("[data-month]").forEach((btn) => {
+  root.querySelectorAll("[data-month]").forEach((btn) => {
     btn.addEventListener("click", () => {
       cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
       renderCalendar();
     });
   });
 
-  document.querySelector("[data-today]").addEventListener("click", () => {
+  root.querySelector("[data-today]").addEventListener("click", () => {
     cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
     renderCalendar();
   });
 
-  const switcher = document.querySelector("[data-view-switch]");
+  const switcher = root.querySelector("[data-view-switch]");
   const panels = {
-    calendario: document.querySelector('[data-panel="calendario"]'),
-    kanban: document.querySelector('[data-panel="kanban"]')
+    calendario: root.querySelector('[data-panel="calendario"]'),
+    kanban: root.querySelector('[data-panel="kanban"]')
   };
 
   function showView(name) {
@@ -174,7 +174,7 @@
       b.setAttribute("aria-pressed", String(b.dataset.view === name)));
     panels.calendario.classList.toggle("is-hidden", name !== "calendario");
     panels.kanban.classList.toggle("is-hidden", name !== "kanban");
-    history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
+    if (!SPA) history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
   }
 
   switcher.addEventListener("click", (event) => {
@@ -184,5 +184,9 @@
 
   store.subscribe(render);
   render();
-  if (location.hash === "#kanban") showView("kanban");
-})();
+
+  const inicial = opts.view || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
+  if (inicial === "kanban") showView("kanban");
+}
+
+if (!SPA) initBoard();
