@@ -1,6 +1,8 @@
 // Dashboard: tudo lido do store e redesenhado a cada mudança.
 
 function initDashboard(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const elStats = root.querySelector("[data-stats]");
   const elUpcoming = root.querySelector("[data-upcoming]");
   const elActivity = root.querySelector("[data-activity]");
@@ -9,9 +11,11 @@ function initDashboard(root = document) {
 
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
 
+  // Respeita "semana começa em" das Configurações.
   function startOfWeek(date) {
+    const inicio = store.config.semanaComeca;
     const d = new Date(date);
-    d.setDate(d.getDate() - d.getDay());
+    d.setDate(d.getDate() - ((d.getDay() - inicio + 7) % 7));
     d.setHours(0, 0, 0, 0);
     return d;
   }
@@ -19,6 +23,10 @@ function initDashboard(root = document) {
   function render() {
     const itens = store.itens;
     const board = store.board();
+
+    const primeiroNome = (store.perfil.nome || "").split(" ")[0];
+    root.querySelector("[data-saudacao]").textContent =
+      primeiroNome ? `Olá, ${primeiroNome}` : "Olá";
     const publicados = board.filter((i) => i.status === "publicado");
     const agendados = board.filter((i) => i.status === "agendado");
     const doMes = board.filter((i) => {
@@ -85,7 +93,9 @@ function initDashboard(root = document) {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
-    let html = ["D", "S", "T", "Q", "Q", "S", "S"].map((d) => `<span class="wd">${d}</span>`).join("");
+    const iniciais = ["D", "S", "T", "Q", "Q", "S", "S"];
+    const ordem = [...iniciais.slice(store.config.semanaComeca), ...iniciais.slice(0, store.config.semanaComeca)];
+    let html = ordem.map((d) => `<span class="wd">${d}</span>`).join("");
 
     for (let n = 0; n < 42; n++) {
       const day = new Date(start);

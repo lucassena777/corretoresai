@@ -30,11 +30,19 @@ $spriteShell = $spriteShell.Substring(0, $spriteShell.IndexOf('</svg>`;') + 6)
 # Telas
 $landing = Recortar $index '<header class="site-header">' '</footer>'
 
+$nomes = @("dashboard", "central", "calendario", "biblioteca", "historico",
+           "planos", "perfil", "configuracoes")
+
 $telas = [ordered]@{}
-foreach ($nome in @("dashboard", "central", "calendario", "biblioteca", "perfil")) {
+foreach ($nome in $nomes) {
   $html = Ler "app\$nome.html"
   $telas[$nome] = Recortar $html '<main class="view">' '</main>'
 }
+
+# A tela de login fica fora do shell do app (nao tem sidebar).
+$entrarHtml = Ler "app\entrar.html"
+$telaEntrar = (Recortar $entrarHtml '<button class="theme-btn auth-tema"' '</button>') + "`n" +
+              (Recortar $entrarHtml '<main class="auth"' '</main>')
 
 # Titulo e subtitulo de cada tela, lidos do proprio HTML.
 $metas = [ordered]@{}
@@ -47,15 +55,17 @@ foreach ($nome in $telas.Keys) {
 
 $css = @("assets\base.css", "assets\site.css", "assets\app.css") | ForEach-Object { Ler $_ }
 $js = @(
-  "assets\data.js", "assets\store.js", "assets\ui.js", "assets\shell.js",
-  "assets\site.js", "assets\dashboard.js", "assets\central.js",
-  "assets\board.js", "assets\biblioteca.js", "assets\perfil.js"
+  "assets\data.js", "assets\db.js", "assets\store.js", "assets\ui.js",
+  "assets\auth.js", "assets\shell.js", "assets\site.js", "assets\entrar.js",
+  "assets\dashboard.js", "assets\central.js", "assets\board.js",
+  "assets\biblioteca.js", "assets\historico.js", "assets\planos.js",
+  "assets\perfil.js", "assets\configuracoes.js"
 ) | ForEach-Object { Ler $_ }
 
 # Templates das telas, para o roteador montar sob demanda.
-$templates = ($telas.GetEnumerator() | ForEach-Object {
+$templates = (($telas.GetEnumerator() | ForEach-Object {
   "<template data-tela=`"$($_.Key)`">$($_.Value)</template>"
-}) -join "`n"
+}) + @("<template data-tela=`"entrar`">$telaEntrar</template>")) -join "`n"
 
 $metasJson = ($metas.GetEnumerator() | ForEach-Object {
   "  $($_.Key): { title: `"$($_.Value.title)`", subtitle: `"$($_.Value.subtitle)`" }"
@@ -97,10 +107,7 @@ $metasJson
 
   // Rotas que reaproveitam uma tela existente.
   const ALIAS = {
-    kanban: { tela: "calendario", view: "kanban" },
-    historico: { tela: "biblioteca", ancora: "historico" },
-    configuracoes: { tela: "perfil", ancora: "configuracoes" },
-    planos: { landing: true, ancora: "planos" }
+    kanban: { tela: "calendario", view: "kanban" }
   };
 
   const INITS = {
@@ -108,7 +115,10 @@ $metasJson
     central: (root) => initCentral(root),
     calendario: (root, opts) => initBoard(root, opts),
     biblioteca: (root) => initBiblioteca(root),
-    perfil: (root) => initPerfil(root)
+    historico: (root) => initHistorico(root),
+    planos: (root) => initPlanos(root),
+    perfil: (root) => initPerfil(root),
+    configuracoes: (root) => initConfiguracoes(root)
   };
 
   let landingPronta = false;
@@ -125,6 +135,18 @@ $metasJson
     const alvo = ancora && elLanding.querySelector("#" + ancora);
     if (alvo) alvo.scrollIntoView();
     else window.scrollTo(0, 0);
+  }
+
+  // Login e cadastro: tela cheia, sem sidebar.
+  function mostrarEntrar() {
+    elLanding.hidden = true;
+    store.dropSubscribers();
+    elApp.hidden = false;
+    elApp.className = "";
+    elApp.innerHTML = "";
+    elApp.appendChild(document.querySelector('[data-tela="entrar"]').content.cloneNode(true));
+    initEntrar(elApp);
+    window.scrollTo(0, 0);
   }
 
   function mostrarTela(nome, opts) {
@@ -163,14 +185,13 @@ $metasJson
     }
 
     if (!bruto) return mostrarLanding();
+    if (bruto === "entrar") return mostrarEntrar();
 
     const alias = ALIAS[bruto];
-    if (alias?.landing) return mostrarLanding(alias.ancora);
-
     const nome = alias?.tela || bruto;
     if (!INITS[nome]) return mostrarLanding();
 
-    mostrarTela(nome, { page: bruto, view: alias?.view, ancora: alias?.ancora });
+    mostrarTela(nome, { page: bruto, view: alias?.view });
   }
 
   window.addEventListener("hashchange", rotear);

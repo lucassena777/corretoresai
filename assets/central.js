@@ -1,15 +1,25 @@
 // Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
 
 function initCentral(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const form = root.querySelector("[data-generator]");
   const elIdeas = root.querySelector("[data-ideas]");
   const elQuota = root.querySelector("[data-quota]");
+  const cfg = store.config;
 
-  // Preenche a partir do perfil e de ?data=AAAA-MM-DD (vindo do calendário).
+  // Preenche a partir das Configurações, do perfil e de ?data= (vindo do calendário).
   form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
-  form.area.value = store.perfil.areas[0] || AREAS[0];
+  form.area.value = cfg.areaPadrao || store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
   const dataAlvo = routeParams().get("data");
+
+  const marcar = (grupo, valor) => {
+    root.querySelectorAll(`[data-choice="${grupo}"] button`).forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.textContent.trim() === valor)));
+  };
+  marcar("funil", cfg.funilPadrao);
+  marcar("formato", cfg.formatoPadrao);
 
   root.querySelectorAll("[data-goto]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -70,7 +80,8 @@ function initCentral(root = document) {
         .replace("{cidade}", cidade);
       const title = bruto[0].toUpperCase() + bruto.slice(1);
 
-      const base = { title, area, format, funnel, city: cidade, briefing, date: proximaData(), time: "10:00",
+      const base = { title, area, format, funnel, city: cidade, briefing,
+        date: proximaData(), time: store.config.horarioPadrao,
         tags: [area, TAGS_FUNIL[funnel], format] };
 
       return { ...base, script: buildScript(base, store.perfil) };
@@ -112,10 +123,14 @@ function initCentral(root = document) {
     const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
     const acao = btn.dataset.action;
 
-    const item = store.criar({ ...ideia, status: acao === "aprovar" ? "aprovado" : "rascunho" });
+    // "Agendar ao aprovar" decide se o card nasce Agendado ou só Aprovado.
+    const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
+    const item = store.criar({ ...ideia, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
-      ui.toast(`Aprovado e agendado para ${formatFull(item.date)}.`);
+      ui.toast(store.config.agendarAoAprovar
+        ? `Agendado para ${formatFull(item.date)}.`
+        : `Aprovado. Defina a data no calendário quando quiser.`);
     } else if (acao === "rascunho") {
       ui.toast("Salvo como rascunho na Biblioteca.");
     } else {

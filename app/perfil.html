@@ -8,93 +8,128 @@
   <link rel="stylesheet" href="../assets/app.css" />
   <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
 </head>
-<body data-page="perfil" data-title="Perfil" data-subtitle="Seus dados e as preferências da conta">
+<body data-page="perfil" data-title="Perfil" data-subtitle="Os dados que assinam os seus conteúdos">
 
 <main class="view">
-  <div class="view-head">
-    <div>
-      <h1>Perfil</h1>
-      <p>O que você preenche aqui a IA usa como contexto em todo conteúdo gerado.</p>
-    </div>
-  </div>
-
-  <form class="form-card" data-perfil>
-    <div class="field field-row">
-      <div>
-        <label for="nome">Nome</label>
-        <input id="nome" name="nome" />
-      </div>
-      <div>
-        <label for="creci">CRECI</label>
-        <input id="creci" name="creci" />
-      </div>
-    </div>
-
-    <div class="field field-row">
-      <div>
-        <label for="cidade">Cidade de atuação</label>
-        <input id="cidade" name="cidade" />
-      </div>
-      <div>
-        <label for="instagram">Instagram</label>
-        <input id="instagram" name="instagram" />
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="tom">Como você quer soar nos conteúdos</label>
-      <textarea id="tom" name="tom"></textarea>
-      <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
-    </div>
-
-    <div class="field">
-      <label>Áreas em que você atua</label>
-      <div class="choice-row" data-areas></div>
-      <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Salvar perfil</button>
-  </form>
-
-  <section id="configuracoes" style="margin-top:52px">
+  <form data-perfil>
     <div class="view-head">
       <div>
-        <h1 style="font-size:22px">Configurações</h1>
-        <p>Aparência, plano e dados da conta.</p>
+        <h1>Perfil</h1>
+        <p>Estes dados assinam os seus conteúdos e alimentam a IA na hora de escrever.</p>
       </div>
+      <button class="btn btn-primary" type="submit">
+        <svg><use href="#i-check-circle" /></svg>
+        Salvar alterações
+      </button>
     </div>
 
-    <div class="form-card">
-      <div class="field">
-        <label>Tema</label>
-        <div class="choice-row">
-          <button type="button" data-theme-toggle>Alternar entre claro e escuro</button>
+    <div class="perfil-grid">
+      <aside class="panel perfil-cartao">
+        <div class="panel-body">
+          <span class="avatar avatar-xl" data-avatar></span>
+          <h2 data-nome></h2>
+          <p data-creci></p>
+          <div class="perfil-nums">
+            <div><strong data-total></strong><span>Conteúdos</span></div>
+            <div><strong data-plano></strong><span>Plano atual</span></div>
+          </div>
         </div>
-        <p class="hint">A preferência fica salva neste navegador.</p>
-      </div>
+      </aside>
 
-      <div class="field">
-        <label>Plano atual</label>
-        <div class="choice-row" data-planos></div>
-        <p class="hint" data-plano-nota></p>
-      </div>
+      <div class="perfil-col">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <strong>Dados pessoais</strong>
+              <span>Como você aparece nos cards e nas legendas</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field field-row">
+              <div class="field">
+                <label for="nome">Nome completo *</label>
+                <input id="nome" name="nome" required />
+              </div>
+              <div class="field">
+                <label for="creci">CRECI</label>
+                <input id="creci" name="creci" placeholder="CRECI-SP 000.000" />
+              </div>
+            </div>
 
-      <div class="field">
-        <label>Dados da demonstração</label>
-        <div class="choice-row">
-          <button type="button" data-reset>Restaurar o acervo original</button>
-          <button type="button" data-exportar>Copiar meus dados em JSON</button>
-        </div>
-        <p class="hint">Restaurar desfaz tudo o que você criou, editou e arrastou.</p>
+            <div class="field field-row">
+              <div class="field">
+                <label for="email">E-mail</label>
+                <input id="email" name="email" type="email" disabled />
+              </div>
+              <div class="field">
+                <label for="telefone">Telefone</label>
+                <input id="telefone" name="telefone" placeholder="(11) 90000-0000" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <strong>Atuação</strong>
+              <span>A cidade entra nos títulos, nas legendas e nas hashtags geradas</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field field-row">
+              <div class="field">
+                <label for="cidade">Cidade de atuação *</label>
+                <input id="cidade" name="cidade" required />
+                <p class="hint">Usada em frases como "construa autoridade na sua cidade".</p>
+              </div>
+              <div class="field">
+                <label for="imobiliaria">Imobiliária</label>
+                <input id="imobiliaria" name="imobiliaria" placeholder="Autônomo, se for o caso" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="bio">Bio</label>
+              <textarea id="bio" name="bio" placeholder="Em uma frase: o que você vende e para quem."></textarea>
+              <p class="hint">Aparece nos materiais exportados e nas assinaturas.</p>
+            </div>
+
+            <div class="field">
+              <label for="instagram">Instagram</label>
+              <input id="instagram" name="instagram" placeholder="@seuperfil" />
+            </div>
+
+            <div class="field">
+              <label>Áreas em que você atua</label>
+              <div class="choice-row" data-areas></div>
+              <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
+            </div>
+
+            <div class="field">
+              <label for="tom">Como você quer soar nos conteúdos</label>
+              <textarea id="tom" name="tom"></textarea>
+              <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
+            </div>
+
+            <p class="aviso">
+              <svg><use href="#i-check-circle" /></svg>
+              Alterar nome e cidade muda apenas os conteúdos gerados a partir de agora —
+              o que já está no calendário permanece como está.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
-  </section>
+  </form>
 </main>
 
 <script src="../assets/theme.js"></script>
 <script src="../assets/data.js"></script>
+<script src="../assets/db.js"></script>
 <script src="../assets/store.js"></script>
 <script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
 <script src="../assets/shell.js"></script>
 <script src="../assets/perfil.js"></script>
 </body>

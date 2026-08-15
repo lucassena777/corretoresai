@@ -34,6 +34,9 @@ const ICONS = `
 <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
 <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
 <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
 </svg>`;
 
 // href: navegação por arquivos (site multipágina).
@@ -44,10 +47,10 @@ const NAV = [
   { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
   { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
   { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
-  { id: "historico", label: "Histórico", icon: "i-history", href: "biblioteca.html#historico", rota: "#/historico" },
-  { id: "planos", label: "Planos", icon: "i-card", href: "../index.html#planos", rota: "#/planos" },
+  { id: "historico", label: "Histórico", icon: "i-history", href: "historico.html", rota: "#/historico" },
+  { id: "planos", label: "Planos", icon: "i-card", href: "planos.html", rota: "#/planos" },
   { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html", rota: "#/perfil" },
-  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes", rota: "#/configuracoes" }
+  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "configuracoes.html", rota: "#/configuracoes" }
 ];
 
 const LINKS = SPA
@@ -93,7 +96,7 @@ function shellHTML({ page, title, subtitle }) {
         <div class="side-links">
           <a href="${LINKS.site}">${icon("i-globe")}<span>Ver o site</span></a>
           <a href="${LINKS.central}">${icon("i-sparkle")}<span>Introdução</span></a>
-          <a href="${LINKS.site}">${icon("i-logout")}<span>Sair</span></a>
+          <button type="button" data-sair>${icon("i-logout")}<span>Sair</span></button>
         </div>
       </div>
     </aside>
@@ -120,6 +123,9 @@ function renderShell() {
 
   body.insertAdjacentHTML("afterbegin", ICONS);
 
+  // Telas fora do app (login, cadastro) só precisam do sprite de ícones.
+  if (!view) return;
+
   const shell = document.createElement("div");
   shell.className = "app";
   shell.innerHTML = shellHTML({
@@ -131,12 +137,21 @@ function renderShell() {
   body.appendChild(shell);
   if (view) shell.querySelector(".app-col").appendChild(view);
 
+  ligarSair(shell);
   renderIdentity();
   store.subscribe(renderIdentity);
 }
 
+function ligarSair(root) {
+  root.querySelector("[data-sair]")?.addEventListener("click", () => {
+    if (confirm("Sair da sua conta? Seus conteúdos continuam salvos.")) auth.sair();
+  });
+}
+
 // Nome, plano e cota vêm do estado — mudou no perfil, muda aqui na hora.
 function renderIdentity() {
+  if (!store.logado) return;
+
   const perfil = store.perfil;
   const plano = store.plano;
   const restantes = store.restantes();
@@ -160,8 +175,12 @@ function renderIdentity() {
       <div class="plan-bar"><i style="width:${Math.round(usado * 100)}%"></i></div>
       <span>${ilimitado
         ? "Gerações ilimitadas liberadas."
-        : `${restantes} de ${plano.cota} gerações restantes.`}</span>`;
+        : `${restantes} de ${plano.cota} gerações restantes.`}</span>
+      ${ilimitado ? "" : `<a class="plan-up" href="${SPA ? "#/planos" : "planos.html"}">Ver planos</a>`}`;
   }
+
+  // "Reduzir animações" vale para o documento inteiro.
+  document.documentElement.dataset.anim = store.config.reduzirAnimacoes ? "off" : "on";
 }
 
 if (!SPA) renderShell();

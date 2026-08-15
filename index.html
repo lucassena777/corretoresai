@@ -94,11 +94,11 @@
         <svg class="icon-sun"><use href="#i-sun" /></svg>
         <svg class="icon-moon"><use href="#i-moon" /></svg>
       </button>
-      <a class="btn btn-quiet" href="app/dashboard.html">
+      <a class="btn btn-quiet" href="app/entrar.html">
         <svg><use href="#i-login" /></svg>
         Entrar
       </a>
-      <a class="btn btn-primary" href="app/central.html">Começar grátis</a>
+      <a class="btn btn-primary" href="app/entrar.html?modo=cadastro">Começar grátis</a>
     </div>
   </div>
 </header>
@@ -126,7 +126,7 @@
         </p>
 
         <div class="hero-cta">
-          <a class="btn btn-primary btn-lg" href="app/central.html">
+          <a class="btn btn-primary btn-lg" href="app/entrar.html?modo=cadastro">
             Começar grátis
             <svg><use href="#i-arrow" /></svg>
           </a>
@@ -252,7 +252,7 @@
           <svg><use href="#i-check-circle" /></svg>
           Ao aprovar, o conteúdo entra no calendário, vira card no Kanban e atualiza o dashboard.
         </p>
-        <a class="btn btn-primary" href="app/central.html">
+        <a class="btn btn-primary" href="app/entrar.html?modo=cadastro">
           Experimentar agora
           <svg><use href="#i-arrow" /></svg>
         </a>
@@ -319,65 +319,12 @@
         </p>
       </div>
 
-      <div class="plans">
-        <article class="plan">
-          <div class="plan-head">
-            <span class="icon-tile"><svg><use href="#i-sparkle" /></svg></span>
-            <h3>Gratuito</h3>
-          </div>
-          <p class="plan-note">Perfeito para testar e conhecer a plataforma.</p>
-          <p class="plan-price">R$ 0 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>5 gerações de conteúdo com IA por mês</li>
-            <li>Acesso completo à Central de Planejamento (Calendário e Kanban)</li>
-            <li>Gerador de ideias e textos para legendas</li>
-            <li>Exportação de texto simples</li>
-          </ul>
-          <button class="btn btn-outline btn-block" type="button" data-plano="gratuito">Começar Grátis</button>
-        </article>
+      <div class="plans" data-plans></div>
 
-        <article class="plan is-popular">
-          <span class="plan-flag">MAIS POPULAR</span>
-          <div class="plan-head">
-            <span class="icon-tile is-gold"><svg><use href="#i-rocket" /></svg></span>
-            <h3>Corretor Pro</h3>
-          </div>
-          <p class="plan-note">Para corretores que buscam consistência e mais vendas.</p>
-          <p class="plan-price">R$ 29,90 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>40 gerações de conteúdo com IA por mês</li>
-            <li>Acesso ao Estágio do funil de conteúdo</li>
-            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
-            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
-            <li>Filtro por funil personalizado</li>
-            <li>Suporte prioritário via WhatsApp</li>
-          </ul>
-          <button class="btn btn-primary btn-block" type="button" data-plano="pro">Quero Acelerar Minhas Vendas</button>
-        </article>
-
-        <article class="plan">
-          <div class="plan-head">
-            <span class="icon-tile"><svg><use href="#i-crown" /></svg></span>
-            <h3>Ilimitado</h3>
-          </div>
-          <p class="plan-note">Para alta performance, equipes e imobiliárias.</p>
-          <p class="plan-price">R$ 49,90 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>Gerações de conteúdo 100% ILIMITADAS</li>
-            <li>Acesso ao Estágio do funil de conteúdo</li>
-            <li>Filtro por funil personalizado</li>
-            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
-            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
-            <li>Gerador automático de legenda por link/foto do imóvel</li>
-            <li>Exportação e agendamento em 1 clique</li>
-            <li>Acesso antecipado a novas ferramentas</li>
-            <li>Suporte VIP individual</li>
-          </ul>
-          <button class="btn btn-outline btn-block" type="button" data-plano="ilimitado">Desbloquear Acesso Ilimitado</button>
-        </article>
-      </div>
-
-      <p class="plans-note">Cancele a qualquer momento. Sem fidelidade ou taxas escondidas.</p>
+      <p class="plans-note">
+        Cancele a qualquer momento, direto no painel. Sem fidelidade, sem multa e
+        sem taxa escondida. A cota de gerações renova na virada do mês.
+      </p>
     </div>
   </section>
 
@@ -427,7 +374,7 @@
         Comece hoje com dez conteúdos gratuitos e veja como é ter um mês inteiro de
         publicações planejado antes do café esfriar.
       </p>
-      <a class="btn btn-primary btn-lg" href="app/central.html">
+      <a class="btn btn-primary btn-lg" href="app/entrar.html?modo=cadastro">
         Criar minha conta grátis
         <svg><use href="#i-arrow" /></svg>
       </a>
@@ -448,13 +395,14 @@
     <nav class="footer-links" aria-label="Rodapé">
       <a href="#recursos">Recursos</a>
       <a href="#planos">Planos</a>
-      <a href="app/dashboard.html">Entrar</a>
+      <a href="app/entrar.html">Entrar</a>
     </nav>
   </div>
 </footer>
 
 <script src="assets/theme.js"></script>
 <script src="assets/data.js"></script>
+<script src="assets/db.js"></script>
 <script src="assets/store.js"></script>
 <script src="assets/site.js"></script>
 </body>

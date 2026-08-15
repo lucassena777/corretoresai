@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Configurações — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="configuracoes" data-title="Configurações" data-subtitle="Ajuste a plataforma ao seu jeito de trabalhar">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Configurações</h1>
+      <p>Defina os padrões da sua rotina para criar conteúdo em menos cliques.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar conteúdo
+    </a>
+  </div>
+
+  <div class="config-grid" data-config>
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <strong>Padrões de criação</strong>
+          <span>Já vêm selecionados ao abrir a Central de Conteúdo</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="areaPadrao">Área de atuação padrão</label>
+          <select id="areaPadrao" name="areaPadrao"></select>
+        </div>
+
+        <div class="field field-row">
+          <div class="field">
+            <label for="funilPadrao">Funil padrão</label>
+            <select id="funilPadrao" name="funilPadrao"></select>
+          </div>
+          <div class="field">
+            <label for="formatoPadrao">Formato padrão</label>
+            <select id="formatoPadrao" name="formatoPadrao"></select>
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div class="field">
+            <label for="horarioPadrao">Horário padrão de publicação</label>
+            <select id="horarioPadrao" name="horarioPadrao"></select>
+          </div>
+          <div class="field">
+            <label for="semanaComeca">Semana começa em</label>
+            <select id="semanaComeca" name="semanaComeca">
+              <option value="0">Domingo</option>
+              <option value="1">Segunda-feira</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="config-col">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Aparência</strong>
+            <span>Vale para a landing e para a área logada</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="field" style="margin:0">
+            <label for="tema">Tema</label>
+            <select id="tema" data-tema>
+              <option value="dark">Modo escuro</option>
+              <option value="light">Modo claro</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Fluxo de trabalho</strong></div>
+        </div>
+        <div class="panel-body">
+          <label class="switch">
+            <input type="checkbox" name="agendarAoAprovar" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Agendar ao aprovar</strong>
+              <span>Ao aprovar um conteúdo, ele já entra no calendário como Agendado. Se desligado, fica como Aprovado até você definir a data.</span>
+            </span>
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="reduzirAnimacoes" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Reduzir animações</strong>
+              <span>Desliga as transições de entrada das páginas, mantendo apenas o essencial.</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Notificações</strong></div>
+        </div>
+        <div class="panel-body">
+          <label class="switch">
+            <input type="checkbox" name="resumoSemanal" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Resumo semanal por e-mail</strong>
+              <span>Um panorama do que foi publicado e do que vem pela frente, toda segunda.</span>
+            </span>
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="lembretes" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Lembretes de publicação</strong>
+              <span>Um aviso no navegador quando chegar o horário de publicar.</span>
+            </span>
+          </label>
+
+          <p class="hint" style="margin-top:16px">
+            As notificações ficam salvas na sua conta, mas ainda não são disparadas —
+            isso depende do envio pelo servidor.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Conta e dados</strong>
+            <span data-conta-email></span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="choice-row">
+            <button type="button" data-senha>Trocar senha</button>
+            <button type="button" data-exemplos>Carregar conteúdos de exemplo</button>
+            <button type="button" data-limpar-conteudo>Apagar todo o conteúdo</button>
+            <button type="button" data-excluir-conta>Excluir minha conta</button>
+          </div>
+          <p class="hint">Tudo fica salvo apenas neste navegador.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/db.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/configuracoes.js"></script>
+</body>
+</html>

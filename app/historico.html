@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Histórico — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="historico" data-title="Histórico" data-subtitle="Tudo o que aconteceu na sua conta">
+
+<main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Histórico</h1>
+      <p>Cada criação, aprovação, edição e mudança de status registrada em ordem cronológica.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar conteúdo
+    </a>
+  </div>
+
+  <div class="segmented" data-abas>
+    <button type="button" data-aba="tudo" aria-pressed="true">Tudo</button>
+    <button type="button" data-aba="publicacoes" aria-pressed="false">Publicações</button>
+    <button type="button" data-aba="edicoes" aria-pressed="false">Edições</button>
+  </div>
+
+  <div class="timeline" data-timeline></div>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/db.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/historico.js"></script>
+</body>
+</html>

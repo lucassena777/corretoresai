@@ -2,7 +2,11 @@
 
 function initLanding(root = document) {
   const grid = root.querySelector("[data-mini-calendar]");
-  const board = store.board();
+
+  // A landing é vitrine: mostra sempre o acervo de exemplo, não a conta de quem
+  // está logado — senão um cadastro novo veria "0 leads gerados" na home.
+  const itens = SEED_ITENS;
+  const board = itens.filter((i) => KANBAN.includes(i.status));
 
   // No arquivo único não existem app/*.html — os links viram rotas de hash.
   if (SPA) {
@@ -33,7 +37,7 @@ function initLanding(root = document) {
   if (alvo) {
     const publicados = board.filter((i) => i.status === "publicado").length;
     const stats = [
-      [store.itens.length, "Conteúdos criados"],
+      [itens.length, "Conteúdos criados"],
       [board.filter((i) => i.status === "agendado").length, "Agendados"],
       [Math.round(publicados * 29.5), "Leads gerados"]
     ];
@@ -41,12 +45,32 @@ function initLanding(root = document) {
       `<div class="mini-stat"><strong>${valor}</strong><span>${rotulo}</span></div>`).join("");
   }
 
-  // Escolher um plano na landing já entra valendo dentro do app.
-  root.querySelectorAll("[data-plano]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      store.trocarPlano(btn.dataset.plano);
-      location.href = SPA ? "#/central" : "app/central.html";
-    });
+  // Os planos vêm da mesma fonte que o app, para nunca divergirem.
+  const grade = root.querySelector("[data-plans]");
+  if (grade) {
+    grade.innerHTML = Object.values(PLANOS).map((plano) => {
+      const popular = plano.id === "pro";
+      return `
+        <article class="plan${popular ? " is-popular" : ""}">
+          ${popular ? '<span class="plan-flag">MAIS POPULAR</span>' : ""}
+          <div class="plan-head">
+            <span class="icon-tile${popular ? " is-gold" : ""}"><svg><use href="#${plano.icone}" /></svg></span>
+            <h3>${plano.label}</h3>
+          </div>
+          <p class="plan-note">${plano.resumo}</p>
+          <p class="plan-price">${plano.preco} <span>/mês</span></p>
+          <ul class="plan-features">${plano.beneficios.map((b) => `<li>${b}</li>`).join("")}</ul>
+          <button class="btn ${popular ? "btn-primary" : "btn-outline"} btn-block" type="button" data-plano="${plano.id}">${plano.cta}</button>
+        </article>`;
+    }).join("");
+  }
+
+  // Escolher um plano leva para o cadastro já com esse plano em mente.
+  root.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-plano]");
+    if (!btn) return;
+    sessionStorage.setItem("corretoresai-plano-escolhido", btn.dataset.plano);
+    location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
   });
 }
 

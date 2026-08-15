@@ -1,44 +1,30 @@
-// Estado único da aplicação: conteúdos, perfil, plano e histórico.
-// Tudo persiste em localStorage e qualquer tela pode ouvir mudanças.
+// Estado da conta logada. Lê e grava sempre através do db, nunca direto no
+// localStorage — assim trocar o banco por um back-end não mexe nas telas.
 
 const store = (() => {
-  const KEY = "corretoresai-estado-v2";
   const listeners = new Set();
+  let state = null;
 
-  function seedState() {
-    return {
-      itens: SEED_ITENS.map((item) => ({ ...item, tags: [...item.tags] })),
-      perfil: { ...PERFIL_PADRAO, areas: [...PERFIL_PADRAO.areas] },
-      plano: "ilimitado",
-      usadas: 0,
-      atividades: SEED_ATIVIDADES.map((a) => ({
-        icon: a.icon,
-        text: a.text,
-        at: HOJE.getTime() - a.dias * 86400000
-      }))
-    };
-  }
-
-  let state = load();
-
-  function load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(KEY));
-      if (!saved || !Array.isArray(saved.itens)) return seedState();
-      return { ...seedState(), ...saved };
-    } catch {
-      return seedState();
+  function carregar() {
+    const conta = db.contaAtual();
+    if (!conta) { state = null; return; }
+    if (!conta.estado) {
+      conta.estado = estadoSemente({ plano: "gratuito" });
+      db.gravarEstado(conta.estado);
     }
+    state = { ...estadoSemente(), ...conta.estado, config: { ...CONFIG_PADRAO, ...(conta.estado.config || {}) } };
   }
+
+  carregar();
 
   function persist() {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    db.gravarEstado(state);
     listeners.forEach((fn) => fn(state));
   }
 
   function log(icon, text) {
     state.atividades.unshift({ icon, text, at: Date.now() });
-    state.atividades = state.atividades.slice(0, 40);
+    state.atividades = state.atividades.slice(0, 120);
   }
 
   function nextId() {
@@ -46,39 +32,36 @@ const store = (() => {
   }
 
   return {
+    get logado() { return Boolean(state); },
     get state() { return state; },
-    get itens() { return state.itens; },
-    get perfil() { return state.perfil; },
-    get plano() { return PLANOS[state.plano]; },
-    get planoId() { return state.plano; },
+    get itens() { return state?.itens ?? []; },
+    get atividades() { return state?.atividades ?? []; },
+    get config() { return state?.config ?? { ...CONFIG_PADRAO }; },
+    get perfil() { return db.contaAtual()?.perfil ?? { ...PERFIL_PADRAO }; },
+    get plano() { return PLANOS[state?.plano] ?? PLANOS.gratuito; },
+    get planoId() { return state?.plano ?? "gratuito"; },
+
+    recarregar() { carregar(); listeners.forEach((fn) => fn(state)); },
 
     subscribe(fn) {
       listeners.add(fn);
       return () => listeners.delete(fn);
     },
 
-    // Usado pelo roteador do arquivo único ao trocar de tela.
-    dropSubscribers() {
-      listeners.clear();
-    },
+    dropSubscribers() { listeners.clear(); },
 
-    find(id) {
-      return state.itens.find((item) => item.id === id);
-    },
+    find(id) { return state.itens.find((item) => item.id === id); },
 
-    // Só o que aparece no Kanban / calendário.
-    board() {
-      return state.itens.filter((item) => KANBAN.includes(item.status));
-    },
+    board() { return state.itens.filter((item) => KANBAN.includes(item.status)); },
 
     restantes() {
-      const cota = PLANOS[state.plano].cota;
+      const cota = this.plano.cota;
       return cota === Infinity ? Infinity : Math.max(0, cota - state.usadas);
     },
 
     consumirGeracao() {
       if (this.restantes() <= 0) return false;
-      if (PLANOS[state.plano].cota !== Infinity) state.usadas += 1;
+      if (this.plano.cota !== Infinity) state.usadas += 1;
       persist();
       return true;
     },
@@ -87,11 +70,11 @@ const store = (() => {
       const item = {
         id: nextId(),
         status: "rascunho",
-        time: "10:00",
+        time: state.config.horarioPadrao,
         tags: [],
         ...dados
       };
-      item.script = item.script || buildScript(item, state.perfil);
+      item.script = item.script || buildScript(item, this.perfil);
       state.itens.unshift(item);
       log("i-sparkle", `"${item.title}" foi criado`);
       persist();
@@ -118,7 +101,6 @@ const store = (() => {
       return item;
     },
 
-    // Move sem gerar log de edição genérico (usado no arrastar-e-soltar).
     mover(id, patch) {
       const item = this.find(id);
       if (!item) return null;
@@ -160,29 +142,46 @@ const store = (() => {
     },
 
     salvarPerfil(patch) {
-      Object.assign(state.perfil, patch);
+      db.gravarPerfil(patch);
       log("i-user", "Perfil atualizado");
       persist();
     },
 
+    salvarConfig(patch) {
+      Object.assign(state.config, patch);
+      log("i-settings", "Configurações atualizadas");
+      persist();
+    },
+
     trocarPlano(id) {
-      if (!PLANOS[id]) return;
+      if (!PLANOS[id] || id === state.plano) return;
       state.plano = id;
+      state.usadas = 0;
       log("i-card", `Plano alterado para ${PLANOS[id].label}`);
       persist();
     },
 
     roteiro(item) {
       if (!item.script) {
-        item.script = buildScript(item, state.perfil);
+        item.script = buildScript(item, this.perfil);
         persist();
       }
       return item.script;
     },
 
-    reset() {
-      localStorage.removeItem(KEY);
-      state = seedState();
+    // Coloca (ou tira) o acervo de exemplo na conta atual.
+    carregarExemplos() {
+      const semente = estadoSemente({ plano: state.plano, comAcervo: true });
+      state.itens = semente.itens;
+      state.atividades = semente.atividades;
+      log("i-book", "Acervo de exemplo carregado");
+      persist();
+    },
+
+    limparTudo() {
+      state.itens = [];
+      state.atividades = [];
+      state.usadas = 0;
       persist();
     }
   };

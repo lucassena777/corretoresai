@@ -32,7 +32,12 @@
   --radius-xl: 20px;
   --container: 1180px;
 
-  --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Serifa de transição para títulos: formal, com contraste alto de traço.
+     Sem webfont externa — a CSP da prévia publicada bloqueia CDN de fonte. */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+    Georgia, "Times New Roman", serif;
+  --font: "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
   --shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.85);
   --shadow-gold: 0 12px 34px -14px rgba(201, 162, 39, 0.45);
 }
@@ -94,9 +99,10 @@ button { font: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 21px;
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.005em;
 }
 
 .brand-mark {
@@ -255,6 +261,181 @@ button { font: inherit; }
   font-size: 11px;
 }
 
+.plan-flag {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.check-list li { display: flex; align-items: center; gap: 8px; }
+
+.check-list li::before {
+  content: "";
+  flex: none;
+  width: 11px;
+  height: 6px;
+  border-left: 1.8px solid var(--gold);
+  border-bottom: 1.8px solid var(--gold);
+  transform: rotate(-45deg) translateY(-2px);
+}
+
+/* ---------- Controles de formulário ---------- */
+
+.field { margin-bottom: 22px; }
+.field:last-child { margin-bottom: 0; }
+
+.field > label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.field > label small { color: var(--text-dim); font-weight: 400; }
+.field .hint { margin: 8px 0 0; color: var(--text-dim); font-size: 12.5px; }
+.field .hint a { color: var(--gold-soft); }
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.field select {
+  appearance: none;
+  padding-right: 40px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 19px center, right 14px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.field textarea { min-height: 108px; resize: vertical; }
+.field input::placeholder, .field textarea::placeholder { color: var(--text-dim); }
+
+.field input:focus, .field select:focus, .field textarea:focus,
+.btn:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--gold-deep);
+}
+
+.field input:disabled, .field select:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.field-row > .field { margin-bottom: 0; }
+
+.choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.choice-row button {
+  padding: 9px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.choice-row button:hover { border-color: var(--gold-deep); color: var(--text); }
+
+.choice-row button[aria-pressed="true"] {
+  border-color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  font-weight: 600;
+}
+
+/* Interruptor */
+
+.switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.switch:last-child { border-bottom: 0; padding-bottom: 0; }
+.switch-text { flex: 1; min-width: 0; }
+.switch-text strong { display: block; font-size: 14px; font-weight: 600; }
+.switch-text span { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; }
+
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+
+.switch-track {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--text-dim);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.switch input:checked + .switch-track {
+  border-color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(20px);
+  background: var(--on-gold);
+}
+
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--gold-deep); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+:root[data-anim="off"] * { transition: none !important; animation: none !important; }
+
 /* CorretoresAI — landing page */
 
 /* ---------- Header ---------- */
@@ -307,10 +488,11 @@ button { font: inherit; }
 
 .hero-title {
   margin: 0 0 24px;
-  font-size: clamp(34px, 3.5vw, 51px);
-  line-height: 1.12;
-  letter-spacing: -0.03em;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 3.8vw, 55px);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  font-weight: 700;
 }
 
 .hero-title .accent { color: var(--gold-soft); }
@@ -327,25 +509,6 @@ button { font: inherit; }
   flex-wrap: wrap;
   gap: 14px;
   margin: 32px 0 20px;
-}
-
-.check-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.check-list li { display: flex; align-items: center; gap: 8px; }
-
-.check-list li::before {
-  content: "";
-  width: 11px;
-  height: 6px;
-  border-left: 1.8px solid var(--gold);
-  border-bottom: 1.8px solid var(--gold);
-  transform: rotate(-45deg) translateY(-2px);
 }
 
 /* Mock da plataforma */
@@ -490,10 +653,12 @@ button { font: inherit; }
 
 .section-title {
   margin: 0 0 16px;
-  font-size: clamp(28px, 2.7vw, 39px);
-  line-height: 1.18;
-  letter-spacing: -0.025em;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: clamp(29px, 2.9vw, 42px);
+  line-height: 1.16;
+  letter-spacing: -0.012em;
+  font-weight: 700;
+  text-wrap: balance;
 }
 
 .section-title .accent { color: var(--gold-soft); }
@@ -595,23 +760,8 @@ button { font: inherit; }
   box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.18), var(--shadow);
 }
 
-.plan-flag {
-  position: absolute;
-  top: -13px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
-  color: var(--on-gold);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-}
-
 .plan-head { display: flex; align-items: center; gap: 14px; }
-.plan-head h3 { margin: 0; font-size: 19px; font-weight: 700; }
+.plan-head h3 { margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 700; }
 
 .plan-note {
   margin: 16px 0 22px;
@@ -624,9 +774,11 @@ button { font: inherit; }
   align-items: baseline;
   gap: 6px;
   margin-bottom: 24px;
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-size: 37px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
 }
 
 .plan-price span {
@@ -915,13 +1067,105 @@ button { font: inherit; }
 
 .view-head h1 {
   margin: 0 0 6px;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
 }
 
 .view-head p { margin: 0; color: var(--text-muted); font-size: 14.5px; }
 .view-head .btn { margin-left: auto; }
+.view-head .head-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; }
+.view-head .head-actions .btn { margin-left: 0; }
+
+/* ---------- Filtros da biblioteca ---------- */
+
+.filtros {
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.busca { position: relative; margin-bottom: 16px; }
+
+.busca svg {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: var(--text-dim);
+}
+
+.busca input {
+  width: 100%;
+  padding: 13px 16px 13px 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.busca input::placeholder { color: var(--text-dim); }
+.busca input:focus { outline: none; border-color: var(--gold-deep); }
+
+.filtros-linha {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.filtros-linha select {
+  width: 100%;
+  padding: 11px 38px 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 18px center, right 13px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.filtros-linha select:focus { outline: none; border-color: var(--gold-deep); }
+
+.filtros-rodape {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.filtros-rodape p {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.filtros-rodape svg { width: 15px; height: 15px; color: var(--gold-soft); }
+.filtros-rodape .link { margin-left: auto; font-size: 13px; }
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
 
 /* Cartões de métrica */
 
@@ -1126,61 +1370,6 @@ button { font: inherit; }
   background: var(--surface);
 }
 
-.field { margin-bottom: 22px; }
-.field:last-child { margin-bottom: 0; }
-
-.field > label {
-  display: block;
-  margin-bottom: 9px;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.field > label small { color: var(--text-dim); font-weight: 400; }
-
-.field .hint { margin: 8px 0 0; color: var(--text-dim); font-size: 12.5px; }
-
-.field input,
-.field select,
-.field textarea {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-}
-
-.field textarea { min-height: 108px; resize: vertical; }
-.field input::placeholder, .field textarea::placeholder { color: var(--text-dim); }
-.field input:focus, .field select:focus, .field textarea:focus {
-  outline: none;
-  border-color: var(--gold-deep);
-}
-
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-
-.choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
-
-.choice-row button {
-  padding: 9px 20px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: 13.5px;
-  cursor: pointer;
-}
-
-.choice-row button[aria-pressed="true"] {
-  border-color: transparent;
-  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
-  color: var(--on-gold);
-  font-weight: 600;
-}
-
 .generate-btn {
   width: 100%;
   margin-top: 28px;
@@ -1341,20 +1530,23 @@ button { font: inherit; }
 
 .kan-drop.is-over { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--gold-deep); }
 
-.kan-card {
+.content-card {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
-  cursor: grab;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-.kan-card:active { cursor: grabbing; }
-.kan-card.is-dragging { opacity: 0.4; }
+.content-card:hover { border-color: var(--border); transform: translateY(-2px); }
+.kan-drop .content-card { cursor: grab; }
+.kan-drop .content-card:active { cursor: grabbing; }
+.content-card.is-dragging { opacity: 0.4; }
 
-.kan-cover {
+.card-cover {
   position: relative;
-  height: 96px;
+  height: 104px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -1362,38 +1554,78 @@ button { font: inherit; }
   background: linear-gradient(135deg, var(--surface-3), var(--surface-2));
 }
 
-.kan-cover.t-apartamentos { background: linear-gradient(135deg, #2b3138, #1d2228); }
-.kan-cover.t-casas { background: linear-gradient(135deg, #38312a, #241f1a); }
-.kan-cover.t-terrenos { background: linear-gradient(135deg, #2c3329, #1e231c); }
-.kan-cover.t-studios { background: linear-gradient(135deg, #2a303a, #1c2027); }
-.kan-cover.t-comercial { background: linear-gradient(135deg, #313138, #212126); }
-.kan-cover.t-lancamentos { background: linear-gradient(135deg, #34303c, #222028); }
+.card-cover.t-apartamentos { background: linear-gradient(135deg, #2b3138, #1d2228); }
+.card-cover.t-casas { background: linear-gradient(135deg, #38312a, #241f1a); }
+.card-cover.t-terrenos { background: linear-gradient(135deg, #2c3329, #1e231c); }
+.card-cover.t-studios { background: linear-gradient(135deg, #2a303a, #1c2027); }
+.card-cover.t-comercial { background: linear-gradient(135deg, #313138, #212126); }
+.card-cover.t-lancamentos { background: linear-gradient(135deg, #34303c, #222028); }
+.card-cover.t-condominios { background: linear-gradient(135deg, #2a3630, #1c2521); }
+.card-cover.t-altopadrao { background: linear-gradient(135deg, #3a332c, #26211b); }
+.card-cover.t-rural { background: linear-gradient(135deg, #2f3428, #20241b); }
 
-.kan-format {
+.card-format {
   align-self: flex-start;
   padding: 3px 10px;
   border-radius: 7px;
   background: rgba(10, 12, 13, 0.68);
-  color: var(--text);
+  color: #f3f5f6;
   font-size: 11px;
   font-weight: 600;
 }
 
-.kan-area { color: var(--text-muted); font-size: 11.5px; }
+.card-cover-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: rgba(243, 245, 246, 0.72);
+  font-size: 11.5px;
+}
 
-.kan-body { padding: 14px 15px 15px; }
+.card-body { padding: 14px 15px 15px; }
 
-.kan-body h4 {
+.card-title { display: flex; align-items: flex-start; gap: 8px; }
+
+.card-title h4 {
+  flex: 1;
   margin: 0 0 10px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   line-height: 1.35;
 }
 
-.kan-when { color: var(--text-dim); font-size: 12.5px; }
-.kan-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+.card-menu {
+  flex: none;
+  width: 26px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
 
-.kan-foot {
+.card-menu:hover { background: var(--surface-2); color: var(--text); }
+
+.card-when { margin: 0; color: var(--text-dim); font-size: 12.5px; }
+
+.card-resumo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+
+.card-foot {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -1403,7 +1635,39 @@ button { font: inherit; }
   color: var(--text-muted);
 }
 
-.kan-foot .avatar { width: 24px; height: 24px; font-size: 10px; }
+.card-foot .avatar { width: 24px; height: 24px; font-size: 10px; }
+
+/* Menu flutuante dos cartões */
+
+.pop-menu {
+  position: absolute;
+  z-index: 70;
+  min-width: 226px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.pop-menu button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pop-menu button svg { width: 15px; height: 15px; flex: none; }
+.pop-menu button:hover { background: var(--surface-2); color: var(--text); }
+.pop-menu button.is-danger { color: #ff9b9b; }
 
 .badge {
   display: inline-flex;
@@ -1422,6 +1686,323 @@ button { font: inherit; }
 .badge.s-publicado { color: var(--ok); }
 
 .is-hidden { display: none !important; }
+
+/* ---------- Histórico ---------- */
+
+.timeline { display: grid; gap: 22px; margin-top: 24px; }
+
+.tl-grupo {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.tl-grupo > header {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.tl-grupo ul { display: grid; }
+
+.tl-grupo li {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tl-grupo li:last-child { border-bottom: 0; }
+.tl-grupo li .icon-tile { width: 32px; height: 32px; border-radius: 999px; }
+.tl-grupo li .icon-tile svg { width: 15px; height: 15px; }
+.tl-grupo li p { flex: 1; margin: 0; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.tl-grupo li time { color: var(--text-dim); font-size: 12.5px; white-space: nowrap; }
+
+/* ---------- Planos dentro do app ---------- */
+
+.planos-app {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.plano-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 26px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+
+.plano-card.is-popular { border-color: var(--gold-deep); }
+.plano-card.is-ativo { border-color: var(--gold-deep); box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.2); }
+
+.plano-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+
+.plano-topo h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.plano-atual { color: var(--gold-soft); font-size: 12px; font-weight: 600; }
+
+.plano-resumo { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+.plano-preco {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 24px;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+
+.plano-preco span { color: var(--text-dim); font-family: var(--font); font-size: 13.5px; font-weight: 500; }
+
+.plano-lista { display: grid; gap: 13px; margin-bottom: 28px; }
+
+.plano-lista li {
+  display: flex;
+  gap: 11px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.plano-lista svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--gold); }
+
+.plano-card .btn { margin-top: auto; }
+.plano-card .btn[disabled] { opacity: 0.6; cursor: default; transform: none; }
+
+.planos-nota { margin: 30px 0 0; text-align: center; color: var(--text-dim); font-size: 13px; }
+
+/* ---------- Configurações ---------- */
+
+.config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.config-col { display: grid; gap: 20px; }
+
+/* ---------- Perfil ---------- */
+
+.perfil-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.perfil-col { display: grid; gap: 20px; }
+.perfil-cartao .panel-body { display: grid; justify-items: center; text-align: center; gap: 4px; padding: 30px 24px; }
+
+.avatar-xl {
+  width: 84px;
+  height: 84px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  font-size: 27px;
+  letter-spacing: 0.02em;
+}
+
+.perfil-cartao h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.perfil-cartao p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+.perfil-nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: 100%;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.perfil-nums strong { display: block; font-size: 19px; font-weight: 700; }
+.perfil-nums span { color: var(--text-dim); font-size: 12px; }
+
+.aviso {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.aviso svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-soft); }
+
+.plan-up {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--gold-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.side-links button {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-links button svg { width: 17px; height: 17px; flex: none; }
+.side-links button:hover { color: var(--text); background: var(--surface); }
+
+@media (max-width: 1100px) {
+  .planos-app { grid-template-columns: 1fr; }
+  .config-grid, .perfil-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Login e cadastro ---------- */
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 56px;
+  align-items: center;
+  max-width: 1120px;
+  min-height: 100vh;
+  margin-inline: auto;
+  padding: 48px 24px;
+}
+
+.auth-tema { position: fixed; top: 22px; right: 24px; z-index: 10; }
+
+.auth-card {
+  padding: 34px 36px 36px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-card .brand { margin-bottom: 26px; }
+
+.auth-tabs { display: flex; width: 100%; margin-bottom: 28px; }
+.auth-tabs button { flex: 1; justify-content: center; }
+
+.auth-card h1 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+
+.auth-sub { margin: 0 0 26px; color: var(--text-muted); font-size: 14.5px; }
+
+.input-acao { position: relative; }
+.input-acao input { padding-right: 46px; }
+
+.input-acao button {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.input-acao button svg { width: 17px; height: 17px; }
+.input-acao button:hover { color: var(--text); }
+.input-acao button.is-on { color: var(--gold-soft); }
+
+.auth-erro {
+  margin: 0 0 18px;
+  padding: 11px 15px;
+  border: 1px solid #7f2b2b;
+  border-radius: 10px;
+  background: rgba(127, 43, 43, 0.14);
+  color: #ffb4b4;
+  font-size: 13.5px;
+}
+
+.auth-alt { margin: 18px 0 0; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+
+.link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--gold-soft);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-demo {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.auth-demo p { margin: 0 0 12px; color: var(--text-dim); font-size: 13px; text-align: center; }
+
+.auth-lado h2 {
+  margin: 20px 0 26px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+.auth-check { flex-direction: column; gap: 14px; align-items: flex-start; font-size: 14px; }
+.auth-check li { align-items: flex-start; }
+.auth-check li::before { margin-top: 7px; }
+
+.auth-nota { margin: 30px 0 0; color: var(--text-dim); font-size: 12.5px; }
+
+@media (max-width: 900px) {
+  .auth { grid-template-columns: 1fr; gap: 36px; padding-top: 72px; }
+  .auth-lado { order: -1; }
+  .auth-lado h2 { font-size: 24px; }
+}
 
 /* ---------- Avisos ---------- */
 
@@ -1673,6 +2254,9 @@ button { font: inherit; }
 <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
 <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
 <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
 </svg>
 
 <div data-landing>
@@ -1696,11 +2280,11 @@ button { font: inherit; }
         <svg class="icon-sun"><use href="#i-sun" /></svg>
         <svg class="icon-moon"><use href="#i-moon" /></svg>
       </button>
-      <a class="btn btn-quiet" href="app/dashboard.html">
+      <a class="btn btn-quiet" href="app/entrar.html">
         <svg><use href="#i-login" /></svg>
         Entrar
       </a>
-      <a class="btn btn-primary" href="app/central.html">Começar grátis</a>
+      <a class="btn btn-primary" href="app/entrar.html?modo=cadastro">Começar grátis</a>
     </div>
   </div>
 </header>
@@ -1728,7 +2312,7 @@ button { font: inherit; }
         </p>
 
         <div class="hero-cta">
-          <a class="btn btn-primary btn-lg" href="app/central.html">
+          <a class="btn btn-primary btn-lg" href="app/entrar.html?modo=cadastro">
             Começar grátis
             <svg><use href="#i-arrow" /></svg>
           </a>
@@ -1854,7 +2438,7 @@ button { font: inherit; }
           <svg><use href="#i-check-circle" /></svg>
           Ao aprovar, o conteúdo entra no calendário, vira card no Kanban e atualiza o dashboard.
         </p>
-        <a class="btn btn-primary" href="app/central.html">
+        <a class="btn btn-primary" href="app/entrar.html?modo=cadastro">
           Experimentar agora
           <svg><use href="#i-arrow" /></svg>
         </a>
@@ -1921,65 +2505,12 @@ button { font: inherit; }
         </p>
       </div>
 
-      <div class="plans">
-        <article class="plan">
-          <div class="plan-head">
-            <span class="icon-tile"><svg><use href="#i-sparkle" /></svg></span>
-            <h3>Gratuito</h3>
-          </div>
-          <p class="plan-note">Perfeito para testar e conhecer a plataforma.</p>
-          <p class="plan-price">R$ 0 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>5 gerações de conteúdo com IA por mês</li>
-            <li>Acesso completo à Central de Planejamento (Calendário e Kanban)</li>
-            <li>Gerador de ideias e textos para legendas</li>
-            <li>Exportação de texto simples</li>
-          </ul>
-          <button class="btn btn-outline btn-block" type="button" data-plano="gratuito">Começar Grátis</button>
-        </article>
+      <div class="plans" data-plans></div>
 
-        <article class="plan is-popular">
-          <span class="plan-flag">MAIS POPULAR</span>
-          <div class="plan-head">
-            <span class="icon-tile is-gold"><svg><use href="#i-rocket" /></svg></span>
-            <h3>Corretor Pro</h3>
-          </div>
-          <p class="plan-note">Para corretores que buscam consistência e mais vendas.</p>
-          <p class="plan-price">R$ 29,90 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>40 gerações de conteúdo com IA por mês</li>
-            <li>Acesso ao Estágio do funil de conteúdo</li>
-            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
-            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
-            <li>Filtro por funil personalizado</li>
-            <li>Suporte prioritário via WhatsApp</li>
-          </ul>
-          <button class="btn btn-primary btn-block" type="button" data-plano="pro">Quero Acelerar Minhas Vendas</button>
-        </article>
-
-        <article class="plan">
-          <div class="plan-head">
-            <span class="icon-tile"><svg><use href="#i-crown" /></svg></span>
-            <h3>Ilimitado</h3>
-          </div>
-          <p class="plan-note">Para alta performance, equipes e imobiliárias.</p>
-          <p class="plan-price">R$ 49,90 <span>/mês</span></p>
-          <ul class="plan-features">
-            <li>Gerações de conteúdo 100% ILIMITADAS</li>
-            <li>Acesso ao Estágio do funil de conteúdo</li>
-            <li>Filtro por funil personalizado</li>
-            <li>Roteiros estruturados para Reels, TikTok e Stories</li>
-            <li>Gerador de Carrosséis e anúncios de Tráfego Pago</li>
-            <li>Gerador automático de legenda por link/foto do imóvel</li>
-            <li>Exportação e agendamento em 1 clique</li>
-            <li>Acesso antecipado a novas ferramentas</li>
-            <li>Suporte VIP individual</li>
-          </ul>
-          <button class="btn btn-outline btn-block" type="button" data-plano="ilimitado">Desbloquear Acesso Ilimitado</button>
-        </article>
-      </div>
-
-      <p class="plans-note">Cancele a qualquer momento. Sem fidelidade ou taxas escondidas.</p>
+      <p class="plans-note">
+        Cancele a qualquer momento, direto no painel. Sem fidelidade, sem multa e
+        sem taxa escondida. A cota de gerações renova na virada do mês.
+      </p>
     </div>
   </section>
 
@@ -2005,7 +2536,7 @@ button { font: inherit; }
 <template data-tela="dashboard"><main class="view">
   <div class="view-head">
     <div>
-      <h1>Olá, Marina</h1>
+      <h1 data-saudacao>Olá</h1>
       <p>Este é o resumo da sua operação de conteúdo. Tudo aqui atualiza em tempo real.</p>
     </div>
     <a class="btn btn-primary" href="central.html">
@@ -2180,159 +2711,472 @@ button { font: inherit; }
   <div class="view-head">
     <div>
       <h1>Biblioteca</h1>
-      <p>Busque, filtre e clique em qualquer card para abrir o roteiro completo.</p>
+      <p>Todo o conteúdo que você já criou, com busca e filtros por categoria, data, formato, funil e status.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-outline" type="button" data-exportar>
+        <svg><use href="#i-download" /></svg>
+        Exportar
+      </button>
+      <a class="btn btn-primary" href="central.html">
+        <svg><use href="#i-plus" /></svg>
+        Criar conteúdo
+      </a>
+    </div>
+  </div>
+
+  <div class="filtros">
+    <div class="busca">
+      <svg><use href="#i-search" /></svg>
+      <input data-search placeholder="Buscar por título, gancho, legenda, tag ou hashtag…" />
+    </div>
+
+    <div class="filtros-linha">
+      <select data-filtro="area" aria-label="Categoria"></select>
+      <select data-filtro="periodo" aria-label="Data">
+        <option value="">Qualquer data</option>
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="mes">Este mês</option>
+        <option value="futuro">Próximos dias</option>
+      </select>
+      <select data-filtro="format" aria-label="Formato"></select>
+      <select data-filtro="funnel" aria-label="Funil"></select>
+      <select data-filtro="status" aria-label="Status"></select>
+    </div>
+
+    <div class="filtros-rodape">
+      <p><svg><use href="#i-filter" /></svg> <span data-count></span></p>
+      <button class="link" type="button" data-limpar>Limpar filtros</button>
+    </div>
+  </div>
+
+  <div class="cards-grid" data-library></div>
+</main></template>
+<template data-tela="historico"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Histórico</h1>
+      <p>Cada criação, aprovação, edição e mudança de status registrada em ordem cronológica.</p>
     </div>
     <a class="btn btn-primary" href="central.html">
       <svg><use href="#i-plus" /></svg>
-      Criar novo conteúdo
+      Criar conteúdo
     </a>
   </div>
 
-  <div class="form-card" style="max-width:none;margin-bottom:24px">
-    <div class="field field-row" style="margin-bottom:18px">
-      <div>
-        <label for="busca">Buscar</label>
-        <input id="busca" data-search placeholder="Título, tag ou bairro…" />
-      </div>
-      <div>
-        <label for="filtro-area">Área de atuação</label>
-        <select id="filtro-area" data-filter="area"></select>
-      </div>
-    </div>
-
-    <div class="field" style="margin-bottom:18px">
-      <label>Formato</label>
-      <div class="choice-row" data-filter-row="format">
-        <button type="button" aria-pressed="true" data-value="">Todos</button>
-        <button type="button" aria-pressed="false" data-value="Reels">Reels</button>
-        <button type="button" aria-pressed="false" data-value="Carrossel">Carrossel</button>
-        <button type="button" aria-pressed="false" data-value="Stories">Stories</button>
-        <button type="button" aria-pressed="false" data-value="TikTok">TikTok</button>
-      </div>
-    </div>
-
-    <div class="field field-row">
-      <div>
-        <label>Status</label>
-        <div class="choice-row" data-filter-row="status">
-          <button type="button" aria-pressed="true" data-value="">Todos</button>
-          <button type="button" aria-pressed="false" data-value="rascunho">Rascunho</button>
-          <button type="button" aria-pressed="false" data-value="aprovado">Aprovado</button>
-          <button type="button" aria-pressed="false" data-value="agendado">Agendado</button>
-          <button type="button" aria-pressed="false" data-value="publicado">Publicado</button>
-        </div>
-      </div>
-      <div>
-        <label for="ordem">Ordenar por</label>
-        <select id="ordem" data-order>
-          <option value="recentes">Data — mais recentes</option>
-          <option value="antigos">Data — mais antigos</option>
-          <option value="titulo">Título (A–Z)</option>
-        </select>
-      </div>
-    </div>
+  <div class="segmented" data-abas>
+    <button type="button" data-aba="tudo" aria-pressed="true">Tudo</button>
+    <button type="button" data-aba="publicacoes" aria-pressed="false">Publicações</button>
+    <button type="button" data-aba="edicoes" aria-pressed="false">Edições</button>
   </div>
 
-  <div style="display:flex;align-items:center;gap:16px;margin:0 0 16px">
-    <p class="hint" style="margin:0" data-count></p>
-    <button class="btn btn-quiet" type="button" data-limpar>Limpar filtros</button>
-  </div>
-
-  <div class="kanban" data-library></div>
-
-  <section id="historico" style="margin-top:52px">
-    <div class="view-head">
-      <div>
-        <h1 style="font-size:22px">Histórico</h1>
-        <p>Cada geração, mudança de data e movimento de card fica registrado aqui.</p>
-      </div>
-    </div>
-    <section class="panel">
-      <div class="panel-body">
-        <ul class="activity" style="max-height:420px" data-activity></ul>
-      </div>
-    </section>
-  </section>
+  <div class="timeline" data-timeline></div>
 </main></template>
-<template data-tela="perfil"><main class="view">
+<template data-tela="planos"><main class="view">
   <div class="view-head">
     <div>
-      <h1>Perfil</h1>
-      <p>O que você preenche aqui a IA usa como contexto em todo conteúdo gerado.</p>
+      <h1>Planos</h1>
+      <p>Comece de graça e evolua quando o conteúdo virar rotina. A troca é imediata e sem burocracia.</p>
     </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar conteúdo
+    </a>
   </div>
 
-  <form class="form-card" data-perfil>
-    <div class="field field-row">
-      <div>
-        <label for="nome">Nome</label>
-        <input id="nome" name="nome" />
-      </div>
-      <div>
-        <label for="creci">CRECI</label>
-        <input id="creci" name="creci" />
-      </div>
-    </div>
+  <div class="planos-app" data-planos></div>
 
-    <div class="field field-row">
-      <div>
-        <label for="cidade">Cidade de atuação</label>
-        <input id="cidade" name="cidade" />
-      </div>
-      <div>
-        <label for="instagram">Instagram</label>
-        <input id="instagram" name="instagram" />
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="tom">Como você quer soar nos conteúdos</label>
-      <textarea id="tom" name="tom"></textarea>
-      <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
-    </div>
-
-    <div class="field">
-      <label>Áreas em que você atua</label>
-      <div class="choice-row" data-areas></div>
-      <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Salvar perfil</button>
-  </form>
-
-  <section id="configuracoes" style="margin-top:52px">
+  <p class="planos-nota">
+    A cota de gerações por IA é mensal e zera na virada do mês. O plano Ilimitado não tem cota.
+  </p>
+</main></template>
+<template data-tela="perfil"><main class="view">
+  <form data-perfil>
     <div class="view-head">
       <div>
-        <h1 style="font-size:22px">Configurações</h1>
-        <p>Aparência, plano e dados da conta.</p>
+        <h1>Perfil</h1>
+        <p>Estes dados assinam os seus conteúdos e alimentam a IA na hora de escrever.</p>
       </div>
+      <button class="btn btn-primary" type="submit">
+        <svg><use href="#i-check-circle" /></svg>
+        Salvar alterações
+      </button>
     </div>
 
-    <div class="form-card">
-      <div class="field">
-        <label>Tema</label>
-        <div class="choice-row">
-          <button type="button" data-theme-toggle>Alternar entre claro e escuro</button>
+    <div class="perfil-grid">
+      <aside class="panel perfil-cartao">
+        <div class="panel-body">
+          <span class="avatar avatar-xl" data-avatar></span>
+          <h2 data-nome></h2>
+          <p data-creci></p>
+          <div class="perfil-nums">
+            <div><strong data-total></strong><span>Conteúdos</span></div>
+            <div><strong data-plano></strong><span>Plano atual</span></div>
+          </div>
         </div>
-        <p class="hint">A preferência fica salva neste navegador.</p>
-      </div>
+      </aside>
 
-      <div class="field">
-        <label>Plano atual</label>
-        <div class="choice-row" data-planos></div>
-        <p class="hint" data-plano-nota></p>
-      </div>
+      <div class="perfil-col">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <strong>Dados pessoais</strong>
+              <span>Como você aparece nos cards e nas legendas</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field field-row">
+              <div class="field">
+                <label for="nome">Nome completo *</label>
+                <input id="nome" name="nome" required />
+              </div>
+              <div class="field">
+                <label for="creci">CRECI</label>
+                <input id="creci" name="creci" placeholder="CRECI-SP 000.000" />
+              </div>
+            </div>
 
-      <div class="field">
-        <label>Dados da demonstração</label>
-        <div class="choice-row">
-          <button type="button" data-reset>Restaurar o acervo original</button>
-          <button type="button" data-exportar>Copiar meus dados em JSON</button>
-        </div>
-        <p class="hint">Restaurar desfaz tudo o que você criou, editou e arrastou.</p>
+            <div class="field field-row">
+              <div class="field">
+                <label for="email">E-mail</label>
+                <input id="email" name="email" type="email" disabled />
+              </div>
+              <div class="field">
+                <label for="telefone">Telefone</label>
+                <input id="telefone" name="telefone" placeholder="(11) 90000-0000" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <strong>Atuação</strong>
+              <span>A cidade entra nos títulos, nas legendas e nas hashtags geradas</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field field-row">
+              <div class="field">
+                <label for="cidade">Cidade de atuação *</label>
+                <input id="cidade" name="cidade" required />
+                <p class="hint">Usada em frases como "construa autoridade na sua cidade".</p>
+              </div>
+              <div class="field">
+                <label for="imobiliaria">Imobiliária</label>
+                <input id="imobiliaria" name="imobiliaria" placeholder="Autônomo, se for o caso" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="bio">Bio</label>
+              <textarea id="bio" name="bio" placeholder="Em uma frase: o que você vende e para quem."></textarea>
+              <p class="hint">Aparece nos materiais exportados e nas assinaturas.</p>
+            </div>
+
+            <div class="field">
+              <label for="instagram">Instagram</label>
+              <input id="instagram" name="instagram" placeholder="@seuperfil" />
+            </div>
+
+            <div class="field">
+              <label>Áreas em que você atua</label>
+              <div class="choice-row" data-areas></div>
+              <p class="hint">A primeira selecionada vira o padrão da Central de Conteúdo.</p>
+            </div>
+
+            <div class="field">
+              <label for="tom">Como você quer soar nos conteúdos</label>
+              <textarea id="tom" name="tom"></textarea>
+              <p class="hint">Esse tom entra na sugestão de gravação de cada roteiro gerado.</p>
+            </div>
+
+            <p class="aviso">
+              <svg><use href="#i-check-circle" /></svg>
+              Alterar nome e cidade muda apenas os conteúdos gerados a partir de agora —
+              o que já está no calendário permanece como está.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
+  </form>
+</main></template>
+<template data-tela="configuracoes"><main class="view">
+  <div class="view-head">
+    <div>
+      <h1>Configurações</h1>
+      <p>Defina os padrões da sua rotina para criar conteúdo em menos cliques.</p>
+    </div>
+    <a class="btn btn-primary" href="central.html">
+      <svg><use href="#i-plus" /></svg>
+      Criar conteúdo
+    </a>
+  </div>
+
+  <div class="config-grid" data-config>
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <strong>Padrões de criação</strong>
+          <span>Já vêm selecionados ao abrir a Central de Conteúdo</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="areaPadrao">Área de atuação padrão</label>
+          <select id="areaPadrao" name="areaPadrao"></select>
+        </div>
+
+        <div class="field field-row">
+          <div class="field">
+            <label for="funilPadrao">Funil padrão</label>
+            <select id="funilPadrao" name="funilPadrao"></select>
+          </div>
+          <div class="field">
+            <label for="formatoPadrao">Formato padrão</label>
+            <select id="formatoPadrao" name="formatoPadrao"></select>
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div class="field">
+            <label for="horarioPadrao">Horário padrão de publicação</label>
+            <select id="horarioPadrao" name="horarioPadrao"></select>
+          </div>
+          <div class="field">
+            <label for="semanaComeca">Semana começa em</label>
+            <select id="semanaComeca" name="semanaComeca">
+              <option value="0">Domingo</option>
+              <option value="1">Segunda-feira</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="config-col">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Aparência</strong>
+            <span>Vale para a landing e para a área logada</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="field" style="margin:0">
+            <label for="tema">Tema</label>
+            <select id="tema" data-tema>
+              <option value="dark">Modo escuro</option>
+              <option value="light">Modo claro</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Fluxo de trabalho</strong></div>
+        </div>
+        <div class="panel-body">
+          <label class="switch">
+            <input type="checkbox" name="agendarAoAprovar" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Agendar ao aprovar</strong>
+              <span>Ao aprovar um conteúdo, ele já entra no calendário como Agendado. Se desligado, fica como Aprovado até você definir a data.</span>
+            </span>
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="reduzirAnimacoes" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Reduzir animações</strong>
+              <span>Desliga as transições de entrada das páginas, mantendo apenas o essencial.</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><strong>Notificações</strong></div>
+        </div>
+        <div class="panel-body">
+          <label class="switch">
+            <input type="checkbox" name="resumoSemanal" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Resumo semanal por e-mail</strong>
+              <span>Um panorama do que foi publicado e do que vem pela frente, toda segunda.</span>
+            </span>
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="lembretes" />
+            <span class="switch-track"></span>
+            <span class="switch-text">
+              <strong>Lembretes de publicação</strong>
+              <span>Um aviso no navegador quando chegar o horário de publicar.</span>
+            </span>
+          </label>
+
+          <p class="hint" style="margin-top:16px">
+            As notificações ficam salvas na sua conta, mas ainda não são disparadas —
+            isso depende do envio pelo servidor.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <strong>Conta e dados</strong>
+            <span data-conta-email></span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="choice-row">
+            <button type="button" data-senha>Trocar senha</button>
+            <button type="button" data-exemplos>Carregar conteúdos de exemplo</button>
+            <button type="button" data-limpar-conteudo>Apagar todo o conteúdo</button>
+            <button type="button" data-excluir-conta>Excluir minha conta</button>
+          </div>
+          <p class="hint">Tudo fica salvo apenas neste navegador.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main></template>
+<template data-tela="entrar"><button class="theme-btn auth-tema" type="button" data-theme-toggle aria-label="Alternar tema">
+  <svg class="icon-sun"><use href="#i-sun" /></svg>
+  <svg class="icon-moon"><use href="#i-moon" /></svg>
+</button>
+<main class="auth" data-auth>
+  <section class="auth-card">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark"><svg><use href="#i-building" /></svg></span>
+      <span class="brand-stack">
+        <span>Corretores<span class="brand-ai">AI</span></span>
+        <span class="brand-tag">Central de conteúdo imobiliário</span>
+      </span>
+    </a>
+
+    <div class="segmented auth-tabs" data-modo>
+      <button type="button" data-aba="entrar" aria-pressed="true">Entrar</button>
+      <button type="button" data-aba="cadastro" aria-pressed="false">Criar conta</button>
+    </div>
+
+    <!-- ---------- Entrar ---------- -->
+    <form data-form="entrar">
+      <h1>Bem-vindo de volta</h1>
+      <p class="auth-sub">Entre para continuar de onde parou.</p>
+
+      <div class="field">
+        <label for="e-email">E-mail</label>
+        <input id="e-email" name="email" type="email" autocomplete="email" placeholder="voce@imobiliaria.com.br" required />
+      </div>
+
+      <div class="field">
+        <label for="e-senha">Senha</label>
+        <div class="input-acao">
+          <input id="e-senha" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+          <button type="button" data-ver-senha aria-label="Mostrar senha"><svg><use href="#i-eye" /></svg></button>
+        </div>
+      </div>
+
+      <p class="auth-erro" data-erro hidden></p>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Entrar</button>
+
+      <p class="auth-alt">
+        Não tem conta?
+        <button class="link" type="button" data-ir="cadastro">Criar grátis</button>
+      </p>
+
+      <div class="auth-demo">
+        <p>Quer só olhar sem criar nada?</p>
+        <button class="btn btn-outline btn-block" type="button" data-demo>Entrar na conta de demonstração</button>
+      </div>
+    </form>
+
+    <!-- ---------- Criar conta ---------- -->
+    <form data-form="cadastro" hidden>
+      <h1>Comece grátis</h1>
+      <p class="auth-sub">5 gerações por mês, sem cartão de crédito.</p>
+
+      <div class="field">
+        <label for="c-nome">Nome completo</label>
+        <input id="c-nome" name="nome" autocomplete="name" placeholder="Como você assina seus conteúdos" required />
+      </div>
+
+      <div class="field field-row">
+        <div class="field">
+          <label for="c-email">E-mail</label>
+          <input id="c-email" name="email" type="email" autocomplete="email" placeholder="voce@imobiliaria.com.br" required />
+        </div>
+        <div class="field">
+          <label for="c-cidade">Cidade de atuação</label>
+          <input id="c-cidade" name="cidade" placeholder="Campinas" required />
+        </div>
+      </div>
+
+      <div class="field field-row">
+        <div class="field">
+          <label for="c-creci">CRECI <small>(opcional)</small></label>
+          <input id="c-creci" name="creci" placeholder="CRECI-SP 000.000" />
+        </div>
+        <div class="field">
+          <label for="c-telefone">WhatsApp <small>(opcional)</small></label>
+          <input id="c-telefone" name="telefone" placeholder="(11) 90000-0000" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="c-senha">Senha</label>
+        <div class="input-acao">
+          <input id="c-senha" name="senha" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" required />
+          <button type="button" data-ver-senha aria-label="Mostrar senha"><svg><use href="#i-eye" /></svg></button>
+        </div>
+        <p class="hint">Guardamos só o hash da senha, neste navegador.</p>
+      </div>
+
+      <label class="switch" style="border:0;padding:6px 0 16px">
+        <input type="checkbox" name="exemplos" checked />
+        <span class="switch-track"></span>
+        <span class="switch-text">
+          <strong>Começar com conteúdos de exemplo</strong>
+          <span>Enche o calendário e o Kanban para você ver a plataforma cheia. Dá para limpar depois.</span>
+        </span>
+      </label>
+
+      <p class="auth-erro" data-erro hidden></p>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Criar minha conta</button>
+
+      <p class="auth-alt">
+        Já tem conta?
+        <button class="link" type="button" data-ir="entrar">Entrar</button>
+      </p>
+    </form>
   </section>
+
+  <aside class="auth-lado">
+    <p class="chip"><svg><use href="#i-sparkle" /></svg> A plataforma</p>
+    <h2>Um mês inteiro de publicações planejado antes do café esfriar.</h2>
+    <ul class="check-list auth-check">
+      <li>Roteiro completo com gancho, corte por tempo, legenda e CTA</li>
+      <li>Calendário editorial e Kanban que se atualizam sozinhos</li>
+      <li>Biblioteca com busca por título, gancho, legenda ou hashtag</li>
+      <li>Histórico de cada geração, aprovação e mudança de data</li>
+    </ul>
+    <p class="auth-nota">
+      Os dados ficam neste navegador. Nada é enviado para servidor nenhum.
+    </p>
+  </aside>
 </main></template>
 
 <script>
@@ -2368,18 +3212,71 @@ const STATUSES = {
 const KANBAN = ["aprovado", "agendado", "publicado"];
 
 const PLANOS = {
-  gratuito: { label: "Gratuito", cota: 5, preco: "R$ 0" },
-  pro: { label: "Corretor Pro", cota: 40, preco: "R$ 29,90" },
-  ilimitado: { label: "Ilimitado", cota: Infinity, preco: "R$ 49,90" }
+  gratuito: {
+    id: "gratuito", label: "Gratuito", cota: 5, preco: "R$ 0", icone: "i-sparkle",
+    resumo: "Para conhecer a plataforma e publicar as primeiras semanas sem pagar nada.",
+    beneficios: [
+      "5 gerações de conteúdo com IA por mês",
+      "Acesso completo ao Calendário e ao Kanban",
+      "Roteiro com os 11 campos, pronto para gravar",
+      "Biblioteca com busca e filtros",
+      "Exportação do texto para copiar e colar"
+    ],
+    cta: "Começar Grátis"
+  },
+  pro: {
+    id: "pro", label: "Corretor Pro", cota: 40, preco: "R$ 39,90", icone: "i-rocket",
+    resumo: "Para quem já publica toda semana e quer o mês inteiro planejado de uma vez.",
+    beneficios: [
+      "40 gerações de conteúdo com IA por mês",
+      "Escolha da etapa do funil: topo, meio e fundo",
+      "Roteiros estruturados para Reels, TikTok, Stories e Carrossel",
+      "Gerador de Carrosséis e de anúncios de Tráfego Pago",
+      "Funil personalizado para campanhas e lançamentos",
+      "Histórico completo de cada alteração",
+      "Suporte prioritário via WhatsApp"
+    ],
+    cta: "Quero Acelerar Minhas Vendas"
+  },
+  ilimitado: {
+    id: "ilimitado", label: "Ilimitado", cota: Infinity, preco: "R$ 59,90", icone: "i-crown",
+    resumo: "Para equipes e imobiliárias que produzem todo dia e não podem esbarrar em cota.",
+    beneficios: [
+      "Gerações de conteúdo 100% ilimitadas",
+      "Tudo do Corretor Pro, sem teto mensal",
+      "Legenda gerada a partir do link ou da foto do imóvel",
+      "Exportação e agendamento em 1 clique",
+      "Vários corretores na mesma conta",
+      "Acesso antecipado a novas ferramentas",
+      "Suporte VIP individual"
+    ],
+    cta: "Desbloquear Acesso Ilimitado"
+  }
 };
 
 const PERFIL_PADRAO = {
-  nome: "Marina Duarte",
-  creci: "SP 123.456-F",
+  nome: "",
+  email: "",
+  creci: "",
+  telefone: "",
   cidade: "Campinas",
-  instagram: "@marinaduarte.imoveis",
+  imobiliaria: "",
+  instagram: "",
+  bio: "",
   tom: "Direta, sem jargão de imobiliária e sempre explicando o custo real de morar no imóvel.",
-  areas: ["Apartamentos", "Casas"]
+  areas: ["Apartamentos"]
+};
+
+const CONFIG_PADRAO = {
+  areaPadrao: "Apartamentos",
+  funilPadrao: "Topo",
+  formatoPadrao: "Reels",
+  horarioPadrao: "19:00",
+  semanaComeca: 0,          // 0 = domingo, 1 = segunda
+  agendarAoAprovar: true,
+  reduzirAnimacoes: false,
+  resumoSemanal: true,
+  lembretes: false
 };
 
 const SEED_ITENS = [
@@ -2452,6 +3349,19 @@ const SEED_ATIVIDADES = [
   { icon: "i-sparkle", text: '"Quanto custa de verdade receber convidados com estrutura à altura em Campinas" foi criado', dias: 26 },
   { icon: "i-send", text: '"7 coisas que ninguém te conta sobre apartamentos em Campinas" foi publicado', dias: 35 }
 ];
+
+// Estado inicial de uma conta. Só a conta de demonstração nasce com acervo.
+function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
+  return {
+    itens: comAcervo ? SEED_ITENS.map((i) => ({ ...i, tags: [...i.tags] })) : [],
+    atividades: comAcervo
+      ? SEED_ATIVIDADES.map((a) => ({ icon: a.icon, text: a.text, at: HOJE.getTime() - a.dias * 86400000 }))
+      : [],
+    plano,
+    usadas: 0,
+    config: { ...CONFIG_PADRAO }
+  };
+}
 
 /* ---------------- Gerador de roteiro ---------------- */
 
@@ -2568,47 +3478,214 @@ function slugArea(text) {
   return text.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
 }
 
-// Estado único da aplicação: conteúdos, perfil, plano e histórico.
-// Tudo persiste em localStorage e qualquer tela pode ouvir mudanças.
+// Banco de dados da aplicação.
+//
+// Hoje ele grava em localStorage, com uma conta por e-mail e os dados isolados
+// por conta. A API abaixo (contas, sessão, ler/gravar) é a única porta de
+// entrada — trocar por um back-end de verdade é reescrever só este arquivo.
 
-const store = (() => {
-  const KEY = "corretoresai-estado-v2";
-  const listeners = new Set();
+const db = (() => {
+  const K_CONTAS = "corretoresai-contas";
+  const K_SESSAO = "corretoresai-sessao";
 
-  function seedState() {
-    return {
-      itens: SEED_ITENS.map((item) => ({ ...item, tags: [...item.tags] })),
-      perfil: { ...PERFIL_PADRAO, areas: [...PERFIL_PADRAO.areas] },
-      plano: "ilimitado",
-      usadas: 0,
-      atividades: SEED_ATIVIDADES.map((a) => ({
-        icon: a.icon,
-        text: a.text,
-        at: HOJE.getTime() - a.dias * 86400000
-      }))
-    };
-  }
-
-  let state = load();
-
-  function load() {
+  function lerJson(chave, padrao) {
     try {
-      const saved = JSON.parse(localStorage.getItem(KEY));
-      if (!saved || !Array.isArray(saved.itens)) return seedState();
-      return { ...seedState(), ...saved };
+      const bruto = JSON.parse(localStorage.getItem(chave));
+      return bruto ?? padrao;
     } catch {
-      return seedState();
+      return padrao;
     }
   }
 
+  function gravarJson(chave, valor) {
+    localStorage.setItem(chave, JSON.stringify(valor));
+  }
+
+  const contas = () => lerJson(K_CONTAS, {});
+  const normalizar = (email) => String(email || "").trim().toLowerCase();
+
+  // Hash da senha. Em navegador com contexto seguro usa SHA-256 nativo;
+  // em file:// o crypto.subtle não existe e cai num hash simples.
+  // Nenhum dos dois substitui um back-end — isto é uma demonstração local.
+  async function hash(senha, sal) {
+    const texto = `${sal}::${senha}`;
+    if (window.crypto?.subtle) {
+      const bytes = new TextEncoder().encode(texto);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    let h = 2166136261;
+    for (let i = 0; i < texto.length; i++) {
+      h ^= texto.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return `fallback${(h >>> 0).toString(16)}`;
+  }
+
+  function novoSal() {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  return {
+    async criarConta({ nome, email, senha, cidade = "", creci = "", telefone = "", imobiliaria = "" }) {
+      const chave = normalizar(email);
+      if (!chave || !nome?.trim()) throw new Error("Preencha nome e e-mail.");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(chave)) throw new Error("E-mail inválido.");
+      if ((senha || "").length < 6) throw new Error("A senha precisa de pelo menos 6 caracteres.");
+
+      const todas = contas();
+      if (todas[chave]) throw new Error("Já existe uma conta com esse e-mail.");
+
+      const sal = novoSal();
+      todas[chave] = {
+        email: chave,
+        senhaHash: await hash(senha, sal),
+        sal,
+        criadoEm: Date.now(),
+        perfil: { ...PERFIL_PADRAO, nome: nome.trim(), email: chave, cidade: cidade || PERFIL_PADRAO.cidade, creci, telefone, imobiliaria },
+        estado: null // preenchido pelo store no primeiro acesso
+      };
+
+      gravarJson(K_CONTAS, todas);
+      localStorage.setItem(K_SESSAO, chave);
+      return todas[chave];
+    },
+
+    async entrar(email, senha) {
+      const chave = normalizar(email);
+      const conta = contas()[chave];
+      if (!conta) throw new Error("Não encontramos uma conta com esse e-mail.");
+      const tentativa = await hash(senha, conta.sal);
+      if (tentativa !== conta.senhaHash) throw new Error("Senha incorreta.");
+      localStorage.setItem(K_SESSAO, chave);
+      return conta;
+    },
+
+    sair() {
+      localStorage.removeItem(K_SESSAO);
+    },
+
+    sessao() {
+      const chave = localStorage.getItem(K_SESSAO);
+      return chave && contas()[chave] ? chave : null;
+    },
+
+    contaAtual() {
+      const chave = this.sessao();
+      return chave ? contas()[chave] : null;
+    },
+
+    existe(email) {
+      return Boolean(contas()[normalizar(email)]);
+    },
+
+    quantasContas() {
+      return Object.keys(contas()).length;
+    },
+
+    // Estado da conta logada (conteúdos, plano, histórico, configurações).
+    lerEstado() {
+      const conta = this.contaAtual();
+      return conta ? conta.estado : null;
+    },
+
+    gravarEstado(estado) {
+      const chave = this.sessao();
+      if (!chave) return;
+      const todas = contas();
+      todas[chave].estado = estado;
+      gravarJson(K_CONTAS, todas);
+    },
+
+    gravarPerfil(patch) {
+      const chave = this.sessao();
+      if (!chave) return null;
+      const todas = contas();
+      Object.assign(todas[chave].perfil, patch);
+      gravarJson(K_CONTAS, todas);
+      return todas[chave].perfil;
+    },
+
+    async trocarSenha(atual, nova) {
+      const chave = this.sessao();
+      const todas = contas();
+      const conta = todas[chave];
+      if (!conta) throw new Error("Faça login novamente.");
+      if ((await hash(atual, conta.sal)) !== conta.senhaHash) throw new Error("Senha atual incorreta.");
+      if ((nova || "").length < 6) throw new Error("A nova senha precisa de pelo menos 6 caracteres.");
+      conta.sal = novoSal();
+      conta.senhaHash = await hash(nova, conta.sal);
+      gravarJson(K_CONTAS, todas);
+    },
+
+    excluirConta() {
+      const chave = this.sessao();
+      if (!chave) return;
+      const todas = contas();
+      delete todas[chave];
+      gravarJson(K_CONTAS, todas);
+      this.sair();
+    },
+
+    // Conta de demonstração, criada uma única vez, já com o acervo de exemplo.
+    async garantirDemo() {
+      const chave = "marina@corretoresai.com.br";
+      if (contas()[chave]) return chave;
+
+      const sessaoAnterior = localStorage.getItem(K_SESSAO);
+      await this.criarConta({
+        nome: "Marina Duarte",
+        email: chave,
+        senha: "demo1234",
+        cidade: "Campinas",
+        creci: "CRECI-SP 214.885",
+        telefone: "(11) 98877-1200",
+        imobiliaria: "Duarte Imóveis"
+      });
+
+      const todas = contas();
+      todas[chave].demo = true;
+      todas[chave].perfil.bio = "Especialista em apartamentos e lançamentos na região central. Atendimento consultivo do primeiro contato à escritura.";
+      todas[chave].estado = estadoSemente({ plano: "ilimitado", comAcervo: true });
+      gravarJson(K_CONTAS, todas);
+
+      if (sessaoAnterior) localStorage.setItem(K_SESSAO, sessaoAnterior);
+      else localStorage.removeItem(K_SESSAO);
+
+      return chave;
+    },
+
+    CREDENCIAIS_DEMO: { email: "marina@corretoresai.com.br", senha: "demo1234" }
+  };
+})();
+
+// Estado da conta logada. Lê e grava sempre através do db, nunca direto no
+// localStorage — assim trocar o banco por um back-end não mexe nas telas.
+
+const store = (() => {
+  const listeners = new Set();
+  let state = null;
+
+  function carregar() {
+    const conta = db.contaAtual();
+    if (!conta) { state = null; return; }
+    if (!conta.estado) {
+      conta.estado = estadoSemente({ plano: "gratuito" });
+      db.gravarEstado(conta.estado);
+    }
+    state = { ...estadoSemente(), ...conta.estado, config: { ...CONFIG_PADRAO, ...(conta.estado.config || {}) } };
+  }
+
+  carregar();
+
   function persist() {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    db.gravarEstado(state);
     listeners.forEach((fn) => fn(state));
   }
 
   function log(icon, text) {
     state.atividades.unshift({ icon, text, at: Date.now() });
-    state.atividades = state.atividades.slice(0, 40);
+    state.atividades = state.atividades.slice(0, 120);
   }
 
   function nextId() {
@@ -2616,39 +3693,36 @@ const store = (() => {
   }
 
   return {
+    get logado() { return Boolean(state); },
     get state() { return state; },
-    get itens() { return state.itens; },
-    get perfil() { return state.perfil; },
-    get plano() { return PLANOS[state.plano]; },
-    get planoId() { return state.plano; },
+    get itens() { return state?.itens ?? []; },
+    get atividades() { return state?.atividades ?? []; },
+    get config() { return state?.config ?? { ...CONFIG_PADRAO }; },
+    get perfil() { return db.contaAtual()?.perfil ?? { ...PERFIL_PADRAO }; },
+    get plano() { return PLANOS[state?.plano] ?? PLANOS.gratuito; },
+    get planoId() { return state?.plano ?? "gratuito"; },
+
+    recarregar() { carregar(); listeners.forEach((fn) => fn(state)); },
 
     subscribe(fn) {
       listeners.add(fn);
       return () => listeners.delete(fn);
     },
 
-    // Usado pelo roteador do arquivo único ao trocar de tela.
-    dropSubscribers() {
-      listeners.clear();
-    },
+    dropSubscribers() { listeners.clear(); },
 
-    find(id) {
-      return state.itens.find((item) => item.id === id);
-    },
+    find(id) { return state.itens.find((item) => item.id === id); },
 
-    // Só o que aparece no Kanban / calendário.
-    board() {
-      return state.itens.filter((item) => KANBAN.includes(item.status));
-    },
+    board() { return state.itens.filter((item) => KANBAN.includes(item.status)); },
 
     restantes() {
-      const cota = PLANOS[state.plano].cota;
+      const cota = this.plano.cota;
       return cota === Infinity ? Infinity : Math.max(0, cota - state.usadas);
     },
 
     consumirGeracao() {
       if (this.restantes() <= 0) return false;
-      if (PLANOS[state.plano].cota !== Infinity) state.usadas += 1;
+      if (this.plano.cota !== Infinity) state.usadas += 1;
       persist();
       return true;
     },
@@ -2657,11 +3731,11 @@ const store = (() => {
       const item = {
         id: nextId(),
         status: "rascunho",
-        time: "10:00",
+        time: state.config.horarioPadrao,
         tags: [],
         ...dados
       };
-      item.script = item.script || buildScript(item, state.perfil);
+      item.script = item.script || buildScript(item, this.perfil);
       state.itens.unshift(item);
       log("i-sparkle", `"${item.title}" foi criado`);
       persist();
@@ -2688,7 +3762,6 @@ const store = (() => {
       return item;
     },
 
-    // Move sem gerar log de edição genérico (usado no arrastar-e-soltar).
     mover(id, patch) {
       const item = this.find(id);
       if (!item) return null;
@@ -2730,29 +3803,46 @@ const store = (() => {
     },
 
     salvarPerfil(patch) {
-      Object.assign(state.perfil, patch);
+      db.gravarPerfil(patch);
       log("i-user", "Perfil atualizado");
       persist();
     },
 
+    salvarConfig(patch) {
+      Object.assign(state.config, patch);
+      log("i-settings", "Configurações atualizadas");
+      persist();
+    },
+
     trocarPlano(id) {
-      if (!PLANOS[id]) return;
+      if (!PLANOS[id] || id === state.plano) return;
       state.plano = id;
+      state.usadas = 0;
       log("i-card", `Plano alterado para ${PLANOS[id].label}`);
       persist();
     },
 
     roteiro(item) {
       if (!item.script) {
-        item.script = buildScript(item, state.perfil);
+        item.script = buildScript(item, this.perfil);
         persist();
       }
       return item.script;
     },
 
-    reset() {
-      localStorage.removeItem(KEY);
-      state = seedState();
+    // Coloca (ou tira) o acervo de exemplo na conta atual.
+    carregarExemplos() {
+      const semente = estadoSemente({ plano: state.plano, comAcervo: true });
+      state.itens = semente.itens;
+      state.atividades = semente.atividades;
+      log("i-book", "Acervo de exemplo carregado");
+      persist();
+    },
+
+    limparTudo() {
+      state.itens = [];
+      state.atividades = [];
+      state.usadas = 0;
       persist();
     }
   };
@@ -2956,21 +4046,31 @@ const ui = (() => {
 
   // ---- Cartão de conteúdo reutilizado em Kanban e Biblioteca -------------
 
-  function itemCard(item, { draggable = false } = {}) {
+  function itemCard(item, { draggable = false, resumo = false, data = false } = {}) {
     const status = STATUSES[item.status];
+    const nome = store.perfil.nome || "Você";
+
     return `
-      <article class="kan-card" data-id="${item.id}"${draggable ? ' draggable="true"' : ""}>
-        <div class="kan-cover t-${slugArea(item.area)}">
-          <span class="kan-format">${item.format}</span>
-          <span class="kan-area">${item.area}</span>
+      <article class="content-card" data-id="${item.id}"${draggable ? ' draggable="true"' : ""}>
+        <div class="card-cover t-${slugArea(item.area)}">
+          <span class="card-format">${item.format}</span>
+          <span class="card-cover-foot">
+            <span>${item.area}</span>
+            ${data ? `<span>${formatDay(item.date)} · ${item.time}</span>` : ""}
+          </span>
         </div>
-        <div class="kan-body">
-          <h4>${item.title}</h4>
-          <p class="kan-when">${formatDay(item.date)} · ${item.time}</p>
-          <div class="kan-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
-          <div class="kan-foot">
-            <span class="avatar">${initials(store.perfil.nome)}</span>
-            ${store.perfil.nome}
+        <div class="card-body">
+          <div class="card-title">
+            <h4>${item.title}</h4>
+            <button class="card-menu" type="button" data-menu aria-label="Ações do conteúdo">···</button>
+          </div>
+          ${resumo
+            ? `<p class="card-resumo">${store.roteiro(item).gancho}</p>`
+            : `<p class="card-when">${formatDay(item.date)} · ${item.time}</p>`}
+          <div class="card-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+          <div class="card-foot">
+            <span class="avatar">${initials(nome)}</span>
+            ${nome}
             <span class="badge" style="color:${status.color}"><i class="status-dot"></i>${status.label}</span>
           </div>
         </div>
@@ -2978,20 +4078,114 @@ const ui = (() => {
   }
 
   function initials(nome) {
-    return nome.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+    return (nome || "?").split(/\s+/).filter(Boolean).slice(0, 2)
+      .map((p) => p[0].toUpperCase()).join("") || "?";
   }
 
-  // Abre o editor ao clicar em qualquer cartão com data-id (mas não ao arrastar).
-  function wireCardClicks(root = document) {
-    root.addEventListener("click", (event) => {
-      const card = event.target.closest("[data-id]");
-      if (!card || event.target.closest("[data-action]")) return;
-      openItem(card.dataset.id);
+  // ---- Menu "···" do cartão ---------------------------------------------
+
+  function fecharMenus() {
+    document.querySelectorAll(".pop-menu").forEach((m) => m.remove());
+  }
+
+  function abrirMenuCartao(botao, id) {
+    fecharMenus();
+    const item = store.find(id);
+    if (!item) return;
+
+    const acoes = [
+      ["editar", "Abrir e editar", "i-wand"],
+      ["duplicar", "Duplicar", "i-copy"],
+      ...Object.keys(STATUSES)
+        .filter((s) => s !== item.status)
+        .map((s) => [`status:${s}`, `Marcar como ${STATUSES[s].label}`, "i-check-circle"]),
+      ["excluir", "Excluir", "i-trash"]
+    ];
+
+    const menu = document.createElement("div");
+    menu.className = "pop-menu";
+    menu.innerHTML = acoes.map(([acao, texto, ico]) =>
+      `<button type="button" data-acao="${acao}" class="${acao === "excluir" ? "is-danger" : ""}">
+         <svg><use href="#${ico}" /></svg>${texto}
+       </button>`).join("");
+
+    const r = botao.getBoundingClientRect();
+    menu.style.top = `${r.bottom + window.scrollY + 6}px`;
+    menu.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - 240)}px`;
+    document.body.appendChild(menu);
+
+    menu.addEventListener("click", (event) => {
+      const acao = event.target.closest("[data-acao]")?.dataset.acao;
+      if (!acao) return;
+      fecharMenus();
+
+      if (acao === "editar") return openItem(id);
+      if (acao === "duplicar") { store.duplicar(id); return toast("Cópia criada como rascunho."); }
+      if (acao === "excluir") {
+        if (confirm(`Excluir "${item.title}"?`)) { store.remover(id); toast("Conteúdo excluído."); }
+        return;
+      }
+      if (acao.startsWith("status:")) {
+        const novo = acao.split(":")[1];
+        store.atualizar(id, { status: novo });
+        toast(`Marcado como ${STATUSES[novo].label}.`);
+      }
     });
   }
 
-  return { toast, openModal, closeModal, openItem, itemCard, initials, wireCardClicks };
+  document.addEventListener("click", (event) => {
+    const botao = event.target.closest("[data-menu]");
+    if (botao) {
+      event.stopPropagation();
+      abrirMenuCartao(botao, botao.closest("[data-id]").dataset.id);
+      return;
+    }
+    if (!event.target.closest(".pop-menu")) fecharMenus();
+  });
+
+  // ---- Exportação --------------------------------------------------------
+
+  function textoDoItem(item) {
+    const r = store.roteiro(item);
+    const cabecalho = `${item.title}\n${formatFull(item.date)} · ${item.time} · ${item.format} · ${item.area} · ${STATUSES[item.status].label}`;
+    const corpo = CAMPOS_ROTEIRO.map(([k, rotulo]) => `${rotulo}:\n${r[k] ?? ""}`).join("\n\n");
+    return `${cabecalho}\n${"-".repeat(52)}\n${corpo}`;
+  }
+
+  function exportarTexto(lista) {
+    const texto = lista.map(textoDoItem).join(`\n\n${"=".repeat(52)}\n\n`);
+    navigator.clipboard?.writeText(texto)
+      .then(() => toast(`${lista.length} ${lista.length === 1 ? "conteúdo copiado" : "conteúdos copiados"} para a área de transferência.`))
+      .catch(() => toast("Não foi possível copiar.", "erro"));
+  }
+
+  return { toast, openModal, closeModal, openItem, itemCard, initials, exportarTexto, textoDoItem, fecharMenus };
 })();
+
+// Sessão: para onde ir quando não há login e para onde voltar depois dele.
+
+const auth = {
+  urlEntrar(modo) {
+    const q = modo ? `?modo=${modo}` : "";
+    return SPA ? `#/entrar${q}` : `entrar.html${q}`;
+  },
+
+  urlApp(rota = "dashboard") {
+    return SPA ? `#/${rota}` : `${rota}.html`;
+  },
+
+  // Chamado por toda tela do app: sem sessão, manda para o login.
+  exigirLogin() {
+    if (db.sessao()) return true;
+    location.href = this.urlEntrar();
+    return false;
+  },
+
+  sair() {
+    db.sair();
+    location.href = SPA ? "#/" : "../index.html";
+  }
+};
 
 // Shell do app: injeta o sprite de ícones, a sidebar e a topbar em todas as telas.
 // Cada página só declara data-page / data-title / data-subtitle no <body>.
@@ -3029,6 +4223,9 @@ const ICONS = `
 <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M8 5v5M16 5v5"/></symbol>
 <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c3.5 0 6 2.5 6 6 0 4.5-4 8-7 10l-3-3c2-3 5.5-7 10-7"/><path d="M9 15l-3-3M7.5 16.5C6 18 6 21 6 21s3 0 4.5-1.5"/></symbol>
 <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 18l-1.5-9L8 12l4-7 4 7 5.5-3L20 18"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
 </svg>`;
 
 // href: navegação por arquivos (site multipágina).
@@ -3039,10 +4236,10 @@ const NAV = [
   { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
   { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
   { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
-  { id: "historico", label: "Histórico", icon: "i-history", href: "biblioteca.html#historico", rota: "#/historico" },
-  { id: "planos", label: "Planos", icon: "i-card", href: "../index.html#planos", rota: "#/planos" },
+  { id: "historico", label: "Histórico", icon: "i-history", href: "historico.html", rota: "#/historico" },
+  { id: "planos", label: "Planos", icon: "i-card", href: "planos.html", rota: "#/planos" },
   { id: "perfil", label: "Perfil", icon: "i-user", href: "perfil.html", rota: "#/perfil" },
-  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "perfil.html#configuracoes", rota: "#/configuracoes" }
+  { id: "configuracoes", label: "Configurações", icon: "i-settings", href: "configuracoes.html", rota: "#/configuracoes" }
 ];
 
 const LINKS = SPA
@@ -3088,7 +4285,7 @@ function shellHTML({ page, title, subtitle }) {
         <div class="side-links">
           <a href="${LINKS.site}">${icon("i-globe")}<span>Ver o site</span></a>
           <a href="${LINKS.central}">${icon("i-sparkle")}<span>Introdução</span></a>
-          <a href="${LINKS.site}">${icon("i-logout")}<span>Sair</span></a>
+          <button type="button" data-sair>${icon("i-logout")}<span>Sair</span></button>
         </div>
       </div>
     </aside>
@@ -3115,6 +4312,9 @@ function renderShell() {
 
   body.insertAdjacentHTML("afterbegin", ICONS);
 
+  // Telas fora do app (login, cadastro) só precisam do sprite de ícones.
+  if (!view) return;
+
   const shell = document.createElement("div");
   shell.className = "app";
   shell.innerHTML = shellHTML({
@@ -3126,12 +4326,21 @@ function renderShell() {
   body.appendChild(shell);
   if (view) shell.querySelector(".app-col").appendChild(view);
 
+  ligarSair(shell);
   renderIdentity();
   store.subscribe(renderIdentity);
 }
 
+function ligarSair(root) {
+  root.querySelector("[data-sair]")?.addEventListener("click", () => {
+    if (confirm("Sair da sua conta? Seus conteúdos continuam salvos.")) auth.sair();
+  });
+}
+
 // Nome, plano e cota vêm do estado — mudou no perfil, muda aqui na hora.
 function renderIdentity() {
+  if (!store.logado) return;
+
   const perfil = store.perfil;
   const plano = store.plano;
   const restantes = store.restantes();
@@ -3155,8 +4364,12 @@ function renderIdentity() {
       <div class="plan-bar"><i style="width:${Math.round(usado * 100)}%"></i></div>
       <span>${ilimitado
         ? "Gerações ilimitadas liberadas."
-        : `${restantes} de ${plano.cota} gerações restantes.`}</span>`;
+        : `${restantes} de ${plano.cota} gerações restantes.`}</span>
+      ${ilimitado ? "" : `<a class="plan-up" href="${SPA ? "#/planos" : "planos.html"}">Ver planos</a>`}`;
   }
+
+  // "Reduzir animações" vale para o documento inteiro.
+  document.documentElement.dataset.anim = store.config.reduzirAnimacoes ? "off" : "on";
 }
 
 if (!SPA) renderShell();
@@ -3165,7 +4378,11 @@ if (!SPA) renderShell();
 
 function initLanding(root = document) {
   const grid = root.querySelector("[data-mini-calendar]");
-  const board = store.board();
+
+  // A landing é vitrine: mostra sempre o acervo de exemplo, não a conta de quem
+  // está logado — senão um cadastro novo veria "0 leads gerados" na home.
+  const itens = SEED_ITENS;
+  const board = itens.filter((i) => KANBAN.includes(i.status));
 
   // No arquivo único não existem app/*.html — os links viram rotas de hash.
   if (SPA) {
@@ -3196,7 +4413,7 @@ function initLanding(root = document) {
   if (alvo) {
     const publicados = board.filter((i) => i.status === "publicado").length;
     const stats = [
-      [store.itens.length, "Conteúdos criados"],
+      [itens.length, "Conteúdos criados"],
       [board.filter((i) => i.status === "agendado").length, "Agendados"],
       [Math.round(publicados * 29.5), "Leads gerados"]
     ];
@@ -3204,20 +4421,144 @@ function initLanding(root = document) {
       `<div class="mini-stat"><strong>${valor}</strong><span>${rotulo}</span></div>`).join("");
   }
 
-  // Escolher um plano na landing já entra valendo dentro do app.
-  root.querySelectorAll("[data-plano]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      store.trocarPlano(btn.dataset.plano);
-      location.href = SPA ? "#/central" : "app/central.html";
-    });
+  // Os planos vêm da mesma fonte que o app, para nunca divergirem.
+  const grade = root.querySelector("[data-plans]");
+  if (grade) {
+    grade.innerHTML = Object.values(PLANOS).map((plano) => {
+      const popular = plano.id === "pro";
+      return `
+        <article class="plan${popular ? " is-popular" : ""}">
+          ${popular ? '<span class="plan-flag">MAIS POPULAR</span>' : ""}
+          <div class="plan-head">
+            <span class="icon-tile${popular ? " is-gold" : ""}"><svg><use href="#${plano.icone}" /></svg></span>
+            <h3>${plano.label}</h3>
+          </div>
+          <p class="plan-note">${plano.resumo}</p>
+          <p class="plan-price">${plano.preco} <span>/mês</span></p>
+          <ul class="plan-features">${plano.beneficios.map((b) => `<li>${b}</li>`).join("")}</ul>
+          <button class="btn ${popular ? "btn-primary" : "btn-outline"} btn-block" type="button" data-plano="${plano.id}">${plano.cta}</button>
+        </article>`;
+    }).join("");
+  }
+
+  // Escolher um plano leva para o cadastro já com esse plano em mente.
+  root.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-plano]");
+    if (!btn) return;
+    sessionStorage.setItem("corretoresai-plano-escolhido", btn.dataset.plano);
+    location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
   });
 }
 
 if (!SPA) initLanding();
 
+// Login e cadastro.
+
+function initEntrar(root = document) {
+  const abas = root.querySelector("[data-modo]");
+  const formEntrar = root.querySelector('[data-form="entrar"]');
+  const formCadastro = root.querySelector('[data-form="cadastro"]');
+
+  db.garantirDemo();
+
+  function mostrar(aba) {
+    abas.querySelectorAll("button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.aba === aba)));
+    formEntrar.hidden = aba !== "entrar";
+    formCadastro.hidden = aba !== "cadastro";
+    root.querySelectorAll("[data-erro]").forEach((p) => { p.hidden = true; });
+  }
+
+  function erro(form, mensagem) {
+    const alvo = form.querySelector("[data-erro]");
+    alvo.textContent = mensagem;
+    alvo.hidden = false;
+  }
+
+  abas.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (btn) mostrar(btn.dataset.aba);
+  });
+
+  root.querySelectorAll("[data-ir]").forEach((btn) => {
+    btn.addEventListener("click", () => mostrar(btn.dataset.ir));
+  });
+
+  // Olhinho de mostrar/esconder senha.
+  root.querySelectorAll("[data-ver-senha]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const campo = btn.previousElementSibling;
+      const oculto = campo.type === "password";
+      campo.type = oculto ? "text" : "password";
+      btn.setAttribute("aria-label", oculto ? "Esconder senha" : "Mostrar senha");
+      btn.classList.toggle("is-on", oculto);
+    });
+  });
+
+  function entrarNoApp() {
+    store.recarregar();
+    location.href = auth.urlApp("dashboard");
+  }
+
+  formEntrar.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      await db.entrar(formEntrar.email.value, formEntrar.senha.value);
+      entrarNoApp();
+    } catch (e) {
+      erro(formEntrar, e.message);
+    }
+  });
+
+  formCadastro.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const f = formCadastro;
+    try {
+      await db.criarConta({
+        nome: f.nome.value,
+        email: f.email.value,
+        senha: f.senha.value,
+        cidade: f.cidade.value,
+        creci: f.creci.value,
+        telefone: f.telefone.value
+      });
+
+      store.recarregar();
+
+      // Plano escolhido lá na landing, se houver.
+      const escolhido = sessionStorage.getItem("corretoresai-plano-escolhido");
+      if (escolhido && PLANOS[escolhido]) {
+        store.trocarPlano(escolhido);
+        sessionStorage.removeItem("corretoresai-plano-escolhido");
+      }
+
+      if (f.exemplos.checked) store.carregarExemplos();
+      entrarNoApp();
+    } catch (e) {
+      erro(f, e.message);
+    }
+  });
+
+  root.querySelector("[data-demo]").addEventListener("click", async () => {
+    try {
+      await db.garantirDemo();
+      await db.entrar(db.CREDENCIAIS_DEMO.email, db.CREDENCIAIS_DEMO.senha);
+      entrarNoApp();
+    } catch (e) {
+      erro(formEntrar, e.message);
+    }
+  });
+
+  mostrar(routeParams().get("modo") === "cadastro" ? "cadastro" : "entrar");
+}
+
+if (!SPA) initEntrar();
+
 // Dashboard: tudo lido do store e redesenhado a cada mudança.
 
 function initDashboard(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const elStats = root.querySelector("[data-stats]");
   const elUpcoming = root.querySelector("[data-upcoming]");
   const elActivity = root.querySelector("[data-activity]");
@@ -3226,9 +4567,11 @@ function initDashboard(root = document) {
 
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
 
+  // Respeita "semana começa em" das Configurações.
   function startOfWeek(date) {
+    const inicio = store.config.semanaComeca;
     const d = new Date(date);
-    d.setDate(d.getDate() - d.getDay());
+    d.setDate(d.getDate() - ((d.getDay() - inicio + 7) % 7));
     d.setHours(0, 0, 0, 0);
     return d;
   }
@@ -3236,6 +4579,10 @@ function initDashboard(root = document) {
   function render() {
     const itens = store.itens;
     const board = store.board();
+
+    const primeiroNome = (store.perfil.nome || "").split(" ")[0];
+    root.querySelector("[data-saudacao]").textContent =
+      primeiroNome ? `Olá, ${primeiroNome}` : "Olá";
     const publicados = board.filter((i) => i.status === "publicado");
     const agendados = board.filter((i) => i.status === "agendado");
     const doMes = board.filter((i) => {
@@ -3302,7 +4649,9 @@ function initDashboard(root = document) {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
-    let html = ["D", "S", "T", "Q", "Q", "S", "S"].map((d) => `<span class="wd">${d}</span>`).join("");
+    const iniciais = ["D", "S", "T", "Q", "Q", "S", "S"];
+    const ordem = [...iniciais.slice(store.config.semanaComeca), ...iniciais.slice(0, store.config.semanaComeca)];
+    let html = ordem.map((d) => `<span class="wd">${d}</span>`).join("");
 
     for (let n = 0; n < 42; n++) {
       const day = new Date(start);
@@ -3353,15 +4702,25 @@ if (!SPA) initDashboard();
 // Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
 
 function initCentral(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const form = root.querySelector("[data-generator]");
   const elIdeas = root.querySelector("[data-ideas]");
   const elQuota = root.querySelector("[data-quota]");
+  const cfg = store.config;
 
-  // Preenche a partir do perfil e de ?data=AAAA-MM-DD (vindo do calendário).
+  // Preenche a partir das Configurações, do perfil e de ?data= (vindo do calendário).
   form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
-  form.area.value = store.perfil.areas[0] || AREAS[0];
+  form.area.value = cfg.areaPadrao || store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
   const dataAlvo = routeParams().get("data");
+
+  const marcar = (grupo, valor) => {
+    root.querySelectorAll(`[data-choice="${grupo}"] button`).forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.textContent.trim() === valor)));
+  };
+  marcar("funil", cfg.funilPadrao);
+  marcar("formato", cfg.formatoPadrao);
 
   root.querySelectorAll("[data-goto]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -3422,7 +4781,8 @@ function initCentral(root = document) {
         .replace("{cidade}", cidade);
       const title = bruto[0].toUpperCase() + bruto.slice(1);
 
-      const base = { title, area, format, funnel, city: cidade, briefing, date: proximaData(), time: "10:00",
+      const base = { title, area, format, funnel, city: cidade, briefing,
+        date: proximaData(), time: store.config.horarioPadrao,
         tags: [area, TAGS_FUNIL[funnel], format] };
 
       return { ...base, script: buildScript(base, store.perfil) };
@@ -3464,10 +4824,14 @@ function initCentral(root = document) {
     const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
     const acao = btn.dataset.action;
 
-    const item = store.criar({ ...ideia, status: acao === "aprovar" ? "aprovado" : "rascunho" });
+    // "Agendar ao aprovar" decide se o card nasce Agendado ou só Aprovado.
+    const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
+    const item = store.criar({ ...ideia, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
-      ui.toast(`Aprovado e agendado para ${formatFull(item.date)}.`);
+      ui.toast(store.config.agendarAoAprovar
+        ? `Agendado para ${formatFull(item.date)}.`
+        : `Aprovado. Defina a data no calendário quando quiser.`);
     } else if (acao === "rascunho") {
       ui.toast("Salvo como rascunho na Biblioteca.");
     } else {
@@ -3509,6 +4873,8 @@ if (!SPA) initCentral();
 // Calendário editorial + Kanban: arrastar-e-soltar, clique para editar, tudo no store.
 
 function initBoard(root = document, opts = {}) {
+  if (!auth.exigirLogin()) return;
+
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
   let arrastou = false;
@@ -3520,9 +4886,15 @@ function initBoard(root = document, opts = {}) {
   function renderCalendar() {
     elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
 
+    const inicioSemana = store.config.semanaComeca;
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
     const start = new Date(first);
-    start.setDate(first.getDate() - first.getDay());
+    start.setDate(first.getDate() - ((first.getDay() - inicioSemana + 7) % 7));
+
+    const nomes = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+    root.querySelector(".calendar-head").innerHTML =
+      [...nomes.slice(inicioSemana), ...nomes.slice(0, inicioSemana)]
+        .map((n) => `<span>${n}</span>`).join("");
 
     const weeks = [];
     const day = new Date(start);
@@ -3584,7 +4956,7 @@ function initBoard(root = document, opts = {}) {
             <span class="hint">${status.hint}</span>
           </div>
           <div class="kan-drop" data-drop-status="${key}">
-            ${cards.map((item) => ui.itemCard(item, { draggable: true })).join("")
+            ${cards.map((item) => ui.itemCard(item, { draggable: true, data: true })).join("")
               || '<p class="hint" style="padding:18px;text-align:center">Solte um card aqui.</p>'}
           </div>
         </div>`;
@@ -3653,8 +5025,8 @@ function initBoard(root = document, opts = {}) {
       return;
     }
 
-    const card = event.target.closest(".cal-card, .kan-card");
-    if (card && !arrastou) ui.openItem(card.dataset.id);
+    const card = event.target.closest(".cal-card, .content-card");
+    if (card && !arrastou && !event.target.closest("[data-menu]")) ui.openItem(card.dataset.id);
   });
 
   // ---- Controles ---------------------------------------------------------
@@ -3699,102 +5071,123 @@ function initBoard(root = document, opts = {}) {
 
 if (!SPA) initBoard();
 
-// Biblioteca: busca, filtros, ações em massa e o histórico completo.
+// Biblioteca: busca em todo o conteúdo do roteiro, filtros combinados e exportação.
 
 function initBiblioteca(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const grid = root.querySelector("[data-library]");
   const count = root.querySelector("[data-count]");
   const search = root.querySelector("[data-search]");
-  const areaSelect = root.querySelector('[data-filter="area"]');
-  const ordem = root.querySelector("[data-order]");
-  const elActivity = root.querySelector("[data-activity]");
 
-  const filtros = { text: "", area: "", format: "", status: "" };
+  const filtros = { texto: "", area: "", periodo: "", format: "", funnel: "", status: "" };
 
-  areaSelect.innerHTML = `<option value="">Todas</option>` +
-    AREAS.map((a) => `<option value="${a}">${a}</option>`).join("");
+  const opcoes = (lista, rotulo) =>
+    `<option value="">${rotulo}</option>` +
+    lista.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+
+  root.querySelector('[data-filtro="area"]').innerHTML =
+    opcoes(AREAS.map((a) => [a, a]), "Todas as categorias");
+  root.querySelector('[data-filtro="format"]').innerHTML =
+    opcoes(FORMATOS.map((f) => [f, f]), "Todos os formatos");
+  root.querySelector('[data-filtro="funnel"]').innerHTML =
+    opcoes(FUNIS.map((f) => [f, f]), "Todos os funis");
+  root.querySelector('[data-filtro="status"]').innerHTML =
+    opcoes(Object.entries(STATUSES).map(([k, s]) => [k, s.label]), "Todos os status");
+
+  function dentroDoPeriodo(item) {
+    if (!filtros.periodo) return true;
+    const hoje = HOJE.getTime();
+    const data = new Date(`${item.date}T00:00:00`).getTime();
+    const dias = (hoje - data) / 86400000;
+
+    if (filtros.periodo === "7") return dias >= 0 && dias <= 7;
+    if (filtros.periodo === "30") return dias >= 0 && dias <= 30;
+    if (filtros.periodo === "futuro") return dias < 0;
+    if (filtros.periodo === "mes") {
+      const [y, m] = item.date.split("-").map(Number);
+      return y === HOJE.getFullYear() && m === HOJE.getMonth() + 1;
+    }
+    return true;
+  }
 
   function filtrados() {
-    const lista = store.itens.filter((item) => {
+    return store.itens.filter((item) => {
       if (filtros.area && item.area !== filtros.area) return false;
       if (filtros.format && item.format !== filtros.format) return false;
+      if (filtros.funnel && item.funnel !== filtros.funnel) return false;
       if (filtros.status && item.status !== filtros.status) return false;
-      if (filtros.text) {
-        const alvo = `${item.title} ${item.area} ${item.tags.join(" ")}`.toLowerCase();
-        if (!alvo.includes(filtros.text)) return false;
+      if (!dentroDoPeriodo(item)) return false;
+
+      if (filtros.texto) {
+        const r = store.roteiro(item);
+        const alvo = [item.title, item.area, item.format, item.tags.join(" "),
+          r.gancho, r.legenda, r.hashtags, r.cta].join(" ").toLowerCase();
+        if (!alvo.includes(filtros.texto)) return false;
       }
       return true;
-    });
-
-    if (ordem.value === "antigos") lista.sort((a, b) => a.date.localeCompare(b.date));
-    else if (ordem.value === "titulo") lista.sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
-    else lista.sort((a, b) => b.date.localeCompare(a.date));
-
-    return lista;
+    }).sort((a, b) => b.date.localeCompare(a.date));
   }
 
   function render() {
     const lista = filtrados();
+    const total = store.itens.length;
 
-    count.textContent = lista.length === 1
-      ? "1 conteúdo encontrado"
-      : `${lista.length} conteúdos encontrados`;
+    count.textContent = lista.length === total
+      ? `${total} ${total === 1 ? "conteúdo" : "conteúdos"} no acervo`
+      : `${lista.length} de ${total} conteúdos`;
+
+    if (!store.itens.length) {
+      grid.innerHTML = `
+        <div class="empty" style="grid-column:1/-1">
+          <span class="icon-tile"><svg><use href="#i-book" /></svg></span>
+          <strong>Sua biblioteca está vazia</strong>
+          <p>Gere o primeiro conteúdo e ele aparece aqui, com roteiro completo.</p>
+          <a class="btn btn-primary" href="central.html"><svg><use href="#i-plus" /></svg>Criar conteúdo</a>
+        </div>`;
+      return;
+    }
 
     grid.innerHTML = lista.length
-      ? lista.map((item) => ui.itemCard(item)).join("")
+      ? lista.map((item) => ui.itemCard(item, { resumo: true, data: true })).join("")
       : `<div class="empty" style="grid-column:1/-1">
-           <span class="icon-tile"><svg><use href="#i-book" /></svg></span>
-           <strong>Nada por aqui</strong>
-           <p>Ajuste a busca ou limpe os filtros.</p>
+           <span class="icon-tile"><svg><use href="#i-search" /></svg></span>
+           <strong>Nada bate com esses filtros</strong>
+           <p>Tente outra busca ou volte para o acervo completo.</p>
            <button class="btn btn-outline" type="button" data-limpar>Limpar filtros</button>
          </div>`;
-
-    elActivity.innerHTML = store.state.atividades.map((a) => `
-      <li>
-        <span class="icon-tile"><svg><use href="#${a.icon}" /></svg></span>
-        <div>
-          <p>${a.text}</p>
-          <time>${relativeTime(a.at)}</time>
-        </div>
-      </li>`).join("") || '<li><p class="hint">Sem movimentações ainda.</p></li>';
   }
 
   function limpar() {
-    filtros.text = filtros.area = filtros.format = filtros.status = "";
+    Object.keys(filtros).forEach((k) => { filtros[k] = ""; });
     search.value = "";
-    areaSelect.value = "";
-    root.querySelectorAll("[data-filter-row]").forEach((row) => {
-      row.querySelectorAll("button").forEach((b, n) => b.setAttribute("aria-pressed", String(n === 0)));
-    });
+    root.querySelectorAll("[data-filtro]").forEach((s) => { s.value = ""; });
     render();
   }
 
   search.addEventListener("input", () => {
-    filtros.text = search.value.trim().toLowerCase();
+    filtros.texto = search.value.trim().toLowerCase();
     render();
   });
 
-  areaSelect.addEventListener("change", () => {
-    filtros.area = areaSelect.value;
-    render();
-  });
-
-  ordem.addEventListener("change", render);
-
-  root.querySelectorAll("[data-filter-row]").forEach((row) => {
-    row.addEventListener("click", (event) => {
-      const btn = event.target.closest("button");
-      if (!btn) return;
-      row.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", "false"));
-      btn.setAttribute("aria-pressed", "true");
-      filtros[row.dataset.filterRow] = btn.dataset.value;
+  root.querySelectorAll("[data-filtro]").forEach((select) => {
+    select.addEventListener("change", () => {
+      filtros[select.dataset.filtro] = select.value;
       render();
     });
   });
 
   root.addEventListener("click", (event) => {
     if (event.target.closest("[data-limpar]")) { limpar(); return; }
-    const card = event.target.closest(".kan-card");
+
+    if (event.target.closest("[data-exportar]")) {
+      const lista = filtrados();
+      if (!lista.length) return ui.toast("Não há nada para exportar com esses filtros.", "erro");
+      ui.exportarTexto(lista);
+      return;
+    }
+
+    const card = event.target.closest(".content-card");
     if (card) ui.openItem(card.dataset.id);
   });
 
@@ -3804,37 +5197,181 @@ function initBiblioteca(root = document) {
 
 if (!SPA) initBiblioteca();
 
-// Perfil e configurações — grava no store, e o resto do app reage na hora.
+// Histórico: linha do tempo agrupada por dia, com filtro por tipo de evento.
+
+function initHistorico(root = document) {
+  if (!auth.exigirLogin()) return;
+
+  const abas = root.querySelector("[data-abas]");
+  const timeline = root.querySelector("[data-timeline]");
+  let aba = "tudo";
+
+  const DIAS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
+    "Quinta-feira", "Sexta-feira", "Sábado"];
+
+  const PUBLICACAO = new Set(["i-send", "i-kanban", "i-calendar", "i-calendar-clock"]);
+  const EDICAO = new Set(["i-wand", "i-copy", "i-trash", "i-user", "i-settings", "i-card"]);
+
+  function combina(evento) {
+    if (aba === "publicacoes") return PUBLICACAO.has(evento.icon);
+    if (aba === "edicoes") return EDICAO.has(evento.icon);
+    return true;
+  }
+
+  function tituloDoDia(ts) {
+    const data = new Date(ts);
+    const hoje = new Date();
+    const mesmoDia = (a, b) => a.toDateString() === b.toDateString();
+    const ontem = new Date(hoje);
+    ontem.setDate(ontem.getDate() - 1);
+
+    if (mesmoDia(data, hoje)) return "Hoje";
+    if (mesmoDia(data, ontem)) return "Ontem";
+    return `${DIAS[data.getDay()]}, ${data.getDate()} de ${MESES[data.getMonth()].toLowerCase()}`;
+  }
+
+  function render() {
+    const eventos = store.atividades.filter(combina);
+
+    if (!eventos.length) {
+      timeline.innerHTML = `
+        <div class="empty">
+          <span class="icon-tile"><svg><use href="#i-history" /></svg></span>
+          <strong>Nada registrado ainda</strong>
+          <p>Assim que você gerar, aprovar ou mover um conteúdo, ele aparece aqui.</p>
+          <a class="btn btn-primary" href="central.html"><svg><use href="#i-plus" /></svg>Criar conteúdo</a>
+        </div>`;
+      return;
+    }
+
+    // Agrupa por dia, mantendo a ordem decrescente.
+    const grupos = [];
+    for (const evento of eventos) {
+      const chave = new Date(evento.at).toDateString();
+      const ultimo = grupos.at(-1);
+      if (ultimo && ultimo.chave === chave) ultimo.itens.push(evento);
+      else grupos.push({ chave, at: evento.at, itens: [evento] });
+    }
+
+    timeline.innerHTML = grupos.map((grupo) => `
+      <section class="tl-grupo">
+        <header>${tituloDoDia(grupo.at)}</header>
+        <ul>
+          ${grupo.itens.map((e) => `
+            <li>
+              <span class="icon-tile"><svg><use href="#${e.icon}" /></svg></span>
+              <p>${e.text}</p>
+              <time>${relativeTime(e.at)}</time>
+            </li>`).join("")}
+        </ul>
+      </section>`).join("");
+  }
+
+  abas.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (!btn) return;
+    aba = btn.dataset.aba;
+    abas.querySelectorAll("button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.aba === aba)));
+    render();
+  });
+
+  store.subscribe(render);
+  render();
+}
+
+if (!SPA) initHistorico();
+
+// Planos dentro do app: troca imediata, com o plano atual marcado.
+
+function initPlanos(root = document) {
+  if (!auth.exigirLogin()) return;
+
+  const alvo = root.querySelector("[data-planos]");
+
+  function render() {
+    const atual = store.planoId;
+
+    alvo.innerHTML = Object.values(PLANOS).map((plano) => {
+      const ativo = plano.id === atual;
+      const popular = plano.id === "pro";
+
+      return `
+        <article class="plano-card${ativo ? " is-ativo" : ""}${popular ? " is-popular" : ""}">
+          ${popular && !ativo ? '<span class="plan-flag">MAIS POPULAR</span>' : ""}
+          <div class="plano-topo">
+            <span class="icon-tile${popular || ativo ? " is-gold" : ""}"><svg><use href="#${plano.icone}" /></svg></span>
+            <div>
+              <h2>${plano.label}</h2>
+              ${ativo ? '<span class="plano-atual">Seu plano atual</span>' : ""}
+            </div>
+          </div>
+
+          <p class="plano-resumo">${plano.resumo}</p>
+
+          <p class="plano-preco">${plano.preco}<span>/mês</span></p>
+
+          <ul class="plano-lista">
+            ${plano.beneficios.map((b) => `
+              <li><svg><use href="#i-check-circle" /></svg>${b}</li>`).join("")}
+          </ul>
+
+          ${ativo
+            ? '<button class="btn btn-outline btn-block" type="button" disabled>Plano ativo</button>'
+            : `<button class="btn ${popular ? "btn-primary" : "btn-outline"} btn-block" type="button" data-trocar="${plano.id}">${plano.cta}</button>`}
+        </article>`;
+    }).join("");
+  }
+
+  alvo.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-trocar]");
+    if (!btn) return;
+
+    const novo = PLANOS[btn.dataset.trocar];
+    const atual = store.plano;
+    const descendo = novo.cota < atual.cota;
+
+    const aviso = descendo
+      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Continuar?`
+      : `Ativar o ${novo.label} por ${novo.preco}/mês? A cota entra valendo na hora.`;
+
+    if (!confirm(aviso)) return;
+
+    store.trocarPlano(novo.id);
+    ui.toast(`Plano ${novo.label} ativo. Cota renovada.`);
+  });
+
+  store.subscribe(render);
+  render();
+}
+
+if (!SPA) initPlanos();
+
+// Perfil: os dados que assinam o conteúdo e alimentam o gerador.
 
 function initPerfil(root = document) {
+  if (!auth.exigirLogin()) return;
+
   const form = root.querySelector("[data-perfil]");
   const elAreas = root.querySelector("[data-areas]");
-  const elPlanos = root.querySelector("[data-planos]");
-  const elNota = root.querySelector("[data-plano-nota]");
 
-  function preencher() {
+  function carregar() {
     const p = store.perfil;
-    form.nome.value = p.nome;
-    form.creci.value = p.creci;
-    form.cidade.value = p.cidade;
-    form.instagram.value = p.instagram;
-    form.tom.value = p.tom;
+
+    ["nome", "creci", "email", "telefone", "cidade", "imobiliaria", "bio", "instagram", "tom"]
+      .forEach((campo) => { if (form[campo]) form[campo].value = p[campo] ?? ""; });
+
+    form.email.value = db.contaAtual()?.email ?? "";
 
     elAreas.innerHTML = AREAS.map((area) => `
       <button type="button" data-area="${area}" aria-pressed="${p.areas.includes(area)}">${area}</button>
     `).join("");
-  }
 
-  function renderPlanos() {
-    elPlanos.innerHTML = Object.entries(PLANOS).map(([id, plano]) => `
-      <button type="button" data-plano="${id}" aria-pressed="${id === store.planoId}">
-        ${plano.label} · ${plano.preco}
-      </button>`).join("");
-
-    const restantes = store.restantes();
-    elNota.innerHTML = restantes === Infinity
-      ? "Gerações ilimitadas liberadas."
-      : `${restantes} de ${store.plano.cota} gerações restantes neste ciclo.`;
+    root.querySelector("[data-avatar]").textContent = ui.initials(p.nome);
+    root.querySelector("[data-nome]").textContent = p.nome || "Sem nome";
+    root.querySelector("[data-creci]").textContent = p.creci || db.contaAtual()?.email || "";
+    root.querySelector("[data-total]").textContent = store.itens.length;
+    root.querySelector("[data-plano]").textContent = store.plano.label;
   }
 
   elAreas.addEventListener("click", (event) => {
@@ -3843,21 +5380,18 @@ function initPerfil(root = document) {
     btn.setAttribute("aria-pressed", String(btn.getAttribute("aria-pressed") !== "true"));
   });
 
-  elPlanos.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-plano]");
-    if (!btn) return;
-    store.trocarPlano(btn.dataset.plano);
-    ui.toast(`Plano alterado para ${PLANOS[btn.dataset.plano].label}.`);
-  });
-
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+
     const areas = [...elAreas.querySelectorAll('[aria-pressed="true"]')].map((b) => b.dataset.area);
 
     store.salvarPerfil({
-      nome: form.nome.value.trim() || PERFIL_PADRAO.nome,
+      nome: form.nome.value.trim() || "Sem nome",
       creci: form.creci.value.trim(),
+      telefone: form.telefone.value.trim(),
       cidade: form.cidade.value.trim() || PERFIL_PADRAO.cidade,
+      imobiliaria: form.imobiliaria.value.trim(),
+      bio: form.bio.value.trim(),
       instagram: form.instagram.value.trim(),
       tom: form.tom.value.trim(),
       areas: areas.length ? areas : [AREAS[0]]
@@ -3866,26 +5400,129 @@ function initPerfil(root = document) {
     ui.toast("Perfil salvo.");
   });
 
-  root.querySelector("[data-reset]").addEventListener("click", () => {
-    if (!confirm("Restaurar o acervo original? Tudo o que você criou e editou será perdido.")) return;
-    store.reset();
-    preencher();
-    ui.toast("Acervo restaurado.");
-  });
-
-  // Cópia em vez de download: funciona tanto no arquivo local quanto na prévia publicada.
-  root.querySelector("[data-exportar]").addEventListener("click", () => {
-    navigator.clipboard?.writeText(JSON.stringify(store.state, null, 2))
-      .then(() => ui.toast("Dados copiados como JSON."))
-      .catch(() => ui.toast("Não foi possível copiar.", "erro"));
-  });
-
-  store.subscribe(renderPlanos);
-  preencher();
-  renderPlanos();
+  store.subscribe(carregar);
+  carregar();
 }
 
 if (!SPA) initPerfil();
+
+// Configurações: cada controle grava na hora e vale para o resto do app.
+
+function initConfiguracoes(root = document) {
+  if (!auth.exigirLogin()) return;
+
+  const painel = root.querySelector("[data-config]");
+  const selectTema = root.querySelector("[data-tema]");
+
+  const HORARIOS = ["07:00", "09:00", "10:00", "12:00", "13:00", "15:00",
+    "17:00", "18:00", "19:00", "20:00", "21:00"];
+
+  const preencher = (nome, valores) => {
+    painel.querySelector(`[name="${nome}"]`).innerHTML =
+      valores.map((v) => `<option value="${v}">${v}</option>`).join("");
+  };
+
+  preencher("areaPadrao", AREAS);
+  preencher("funilPadrao", FUNIS);
+  preencher("formatoPadrao", FORMATOS);
+  preencher("horarioPadrao", HORARIOS);
+
+  function carregar() {
+    const c = store.config;
+    painel.querySelectorAll("select[name], input[name]").forEach((campo) => {
+      if (campo.type === "checkbox") campo.checked = Boolean(c[campo.name]);
+      else campo.value = String(c[campo.name]);
+    });
+    selectTema.value = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    root.querySelector("[data-conta-email]").textContent = db.contaAtual()?.email ?? "";
+  }
+
+  painel.addEventListener("change", (event) => {
+    const campo = event.target.closest("select[name], input[name]");
+    if (!campo) return;
+
+    const valor = campo.type === "checkbox"
+      ? campo.checked
+      : (campo.name === "semanaComeca" ? Number(campo.value) : campo.value);
+
+    store.salvarConfig({ [campo.name]: valor });
+    ui.toast("Configuração salva.");
+  });
+
+  selectTema.addEventListener("change", () => {
+    document.documentElement.dataset.theme = selectTema.value;
+    localStorage.setItem("corretoresai-theme", selectTema.value);
+    ui.toast(selectTema.value === "light" ? "Tema claro ativado." : "Tema escuro ativado.");
+  });
+
+  // O botão de sol na topbar também mexe no tema: mantém o select em dia.
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-theme-toggle]")) {
+      setTimeout(() => { selectTema.value = document.documentElement.dataset.theme; }, 0);
+    }
+  });
+
+  // ---- Conta ------------------------------------------------------------
+
+  root.querySelector("[data-senha]").addEventListener("click", () => {
+    ui.openModal(`
+      <header class="modal-head">
+        <div><h2>Trocar senha</h2></div>
+        <button class="theme-btn" type="button" data-close aria-label="Fechar"><svg><use href="#i-close" /></svg></button>
+      </header>
+      <form class="modal-body" data-form-senha>
+        <div class="field">
+          <label for="s-atual">Senha atual</label>
+          <input id="s-atual" name="atual" type="password" required />
+        </div>
+        <div class="field">
+          <label for="s-nova">Nova senha</label>
+          <input id="s-nova" name="nova" type="password" placeholder="Mínimo de 6 caracteres" required />
+        </div>
+        <p class="auth-erro" data-erro hidden></p>
+      </form>
+      <footer class="modal-foot">
+        <button class="btn btn-outline" type="button" data-close>Cancelar</button>
+        <button class="btn btn-primary" type="button" data-salvar-senha>Salvar nova senha</button>
+      </footer>`, (modal) => {
+      modal.querySelector("[data-salvar-senha]").addEventListener("click", async () => {
+        const form = modal.querySelector("[data-form-senha]");
+        const erro = modal.querySelector("[data-erro]");
+        try {
+          await db.trocarSenha(form.atual.value, form.nova.value);
+          ui.closeModal();
+          ui.toast("Senha atualizada.");
+        } catch (e) {
+          erro.textContent = e.message;
+          erro.hidden = false;
+        }
+      });
+    });
+  });
+
+  root.querySelector("[data-exemplos]").addEventListener("click", () => {
+    if (!confirm("Carregar os conteúdos de exemplo? Isso substitui o que já existe na conta.")) return;
+    store.carregarExemplos();
+    ui.toast("Acervo de exemplo carregado.");
+  });
+
+  root.querySelector("[data-limpar-conteudo]").addEventListener("click", () => {
+    if (!confirm("Apagar todo o conteúdo desta conta? Não dá para desfazer.")) return;
+    store.limparTudo();
+    ui.toast("Conteúdo apagado.");
+  });
+
+  root.querySelector("[data-excluir-conta]").addEventListener("click", () => {
+    if (!confirm("Excluir sua conta e todos os dados dela? Não dá para desfazer.")) return;
+    db.excluirConta();
+    location.href = auth.urlEntrar();
+  });
+
+  store.subscribe(carregar);
+  carregar();
+}
+
+if (!SPA) initConfiguracoes();
 
 </script>
 
@@ -3899,16 +5536,16 @@ if (!SPA) initPerfil();
   dashboard: { title: "Dashboard", subtitle: "Sua operação de conteúdo em um só lugar" },
   central: { title: "Central de Conteúdo", subtitle: "Da ideia ao roteiro pronto para gravar" },
   calendario: { title: "Calendário Editorial", subtitle: "Planeje, agende e acompanhe cada publicação" },
-  biblioteca: { title: "Biblioteca", subtitle: "Todo o seu acervo de conteúdo em um lugar só" },
-  perfil: { title: "Perfil", subtitle: "Seus dados e as preferências da conta" }
+  biblioteca: { title: "Biblioteca", subtitle: "Todo o seu acervo de conteúdo" },
+  historico: { title: "Histórico", subtitle: "Tudo o que aconteceu na sua conta" },
+  planos: { title: "Planos", subtitle: "Escolha o plano ideal para o seu momento" },
+  perfil: { title: "Perfil", subtitle: "Os dados que assinam os seus conteúdos" },
+  configuracoes: { title: "Configurações", subtitle: "Ajuste a plataforma ao seu jeito de trabalhar" }
   };
 
   // Rotas que reaproveitam uma tela existente.
   const ALIAS = {
-    kanban: { tela: "calendario", view: "kanban" },
-    historico: { tela: "biblioteca", ancora: "historico" },
-    configuracoes: { tela: "perfil", ancora: "configuracoes" },
-    planos: { landing: true, ancora: "planos" }
+    kanban: { tela: "calendario", view: "kanban" }
   };
 
   const INITS = {
@@ -3916,7 +5553,10 @@ if (!SPA) initPerfil();
     central: (root) => initCentral(root),
     calendario: (root, opts) => initBoard(root, opts),
     biblioteca: (root) => initBiblioteca(root),
-    perfil: (root) => initPerfil(root)
+    historico: (root) => initHistorico(root),
+    planos: (root) => initPlanos(root),
+    perfil: (root) => initPerfil(root),
+    configuracoes: (root) => initConfiguracoes(root)
   };
 
   let landingPronta = false;
@@ -3933,6 +5573,18 @@ if (!SPA) initPerfil();
     const alvo = ancora && elLanding.querySelector("#" + ancora);
     if (alvo) alvo.scrollIntoView();
     else window.scrollTo(0, 0);
+  }
+
+  // Login e cadastro: tela cheia, sem sidebar.
+  function mostrarEntrar() {
+    elLanding.hidden = true;
+    store.dropSubscribers();
+    elApp.hidden = false;
+    elApp.className = "";
+    elApp.innerHTML = "";
+    elApp.appendChild(document.querySelector('[data-tela="entrar"]').content.cloneNode(true));
+    initEntrar(elApp);
+    window.scrollTo(0, 0);
   }
 
   function mostrarTela(nome, opts) {
@@ -3971,14 +5623,13 @@ if (!SPA) initPerfil();
     }
 
     if (!bruto) return mostrarLanding();
+    if (bruto === "entrar") return mostrarEntrar();
 
     const alias = ALIAS[bruto];
-    if (alias?.landing) return mostrarLanding(alias.ancora);
-
     const nome = alias?.tela || bruto;
     if (!INITS[nome]) return mostrarLanding();
 
-    mostrarTela(nome, { page: bruto, view: alias?.view, ancora: alias?.ancora });
+    mostrarTela(nome, { page: bruto, view: alias?.view });
   }
 
   window.addEventListener("hashchange", rotear);

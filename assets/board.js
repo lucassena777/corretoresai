@@ -1,6 +1,8 @@
 // Calendário editorial + Kanban: arrastar-e-soltar, clique para editar, tudo no store.
 
 function initBoard(root = document, opts = {}) {
+  if (!auth.exigirLogin()) return;
+
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
   let arrastou = false;
@@ -12,9 +14,15 @@ function initBoard(root = document, opts = {}) {
   function renderCalendar() {
     elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
 
+    const inicioSemana = store.config.semanaComeca;
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
     const start = new Date(first);
-    start.setDate(first.getDate() - first.getDay());
+    start.setDate(first.getDate() - ((first.getDay() - inicioSemana + 7) % 7));
+
+    const nomes = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+    root.querySelector(".calendar-head").innerHTML =
+      [...nomes.slice(inicioSemana), ...nomes.slice(0, inicioSemana)]
+        .map((n) => `<span>${n}</span>`).join("");
 
     const weeks = [];
     const day = new Date(start);
@@ -76,7 +84,7 @@ function initBoard(root = document, opts = {}) {
             <span class="hint">${status.hint}</span>
           </div>
           <div class="kan-drop" data-drop-status="${key}">
-            ${cards.map((item) => ui.itemCard(item, { draggable: true })).join("")
+            ${cards.map((item) => ui.itemCard(item, { draggable: true, data: true })).join("")
               || '<p class="hint" style="padding:18px;text-align:center">Solte um card aqui.</p>'}
           </div>
         </div>`;
@@ -145,8 +153,8 @@ function initBoard(root = document, opts = {}) {
       return;
     }
 
-    const card = event.target.closest(".cal-card, .kan-card");
-    if (card && !arrastou) ui.openItem(card.dataset.id);
+    const card = event.target.closest(".cal-card, .content-card");
+    if (card && !arrastou && !event.target.closest("[data-menu]")) ui.openItem(card.dataset.id);
   });
 
   // ---- Controles ---------------------------------------------------------

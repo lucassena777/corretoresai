@@ -30,18 +30,71 @@ const STATUSES = {
 const KANBAN = ["aprovado", "agendado", "publicado"];
 
 const PLANOS = {
-  gratuito: { label: "Gratuito", cota: 5, preco: "R$ 0" },
-  pro: { label: "Corretor Pro", cota: 40, preco: "R$ 29,90" },
-  ilimitado: { label: "Ilimitado", cota: Infinity, preco: "R$ 49,90" }
+  gratuito: {
+    id: "gratuito", label: "Gratuito", cota: 5, preco: "R$ 0", icone: "i-sparkle",
+    resumo: "Para conhecer a plataforma e publicar as primeiras semanas sem pagar nada.",
+    beneficios: [
+      "5 gerações de conteúdo com IA por mês",
+      "Acesso completo ao Calendário e ao Kanban",
+      "Roteiro com os 11 campos, pronto para gravar",
+      "Biblioteca com busca e filtros",
+      "Exportação do texto para copiar e colar"
+    ],
+    cta: "Começar Grátis"
+  },
+  pro: {
+    id: "pro", label: "Corretor Pro", cota: 40, preco: "R$ 39,90", icone: "i-rocket",
+    resumo: "Para quem já publica toda semana e quer o mês inteiro planejado de uma vez.",
+    beneficios: [
+      "40 gerações de conteúdo com IA por mês",
+      "Escolha da etapa do funil: topo, meio e fundo",
+      "Roteiros estruturados para Reels, TikTok, Stories e Carrossel",
+      "Gerador de Carrosséis e de anúncios de Tráfego Pago",
+      "Funil personalizado para campanhas e lançamentos",
+      "Histórico completo de cada alteração",
+      "Suporte prioritário via WhatsApp"
+    ],
+    cta: "Quero Acelerar Minhas Vendas"
+  },
+  ilimitado: {
+    id: "ilimitado", label: "Ilimitado", cota: Infinity, preco: "R$ 59,90", icone: "i-crown",
+    resumo: "Para equipes e imobiliárias que produzem todo dia e não podem esbarrar em cota.",
+    beneficios: [
+      "Gerações de conteúdo 100% ilimitadas",
+      "Tudo do Corretor Pro, sem teto mensal",
+      "Legenda gerada a partir do link ou da foto do imóvel",
+      "Exportação e agendamento em 1 clique",
+      "Vários corretores na mesma conta",
+      "Acesso antecipado a novas ferramentas",
+      "Suporte VIP individual"
+    ],
+    cta: "Desbloquear Acesso Ilimitado"
+  }
 };
 
 const PERFIL_PADRAO = {
-  nome: "Marina Duarte",
-  creci: "SP 123.456-F",
+  nome: "",
+  email: "",
+  creci: "",
+  telefone: "",
   cidade: "Campinas",
-  instagram: "@marinaduarte.imoveis",
+  imobiliaria: "",
+  instagram: "",
+  bio: "",
   tom: "Direta, sem jargão de imobiliária e sempre explicando o custo real de morar no imóvel.",
-  areas: ["Apartamentos", "Casas"]
+  areas: ["Apartamentos"]
+};
+
+const CONFIG_PADRAO = {
+  areaPadrao: "Apartamentos",
+  funilPadrao: "Topo",
+  formatoPadrao: "Reels",
+  horarioPadrao: "19:00",
+  semanaComeca: 0,          // 0 = domingo, 1 = segunda
+  agendarAoAprovar: true,
+  reduzirAnimacoes: false,
+  resumoSemanal: true,
+  lembretes: false
 };
 
 const SEED_ITENS = [
@@ -114,6 +167,19 @@ const SEED_ATIVIDADES = [
   { icon: "i-sparkle", text: '"Quanto custa de verdade receber convidados com estrutura à altura em Campinas" foi criado', dias: 26 },
   { icon: "i-send", text: '"7 coisas que ninguém te conta sobre apartamentos em Campinas" foi publicado', dias: 35 }
 ];
+
+// Estado inicial de uma conta. Só a conta de demonstração nasce com acervo.
+function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
+  return {
+    itens: comAcervo ? SEED_ITENS.map((i) => ({ ...i, tags: [...i.tags] })) : [],
+    atividades: comAcervo
+      ? SEED_ATIVIDADES.map((a) => ({ icon: a.icon, text: a.text, at: HOJE.getTime() - a.dias * 86400000 }))
+      : [],
+    plano,
+    usadas: 0,
+    config: { ...CONFIG_PADRAO }
+  };
+}
 
 /* ---------------- Gerador de roteiro ---------------- */
 

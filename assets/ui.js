@@ -196,21 +196,31 @@ const ui = (() => {
 
   // ---- Cartão de conteúdo reutilizado em Kanban e Biblioteca -------------
 
-  function itemCard(item, { draggable = false } = {}) {
+  function itemCard(item, { draggable = false, resumo = false, data = false } = {}) {
     const status = STATUSES[item.status];
+    const nome = store.perfil.nome || "Você";
+
     return `
-      <article class="kan-card" data-id="${item.id}"${draggable ? ' draggable="true"' : ""}>
-        <div class="kan-cover t-${slugArea(item.area)}">
-          <span class="kan-format">${item.format}</span>
-          <span class="kan-area">${item.area}</span>
+      <article class="content-card" data-id="${item.id}"${draggable ? ' draggable="true"' : ""}>
+        <div class="card-cover t-${slugArea(item.area)}">
+          <span class="card-format">${item.format}</span>
+          <span class="card-cover-foot">
+            <span>${item.area}</span>
+            ${data ? `<span>${formatDay(item.date)} · ${item.time}</span>` : ""}
+          </span>
         </div>
-        <div class="kan-body">
-          <h4>${item.title}</h4>
-          <p class="kan-when">${formatDay(item.date)} · ${item.time}</p>
-          <div class="kan-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
-          <div class="kan-foot">
-            <span class="avatar">${initials(store.perfil.nome)}</span>
-            ${store.perfil.nome}
+        <div class="card-body">
+          <div class="card-title">
+            <h4>${item.title}</h4>
+            <button class="card-menu" type="button" data-menu aria-label="Ações do conteúdo">···</button>
+          </div>
+          ${resumo
+            ? `<p class="card-resumo">${store.roteiro(item).gancho}</p>`
+            : `<p class="card-when">${formatDay(item.date)} · ${item.time}</p>`}
+          <div class="card-tags">${item.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+          <div class="card-foot">
+            <span class="avatar">${initials(nome)}</span>
+            ${nome}
             <span class="badge" style="color:${status.color}"><i class="status-dot"></i>${status.label}</span>
           </div>
         </div>
@@ -218,17 +228,86 @@ const ui = (() => {
   }
 
   function initials(nome) {
-    return nome.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+    return (nome || "?").split(/\s+/).filter(Boolean).slice(0, 2)
+      .map((p) => p[0].toUpperCase()).join("") || "?";
   }
 
-  // Abre o editor ao clicar em qualquer cartão com data-id (mas não ao arrastar).
-  function wireCardClicks(root = document) {
-    root.addEventListener("click", (event) => {
-      const card = event.target.closest("[data-id]");
-      if (!card || event.target.closest("[data-action]")) return;
-      openItem(card.dataset.id);
+  // ---- Menu "···" do cartão ---------------------------------------------
+
+  function fecharMenus() {
+    document.querySelectorAll(".pop-menu").forEach((m) => m.remove());
+  }
+
+  function abrirMenuCartao(botao, id) {
+    fecharMenus();
+    const item = store.find(id);
+    if (!item) return;
+
+    const acoes = [
+      ["editar", "Abrir e editar", "i-wand"],
+      ["duplicar", "Duplicar", "i-copy"],
+      ...Object.keys(STATUSES)
+        .filter((s) => s !== item.status)
+        .map((s) => [`status:${s}`, `Marcar como ${STATUSES[s].label}`, "i-check-circle"]),
+      ["excluir", "Excluir", "i-trash"]
+    ];
+
+    const menu = document.createElement("div");
+    menu.className = "pop-menu";
+    menu.innerHTML = acoes.map(([acao, texto, ico]) =>
+      `<button type="button" data-acao="${acao}" class="${acao === "excluir" ? "is-danger" : ""}">
+         <svg><use href="#${ico}" /></svg>${texto}
+       </button>`).join("");
+
+    const r = botao.getBoundingClientRect();
+    menu.style.top = `${r.bottom + window.scrollY + 6}px`;
+    menu.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - 240)}px`;
+    document.body.appendChild(menu);
+
+    menu.addEventListener("click", (event) => {
+      const acao = event.target.closest("[data-acao]")?.dataset.acao;
+      if (!acao) return;
+      fecharMenus();
+
+      if (acao === "editar") return openItem(id);
+      if (acao === "duplicar") { store.duplicar(id); return toast("Cópia criada como rascunho."); }
+      if (acao === "excluir") {
+        if (confirm(`Excluir "${item.title}"?`)) { store.remover(id); toast("Conteúdo excluído."); }
+        return;
+      }
+      if (acao.startsWith("status:")) {
+        const novo = acao.split(":")[1];
+        store.atualizar(id, { status: novo });
+        toast(`Marcado como ${STATUSES[novo].label}.`);
+      }
     });
   }
 
-  return { toast, openModal, closeModal, openItem, itemCard, initials, wireCardClicks };
+  document.addEventListener("click", (event) => {
+    const botao = event.target.closest("[data-menu]");
+    if (botao) {
+      event.stopPropagation();
+      abrirMenuCartao(botao, botao.closest("[data-id]").dataset.id);
+      return;
+    }
+    if (!event.target.closest(".pop-menu")) fecharMenus();
+  });
+
+  // ---- Exportação --------------------------------------------------------
+
+  function textoDoItem(item) {
+    const r = store.roteiro(item);
+    const cabecalho = `${item.title}\n${formatFull(item.date)} · ${item.time} · ${item.format} · ${item.area} · ${STATUSES[item.status].label}`;
+    const corpo = CAMPOS_ROTEIRO.map(([k, rotulo]) => `${rotulo}:\n${r[k] ?? ""}`).join("\n\n");
+    return `${cabecalho}\n${"-".repeat(52)}\n${corpo}`;
+  }
+
+  function exportarTexto(lista) {
+    const texto = lista.map(textoDoItem).join(`\n\n${"=".repeat(52)}\n\n`);
+    navigator.clipboard?.writeText(texto)
+      .then(() => toast(`${lista.length} ${lista.length === 1 ? "conteúdo copiado" : "conteúdos copiados"} para a área de transferência.`))
+      .catch(() => toast("Não foi possível copiar.", "erro"));
+  }
+
+  return { toast, openModal, closeModal, openItem, itemCard, initials, exportarTexto, textoDoItem, fecharMenus };
 })();

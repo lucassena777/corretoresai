@@ -8,91 +8,61 @@
   <link rel="stylesheet" href="../assets/app.css" />
   <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
 </head>
-<body data-page="biblioteca" data-title="Biblioteca" data-subtitle="Todo o seu acervo de conteúdo em um lugar só">
+<body data-page="biblioteca" data-title="Biblioteca" data-subtitle="Todo o seu acervo de conteúdo">
 
 <main class="view">
   <div class="view-head">
     <div>
       <h1>Biblioteca</h1>
-      <p>Busque, filtre e clique em qualquer card para abrir o roteiro completo.</p>
+      <p>Todo o conteúdo que você já criou, com busca e filtros por categoria, data, formato, funil e status.</p>
     </div>
-    <a class="btn btn-primary" href="central.html">
-      <svg><use href="#i-plus" /></svg>
-      Criar novo conteúdo
-    </a>
-  </div>
-
-  <div class="form-card" style="max-width:none;margin-bottom:24px">
-    <div class="field field-row" style="margin-bottom:18px">
-      <div>
-        <label for="busca">Buscar</label>
-        <input id="busca" data-search placeholder="Título, tag ou bairro…" />
-      </div>
-      <div>
-        <label for="filtro-area">Área de atuação</label>
-        <select id="filtro-area" data-filter="area"></select>
-      </div>
-    </div>
-
-    <div class="field" style="margin-bottom:18px">
-      <label>Formato</label>
-      <div class="choice-row" data-filter-row="format">
-        <button type="button" aria-pressed="true" data-value="">Todos</button>
-        <button type="button" aria-pressed="false" data-value="Reels">Reels</button>
-        <button type="button" aria-pressed="false" data-value="Carrossel">Carrossel</button>
-        <button type="button" aria-pressed="false" data-value="Stories">Stories</button>
-        <button type="button" aria-pressed="false" data-value="TikTok">TikTok</button>
-      </div>
-    </div>
-
-    <div class="field field-row">
-      <div>
-        <label>Status</label>
-        <div class="choice-row" data-filter-row="status">
-          <button type="button" aria-pressed="true" data-value="">Todos</button>
-          <button type="button" aria-pressed="false" data-value="rascunho">Rascunho</button>
-          <button type="button" aria-pressed="false" data-value="aprovado">Aprovado</button>
-          <button type="button" aria-pressed="false" data-value="agendado">Agendado</button>
-          <button type="button" aria-pressed="false" data-value="publicado">Publicado</button>
-        </div>
-      </div>
-      <div>
-        <label for="ordem">Ordenar por</label>
-        <select id="ordem" data-order>
-          <option value="recentes">Data — mais recentes</option>
-          <option value="antigos">Data — mais antigos</option>
-          <option value="titulo">Título (A–Z)</option>
-        </select>
-      </div>
+    <div class="head-actions">
+      <button class="btn btn-outline" type="button" data-exportar>
+        <svg><use href="#i-download" /></svg>
+        Exportar
+      </button>
+      <a class="btn btn-primary" href="central.html">
+        <svg><use href="#i-plus" /></svg>
+        Criar conteúdo
+      </a>
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:16px;margin:0 0 16px">
-    <p class="hint" style="margin:0" data-count></p>
-    <button class="btn btn-quiet" type="button" data-limpar>Limpar filtros</button>
+  <div class="filtros">
+    <div class="busca">
+      <svg><use href="#i-search" /></svg>
+      <input data-search placeholder="Buscar por título, gancho, legenda, tag ou hashtag…" />
+    </div>
+
+    <div class="filtros-linha">
+      <select data-filtro="area" aria-label="Categoria"></select>
+      <select data-filtro="periodo" aria-label="Data">
+        <option value="">Qualquer data</option>
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="mes">Este mês</option>
+        <option value="futuro">Próximos dias</option>
+      </select>
+      <select data-filtro="format" aria-label="Formato"></select>
+      <select data-filtro="funnel" aria-label="Funil"></select>
+      <select data-filtro="status" aria-label="Status"></select>
+    </div>
+
+    <div class="filtros-rodape">
+      <p><svg><use href="#i-filter" /></svg> <span data-count></span></p>
+      <button class="link" type="button" data-limpar>Limpar filtros</button>
+    </div>
   </div>
 
-  <div class="kanban" data-library></div>
-
-  <section id="historico" style="margin-top:52px">
-    <div class="view-head">
-      <div>
-        <h1 style="font-size:22px">Histórico</h1>
-        <p>Cada geração, mudança de data e movimento de card fica registrado aqui.</p>
-      </div>
-    </div>
-    <section class="panel">
-      <div class="panel-body">
-        <ul class="activity" style="max-height:420px" data-activity></ul>
-      </div>
-    </section>
-  </section>
+  <div class="cards-grid" data-library></div>
 </main>
 
 <script src="../assets/theme.js"></script>
 <script src="../assets/data.js"></script>
+<script src="../assets/db.js"></script>
 <script src="../assets/store.js"></script>
 <script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
 <script src="../assets/shell.js"></script>
 <script src="../assets/biblioteca.js"></script>
 </body>

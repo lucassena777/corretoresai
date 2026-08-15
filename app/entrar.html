@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Entrar — CorretoresAI</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+</head>
+<body data-page="entrar">
+
+<button class="theme-btn auth-tema" type="button" data-theme-toggle aria-label="Alternar tema">
+  <svg class="icon-sun"><use href="#i-sun" /></svg>
+  <svg class="icon-moon"><use href="#i-moon" /></svg>
+</button>
+
+<main class="auth" data-auth>
+  <section class="auth-card">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark"><svg><use href="#i-building" /></svg></span>
+      <span class="brand-stack">
+        <span>Corretores<span class="brand-ai">AI</span></span>
+        <span class="brand-tag">Central de conteúdo imobiliário</span>
+      </span>
+    </a>
+
+    <div class="segmented auth-tabs" data-modo>
+      <button type="button" data-aba="entrar" aria-pressed="true">Entrar</button>
+      <button type="button" data-aba="cadastro" aria-pressed="false">Criar conta</button>
+    </div>
+
+    <!-- ---------- Entrar ---------- -->
+    <form data-form="entrar">
+      <h1>Bem-vindo de volta</h1>
+      <p class="auth-sub">Entre para continuar de onde parou.</p>
+
+      <div class="field">
+        <label for="e-email">E-mail</label>
+        <input id="e-email" name="email" type="email" autocomplete="email" placeholder="voce@imobiliaria.com.br" required />
+      </div>
+
+      <div class="field">
+        <label for="e-senha">Senha</label>
+        <div class="input-acao">
+          <input id="e-senha" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+          <button type="button" data-ver-senha aria-label="Mostrar senha"><svg><use href="#i-eye" /></svg></button>
+        </div>
+      </div>
+
+      <p class="auth-erro" data-erro hidden></p>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Entrar</button>
+
+      <p class="auth-alt">
+        Não tem conta?
+        <button class="link" type="button" data-ir="cadastro">Criar grátis</button>
+      </p>
+
+      <div class="auth-demo">
+        <p>Quer só olhar sem criar nada?</p>
+        <button class="btn btn-outline btn-block" type="button" data-demo>Entrar na conta de demonstração</button>
+      </div>
+    </form>
+
+    <!-- ---------- Criar conta ---------- -->
+    <form data-form="cadastro" hidden>
+      <h1>Comece grátis</h1>
+      <p class="auth-sub">5 gerações por mês, sem cartão de crédito.</p>
+
+      <div class="field">
+        <label for="c-nome">Nome completo</label>
+        <input id="c-nome" name="nome" autocomplete="name" placeholder="Como você assina seus conteúdos" required />
+      </div>
+
+      <div class="field field-row">
+        <div class="field">
+          <label for="c-email">E-mail</label>
+          <input id="c-email" name="email" type="email" autocomplete="email" placeholder="voce@imobiliaria.com.br" required />
+        </div>
+        <div class="field">
+          <label for="c-cidade">Cidade de atuação</label>
+          <input id="c-cidade" name="cidade" placeholder="Campinas" required />
+        </div>
+      </div>
+
+      <div class="field field-row">
+        <div class="field">
+          <label for="c-creci">CRECI <small>(opcional)</small></label>
+          <input id="c-creci" name="creci" placeholder="CRECI-SP 000.000" />
+        </div>
+        <div class="field">
+          <label for="c-telefone">WhatsApp <small>(opcional)</small></label>
+          <input id="c-telefone" name="telefone" placeholder="(11) 90000-0000" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="c-senha">Senha</label>
+        <div class="input-acao">
+          <input id="c-senha" name="senha" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" required />
+          <button type="button" data-ver-senha aria-label="Mostrar senha"><svg><use href="#i-eye" /></svg></button>
+        </div>
+        <p class="hint">Guardamos só o hash da senha, neste navegador.</p>
+      </div>
+
+      <label class="switch" style="border:0;padding:6px 0 16px">
+        <input type="checkbox" name="exemplos" checked />
+        <span class="switch-track"></span>
+        <span class="switch-text">
+          <strong>Começar com conteúdos de exemplo</strong>
+          <span>Enche o calendário e o Kanban para você ver a plataforma cheia. Dá para limpar depois.</span>
+        </span>
+      </label>
+
+      <p class="auth-erro" data-erro hidden></p>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Criar minha conta</button>
+
+      <p class="auth-alt">
+        Já tem conta?
+        <button class="link" type="button" data-ir="entrar">Entrar</button>
+      </p>
+    </form>
+  </section>
+
+  <aside class="auth-lado">
+    <p class="chip"><svg><use href="#i-sparkle" /></svg> A plataforma</p>
+    <h2>Um mês inteiro de publicações planejado antes do café esfriar.</h2>
+    <ul class="check-list auth-check">
+      <li>Roteiro completo com gancho, corte por tempo, legenda e CTA</li>
+      <li>Calendário editorial e Kanban que se atualizam sozinhos</li>
+      <li>Biblioteca com busca por título, gancho, legenda ou hashtag</li>
+      <li>Histórico de cada geração, aprovação e mudança de data</li>
+    </ul>
+    <p class="auth-nota">
+      Os dados ficam neste navegador. Nada é enviado para servidor nenhum.
+    </p>
+  </aside>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/db.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
+<script src="../assets/shell.js"></script>
+<script src="../assets/entrar.js"></script>
+</body>
+</html>
