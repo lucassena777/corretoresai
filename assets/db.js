@@ -4,13 +4,51 @@
 // por conta. A API abaixo (contas, sessão, ler/gravar) é a única porta de
 // entrada — trocar por um back-end de verdade é reescrever só este arquivo.
 
+// Armazenamento com plano B. Dentro de um iframe protegido (como o da prévia
+// publicada) o localStorage pode lançar exceção; aí a sessão vive em memória e
+// a aplicação continua funcionando — só não sobrevive a um recarregamento.
+const storage = (() => {
+  const memoria = new Map();
+  let usaMemoria = false;
+
+  try {
+    localStorage.setItem("corretoresai-teste", "1");
+    localStorage.removeItem("corretoresai-teste");
+  } catch {
+    usaMemoria = true;
+  }
+
+  return {
+    get persistente() { return !usaMemoria; },
+
+    get(chave) {
+      if (usaMemoria) return memoria.get(chave) ?? null;
+      try { return localStorage.getItem(chave); }
+      catch { usaMemoria = true; return memoria.get(chave) ?? null; }
+    },
+
+    set(chave, valor) {
+      memoria.set(chave, valor);
+      if (usaMemoria) return;
+      try { localStorage.setItem(chave, valor); }
+      catch { usaMemoria = true; }
+    },
+
+    remove(chave) {
+      memoria.delete(chave);
+      if (usaMemoria) return;
+      try { localStorage.removeItem(chave); } catch { usaMemoria = true; }
+    }
+  };
+})();
+
 const db = (() => {
   const K_CONTAS = "corretoresai-contas";
   const K_SESSAO = "corretoresai-sessao";
 
   function lerJson(chave, padrao) {
     try {
-      const bruto = JSON.parse(localStorage.getItem(chave));
+      const bruto = JSON.parse(storage.get(chave));
       return bruto ?? padrao;
     } catch {
       return padrao;
@@ -18,7 +56,7 @@ const db = (() => {
   }
 
   function gravarJson(chave, valor) {
-    localStorage.setItem(chave, JSON.stringify(valor));
+    storage.set(chave, JSON.stringify(valor));
   }
 
   const contas = () => lerJson(K_CONTAS, {});
@@ -67,7 +105,7 @@ const db = (() => {
       };
 
       gravarJson(K_CONTAS, todas);
-      localStorage.setItem(K_SESSAO, chave);
+      storage.set(K_SESSAO, chave);
       return todas[chave];
     },
 
@@ -77,16 +115,16 @@ const db = (() => {
       if (!conta) throw new Error("Não encontramos uma conta com esse e-mail.");
       const tentativa = await hash(senha, conta.sal);
       if (tentativa !== conta.senhaHash) throw new Error("Senha incorreta.");
-      localStorage.setItem(K_SESSAO, chave);
+      storage.set(K_SESSAO, chave);
       return conta;
     },
 
     sair() {
-      localStorage.removeItem(K_SESSAO);
+      storage.remove(K_SESSAO);
     },
 
     sessao() {
-      const chave = localStorage.getItem(K_SESSAO);
+      const chave = storage.get(K_SESSAO);
       return chave && contas()[chave] ? chave : null;
     },
 
@@ -152,7 +190,7 @@ const db = (() => {
       const chave = "marina@corretoresai.com.br";
       if (contas()[chave]) return chave;
 
-      const sessaoAnterior = localStorage.getItem(K_SESSAO);
+      const sessaoAnterior = storage.get(K_SESSAO);
       await this.criarConta({
         nome: "Marina Duarte",
         email: chave,
@@ -169,8 +207,8 @@ const db = (() => {
       todas[chave].estado = estadoSemente({ plano: "ilimitado", comAcervo: true });
       gravarJson(K_CONTAS, todas);
 
-      if (sessaoAnterior) localStorage.setItem(K_SESSAO, sessaoAnterior);
-      else localStorage.removeItem(K_SESSAO);
+      if (sessaoAnterior) storage.set(K_SESSAO, sessaoAnterior);
+      else storage.remove(K_SESSAO);
 
       return chave;
     },

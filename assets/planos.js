@@ -39,19 +39,22 @@ function initPlanos(root = document) {
     }).join("");
   }
 
-  alvo.addEventListener("click", (event) => {
+  alvo.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-trocar]");
     if (!btn) return;
 
     const novo = PLANOS[btn.dataset.trocar];
-    const atual = store.plano;
-    const descendo = novo.cota < atual.cota;
+    const descendo = novo.cota < store.plano.cota;
 
     const aviso = descendo
-      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Continuar?`
+      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Seus conteúdos continuam salvos.`
       : `Ativar o ${novo.label} por ${novo.preco}/mês? A cota entra valendo na hora.`;
 
-    if (!confirm(aviso)) return;
+    const ok = await ui.confirmar(aviso, {
+      titulo: `Mudar para ${novo.label}`,
+      acao: descendo ? "Mudar mesmo assim" : "Ativar plano"
+    });
+    if (!ok) return;
 
     store.trocarPlano(novo.id);
     ui.toast(`Plano ${novo.label} ativo. Cota renovada.`);

@@ -92,20 +92,26 @@ function initConfiguracoes(root = document) {
     });
   });
 
-  root.querySelector("[data-exemplos]").addEventListener("click", () => {
-    if (!confirm("Carregar os conteúdos de exemplo? Isso substitui o que já existe na conta.")) return;
+  root.querySelector("[data-exemplos]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Carregar os conteúdos de exemplo? Isso substitui o que já existe na conta.",
+      { titulo: "Carregar exemplos", acao: "Carregar" });
+    if (!ok) return;
     store.carregarExemplos();
     ui.toast("Acervo de exemplo carregado.");
   });
 
-  root.querySelector("[data-limpar-conteudo]").addEventListener("click", () => {
-    if (!confirm("Apagar todo o conteúdo desta conta? Não dá para desfazer.")) return;
+  root.querySelector("[data-limpar-conteudo]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Apagar todo o conteúdo desta conta? Não dá para desfazer.",
+      { titulo: "Apagar conteúdo", acao: "Apagar tudo", perigo: true });
+    if (!ok) return;
     store.limparTudo();
     ui.toast("Conteúdo apagado.");
   });
 
-  root.querySelector("[data-excluir-conta]").addEventListener("click", () => {
-    if (!confirm("Excluir sua conta e todos os dados dela? Não dá para desfazer.")) return;
+  root.querySelector("[data-excluir-conta]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Excluir sua conta e todos os dados dela? Não dá para desfazer.",
+      { titulo: "Excluir conta", acao: "Excluir conta", perigo: true });
+    if (!ok) return;
     db.excluirConta();
     location.href = auth.urlEntrar();
   });

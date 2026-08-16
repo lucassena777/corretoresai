@@ -27,8 +27,16 @@ $shellJs = Ler "assets\shell.js"
 $spriteShell = $shellJs.Substring($shellJs.IndexOf('<svg width="0"'))
 $spriteShell = $spriteShell.Substring(0, $spriteShell.IndexOf('</svg>`;') + 6)
 
-# Telas
-$landing = Recortar $index '<header class="site-header">' '</footer>'
+# Telas.
+# A landing usa marcadores proprios: recortar por tag daria errado, porque
+# existe um <footer> dentro de cada depoimento antes do rodape do site.
+$landing = Recortar $index '<!--@landing-inicio-->' '<!--@landing-fim-->'
+
+# Rede de seguranca: se o recorte da landing perder o rodape, o HTML sai
+# desbalanceado e as telas do app acabam aninhadas dentro dela (invisiveis).
+if ($landing -notmatch 'class="site-footer"') {
+  throw "Recorte da landing nao inclui o rodape do site."
+}
 
 $nomes = @("dashboard", "central", "calendario", "biblioteca", "historico",
            "planos", "perfil", "configuracoes")
@@ -55,6 +63,7 @@ foreach ($nome in $telas.Keys) {
 
 $css = @("assets\base.css", "assets\site.css", "assets\app.css") | ForEach-Object { Ler $_ }
 $js = @(
+  "assets\theme.js",
   "assets\data.js", "assets\db.js", "assets\store.js", "assets\ui.js",
   "assets\auth.js", "assets\shell.js", "assets\site.js", "assets\entrar.js",
   "assets\dashboard.js", "assets\central.js", "assets\board.js",
@@ -77,7 +86,7 @@ $($css -join "`n")
 </style>
 <script>
   const PREVIEW_SPA = true;
-  document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";
+  try { document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }
 </script>
 
 $spriteLanding

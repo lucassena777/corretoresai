@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="assets/site.css" />
   <script>
     // Aplica o tema salvo antes da pintura, para não piscar branco.
-    document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";
+    try { document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }
   </script>
 </head>
 <body>
@@ -74,6 +74,7 @@
   </symbol>
 </svg>
 
+<!--@landing-inicio-->
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="#top">
@@ -130,7 +131,7 @@
             Começar grátis
             <svg><use href="#i-arrow" /></svg>
           </a>
-          <a class="btn btn-outline btn-lg" href="#recursos">Ver a plataforma</a>
+          <button class="btn btn-outline btn-lg" type="button" data-ver-plataforma>Ver a plataforma</button>
         </div>
 
         <ul class="check-list">
@@ -399,6 +400,7 @@
     </nav>
   </div>
 </footer>
+<!--@landing-fim-->
 
 <script src="assets/theme.js"></script>
 <script src="assets/data.js"></script>

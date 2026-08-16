@@ -6,7 +6,7 @@
   <title>Configurações — CorretoresAI</title>
   <link rel="stylesheet" href="../assets/base.css" />
   <link rel="stylesheet" href="../assets/app.css" />
-  <script>document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";</script>
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
 </head>
 <body data-page="configuracoes" data-title="Configurações" data-subtitle="Ajuste a plataforma ao seu jeito de trabalhar">
 

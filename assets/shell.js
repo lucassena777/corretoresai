@@ -143,8 +143,10 @@ function renderShell() {
 }
 
 function ligarSair(root) {
-  root.querySelector("[data-sair]")?.addEventListener("click", () => {
-    if (confirm("Sair da sua conta? Seus conteúdos continuam salvos.")) auth.sair();
+  root.querySelector("[data-sair]")?.addEventListener("click", async () => {
+    const ok = await ui.confirmar("Sair da sua conta? Seus conteúdos continuam salvos.",
+      { titulo: "Sair", acao: "Sair" });
+    if (ok) auth.sair();
   });
 }
 

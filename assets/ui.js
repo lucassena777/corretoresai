@@ -41,6 +41,33 @@ const ui = (() => {
     return closeModal;
   }
 
+  // Confirmação própria: o confirm() nativo é bloqueado dentro de iframes
+  // protegidos (como o da prévia publicada) e volta "não" sem avisar ninguém.
+  function confirmar(mensagem, { titulo = "Confirmar", acao = "Confirmar", perigo = false } = {}) {
+    return new Promise((resolve) => {
+      let decidido = false;
+      const responder = (valor) => { if (!decidido) { decidido = true; resolve(valor); } };
+
+      openModal(`
+        <header class="modal-head">
+          <div><h2>${titulo}</h2></div>
+        </header>
+        <div class="modal-body"><p class="confirm-texto">${mensagem}</p></div>
+        <footer class="modal-foot">
+          <button class="btn btn-outline" type="button" data-nao>Cancelar</button>
+          <button class="btn ${perigo ? "btn-outline is-danger" : "btn-primary"}" type="button" data-sim>${acao}</button>
+        </footer>`, (modal) => {
+        modal.querySelector("[data-sim]").addEventListener("click", () => { responder(true); closeModal(); });
+        modal.querySelector("[data-nao]").addEventListener("click", () => { responder(false); closeModal(); });
+        modal.querySelector("[data-sim]").focus();
+        // Fechar clicando fora ou no Esc conta como cancelar.
+        new MutationObserver((_, obs) => {
+          if (!document.body.contains(modal)) { responder(false); obs.disconnect(); }
+        }).observe(document.body, { childList: true });
+      });
+    });
+  }
+
   // ---- Editor completo de um conteúdo ------------------------------------
 
   function openItem(id) {
@@ -185,10 +212,13 @@ const ui = (() => {
         }
 
         if (action === "excluir") {
-          if (!confirm(`Excluir "${item.title}"? Não dá para desfazer.`)) return;
-          store.remover(id);
-          closeModal();
-          toast("Conteúdo excluído.");
+          confirmar(`Excluir "${item.title}"? Não dá para desfazer.`,
+            { titulo: "Excluir conteúdo", acao: "Excluir", perigo: true }).then((ok) => {
+            if (!ok) return;
+            store.remover(id);
+            closeModal();
+            toast("Conteúdo excluído.");
+          });
         }
       });
     });
@@ -272,7 +302,10 @@ const ui = (() => {
       if (acao === "editar") return openItem(id);
       if (acao === "duplicar") { store.duplicar(id); return toast("Cópia criada como rascunho."); }
       if (acao === "excluir") {
-        if (confirm(`Excluir "${item.title}"?`)) { store.remover(id); toast("Conteúdo excluído."); }
+        confirmar(`Excluir "${item.title}"? Não dá para desfazer.`,
+          { titulo: "Excluir conteúdo", acao: "Excluir", perigo: true }).then((ok) => {
+          if (ok) { store.remover(id); toast("Conteúdo excluído."); }
+        });
         return;
       }
       if (acao.startsWith("status:")) {
@@ -309,5 +342,6 @@ const ui = (() => {
       .catch(() => toast("Não foi possível copiar.", "erro"));
   }
 
-  return { toast, openModal, closeModal, openItem, itemCard, initials, exportarTexto, textoDoItem, fecharMenus };
+  return { toast, openModal, closeModal, confirmar, openItem, itemCard, initials,
+    exportarTexto, textoDoItem, fecharMenus };
 })();

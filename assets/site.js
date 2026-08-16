@@ -65,12 +65,22 @@ function initLanding(root = document) {
     }).join("");
   }
 
-  // Escolher um plano leva para o cadastro já com esse plano em mente.
-  root.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-plano]");
-    if (!btn) return;
-    sessionStorage.setItem("corretoresai-plano-escolhido", btn.dataset.plano);
-    location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
+  root.addEventListener("click", async (event) => {
+    // Escolher um plano leva para o cadastro já com esse plano em mente.
+    const plano = event.target.closest("[data-plano]");
+    if (plano) {
+      try { sessionStorage.setItem("corretoresai-plano-escolhido", plano.dataset.plano); } catch { /* ok */ }
+      location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
+      return;
+    }
+
+    // "Ver a plataforma" entra direto na conta de demonstração.
+    if (event.target.closest("[data-ver-plataforma]")) {
+      await db.garantirDemo();
+      await db.entrar(db.CREDENCIAIS_DEMO.email, db.CREDENCIAIS_DEMO.senha);
+      store.recarregar();
+      location.href = SPA ? "#/dashboard" : "app/dashboard.html";
+    }
   });
 }
 

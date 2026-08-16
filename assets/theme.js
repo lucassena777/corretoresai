@@ -1,15 +1,19 @@
-// Alternância de tema compartilhada entre a landing e o app.
+// Alternância de tema, compartilhada entre a landing e o app.
+// Toda leitura/escrita é protegida: em iframe restrito o localStorage lança.
+
 (function theme() {
   const root = document.documentElement;
   const KEY = "corretoresai-theme";
 
-  root.dataset.theme = localStorage.getItem(KEY) || "dark";
+  const ler = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
+  const gravar = (v) => { try { localStorage.setItem(KEY, v); } catch { /* sem persistência */ } };
+
+  root.dataset.theme = ler() || "dark";
 
   document.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-theme-toggle]");
-    if (!btn) return;
-    const next = root.dataset.theme === "light" ? "dark" : "light";
-    root.dataset.theme = next;
-    localStorage.setItem(KEY, next);
+    if (!event.target.closest("[data-theme-toggle]")) return;
+    const proximo = root.dataset.theme === "light" ? "dark" : "light";
+    root.dataset.theme = proximo;
+    gravar(proximo);
   });
 })();

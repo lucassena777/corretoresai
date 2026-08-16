@@ -2089,6 +2089,9 @@ button { font: inherit; }
 }
 
 .modal-foot .btn-primary { margin-left: auto; }
+.modal-foot .btn-outline.is-danger { margin-left: auto; }
+.confirm-texto { margin: 0; color: var(--text-muted); font-size: 15px; line-height: 1.6; }
+.modal:has(.confirm-texto) { width: min(460px, 100%); }
 
 .btn-outline.is-danger { color: #ff9b9b; }
 .btn-outline.is-danger:hover { border-color: #7f2b2b; }
@@ -2167,7 +2170,7 @@ button { font: inherit; }
 </style>
 <script>
   const PREVIEW_SPA = true;
-  document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark";
+  try { document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }
 </script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -2267,6 +2270,7 @@ button { font: inherit; }
 </svg>
 
 <div data-landing>
+<!--@landing-inicio-->
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="#top">
@@ -2323,7 +2327,7 @@ button { font: inherit; }
             Começar grátis
             <svg><use href="#i-arrow" /></svg>
           </a>
-          <a class="btn btn-outline btn-lg" href="#recursos">Ver a plataforma</a>
+          <button class="btn btn-outline btn-lg" type="button" data-ver-plataforma>Ver a plataforma</button>
         </div>
 
         <ul class="check-list">
@@ -2536,6 +2540,63 @@ button { font: inherit; }
             <strong>Marcos Ferreira</strong>
             <span>Corretor de Apartamentos</span>
           </footer>
+        </article>
+
+        <article class="quote">
+          <span class="quote-mark">&rdquo;</span>
+          <blockquote>“Meus Reels de lançamento passaram a ter muito mais visualizações. Os roteiros realmente prendem atenção.”</blockquote>
+          <footer>
+            <strong>Renata Souza</strong>
+            <span>Imóveis de Alto Padrão</span>
+          </footer>
+        </article>
+
+        <article class="quote">
+          <span class="quote-mark">&rdquo;</span>
+          <blockquote>“Deixei de postar foto solta com legenda genérica. Agora cada imóvel tem uma narrativa que gera contato.”</blockquote>
+          <footer>
+            <strong>Paulo Andrade</strong>
+            <span>Corretor Autônomo</span>
+          </footer>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CTA FINAL ================= -->
+  <section class="final-cta">
+    <div class="container">
+      <h2 class="section-title">O corretor que aparece é o corretor lembrado</h2>
+      <p class="lead">
+        Comece hoje com dez conteúdos gratuitos e veja como é ter um mês inteiro de
+        publicações planejado antes do café esfriar.
+      </p>
+      <a class="btn btn-primary btn-lg" href="app/entrar.html?modo=cadastro">
+        Criar minha conta grátis
+        <svg><use href="#i-arrow" /></svg>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><svg><use href="#i-building" /></svg></span>
+      <span class="brand-stack">
+        <span>Corretores<span class="brand-ai">AI</span></span>
+        <span class="brand-tag">Central de conteúdo imobiliário</span>
+      </span>
+    </a>
+    <p class="footer-copy">© 2026 CorretoresAI. Todos os direitos reservados.</p>
+    <nav class="footer-links" aria-label="Rodapé">
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="app/entrar.html">Entrar</a>
+    </nav>
+  </div>
+</footer>
+<!--@landing-fim-->
 </div>
 
 <div data-app hidden></div>
@@ -3187,6 +3248,26 @@ button { font: inherit; }
 </main></template>
 
 <script>
+// Alternância de tema, compartilhada entre a landing e o app.
+// Toda leitura/escrita é protegida: em iframe restrito o localStorage lança.
+
+(function theme() {
+  const root = document.documentElement;
+  const KEY = "corretoresai-theme";
+
+  const ler = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
+  const gravar = (v) => { try { localStorage.setItem(KEY, v); } catch { /* sem persistência */ } };
+
+  root.dataset.theme = ler() || "dark";
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-theme-toggle]")) return;
+    const proximo = root.dataset.theme === "light" ? "dark" : "light";
+    root.dataset.theme = proximo;
+    gravar(proximo);
+  });
+})();
+
 // Sementes e constantes da demonstração.
 // O estado vivo (o que o usuário cria, edita, arrasta e apaga) fica em store.js.
 
@@ -3491,13 +3572,51 @@ function slugArea(text) {
 // por conta. A API abaixo (contas, sessão, ler/gravar) é a única porta de
 // entrada — trocar por um back-end de verdade é reescrever só este arquivo.
 
+// Armazenamento com plano B. Dentro de um iframe protegido (como o da prévia
+// publicada) o localStorage pode lançar exceção; aí a sessão vive em memória e
+// a aplicação continua funcionando — só não sobrevive a um recarregamento.
+const storage = (() => {
+  const memoria = new Map();
+  let usaMemoria = false;
+
+  try {
+    localStorage.setItem("corretoresai-teste", "1");
+    localStorage.removeItem("corretoresai-teste");
+  } catch {
+    usaMemoria = true;
+  }
+
+  return {
+    get persistente() { return !usaMemoria; },
+
+    get(chave) {
+      if (usaMemoria) return memoria.get(chave) ?? null;
+      try { return localStorage.getItem(chave); }
+      catch { usaMemoria = true; return memoria.get(chave) ?? null; }
+    },
+
+    set(chave, valor) {
+      memoria.set(chave, valor);
+      if (usaMemoria) return;
+      try { localStorage.setItem(chave, valor); }
+      catch { usaMemoria = true; }
+    },
+
+    remove(chave) {
+      memoria.delete(chave);
+      if (usaMemoria) return;
+      try { localStorage.removeItem(chave); } catch { usaMemoria = true; }
+    }
+  };
+})();
+
 const db = (() => {
   const K_CONTAS = "corretoresai-contas";
   const K_SESSAO = "corretoresai-sessao";
 
   function lerJson(chave, padrao) {
     try {
-      const bruto = JSON.parse(localStorage.getItem(chave));
+      const bruto = JSON.parse(storage.get(chave));
       return bruto ?? padrao;
     } catch {
       return padrao;
@@ -3505,7 +3624,7 @@ const db = (() => {
   }
 
   function gravarJson(chave, valor) {
-    localStorage.setItem(chave, JSON.stringify(valor));
+    storage.set(chave, JSON.stringify(valor));
   }
 
   const contas = () => lerJson(K_CONTAS, {});
@@ -3554,7 +3673,7 @@ const db = (() => {
       };
 
       gravarJson(K_CONTAS, todas);
-      localStorage.setItem(K_SESSAO, chave);
+      storage.set(K_SESSAO, chave);
       return todas[chave];
     },
 
@@ -3564,16 +3683,16 @@ const db = (() => {
       if (!conta) throw new Error("Não encontramos uma conta com esse e-mail.");
       const tentativa = await hash(senha, conta.sal);
       if (tentativa !== conta.senhaHash) throw new Error("Senha incorreta.");
-      localStorage.setItem(K_SESSAO, chave);
+      storage.set(K_SESSAO, chave);
       return conta;
     },
 
     sair() {
-      localStorage.removeItem(K_SESSAO);
+      storage.remove(K_SESSAO);
     },
 
     sessao() {
-      const chave = localStorage.getItem(K_SESSAO);
+      const chave = storage.get(K_SESSAO);
       return chave && contas()[chave] ? chave : null;
     },
 
@@ -3639,7 +3758,7 @@ const db = (() => {
       const chave = "marina@corretoresai.com.br";
       if (contas()[chave]) return chave;
 
-      const sessaoAnterior = localStorage.getItem(K_SESSAO);
+      const sessaoAnterior = storage.get(K_SESSAO);
       await this.criarConta({
         nome: "Marina Duarte",
         email: chave,
@@ -3656,8 +3775,8 @@ const db = (() => {
       todas[chave].estado = estadoSemente({ plano: "ilimitado", comAcervo: true });
       gravarJson(K_CONTAS, todas);
 
-      if (sessaoAnterior) localStorage.setItem(K_SESSAO, sessaoAnterior);
-      else localStorage.removeItem(K_SESSAO);
+      if (sessaoAnterior) storage.set(K_SESSAO, sessaoAnterior);
+      else storage.remove(K_SESSAO);
 
       return chave;
     },
@@ -3898,6 +4017,33 @@ const ui = (() => {
     return closeModal;
   }
 
+  // Confirmação própria: o confirm() nativo é bloqueado dentro de iframes
+  // protegidos (como o da prévia publicada) e volta "não" sem avisar ninguém.
+  function confirmar(mensagem, { titulo = "Confirmar", acao = "Confirmar", perigo = false } = {}) {
+    return new Promise((resolve) => {
+      let decidido = false;
+      const responder = (valor) => { if (!decidido) { decidido = true; resolve(valor); } };
+
+      openModal(`
+        <header class="modal-head">
+          <div><h2>${titulo}</h2></div>
+        </header>
+        <div class="modal-body"><p class="confirm-texto">${mensagem}</p></div>
+        <footer class="modal-foot">
+          <button class="btn btn-outline" type="button" data-nao>Cancelar</button>
+          <button class="btn ${perigo ? "btn-outline is-danger" : "btn-primary"}" type="button" data-sim>${acao}</button>
+        </footer>`, (modal) => {
+        modal.querySelector("[data-sim]").addEventListener("click", () => { responder(true); closeModal(); });
+        modal.querySelector("[data-nao]").addEventListener("click", () => { responder(false); closeModal(); });
+        modal.querySelector("[data-sim]").focus();
+        // Fechar clicando fora ou no Esc conta como cancelar.
+        new MutationObserver((_, obs) => {
+          if (!document.body.contains(modal)) { responder(false); obs.disconnect(); }
+        }).observe(document.body, { childList: true });
+      });
+    });
+  }
+
   // ---- Editor completo de um conteúdo ------------------------------------
 
   function openItem(id) {
@@ -4042,10 +4188,13 @@ const ui = (() => {
         }
 
         if (action === "excluir") {
-          if (!confirm(`Excluir "${item.title}"? Não dá para desfazer.`)) return;
-          store.remover(id);
-          closeModal();
-          toast("Conteúdo excluído.");
+          confirmar(`Excluir "${item.title}"? Não dá para desfazer.`,
+            { titulo: "Excluir conteúdo", acao: "Excluir", perigo: true }).then((ok) => {
+            if (!ok) return;
+            store.remover(id);
+            closeModal();
+            toast("Conteúdo excluído.");
+          });
         }
       });
     });
@@ -4129,7 +4278,10 @@ const ui = (() => {
       if (acao === "editar") return openItem(id);
       if (acao === "duplicar") { store.duplicar(id); return toast("Cópia criada como rascunho."); }
       if (acao === "excluir") {
-        if (confirm(`Excluir "${item.title}"?`)) { store.remover(id); toast("Conteúdo excluído."); }
+        confirmar(`Excluir "${item.title}"? Não dá para desfazer.`,
+          { titulo: "Excluir conteúdo", acao: "Excluir", perigo: true }).then((ok) => {
+          if (ok) { store.remover(id); toast("Conteúdo excluído."); }
+        });
         return;
       }
       if (acao.startsWith("status:")) {
@@ -4166,7 +4318,8 @@ const ui = (() => {
       .catch(() => toast("Não foi possível copiar.", "erro"));
   }
 
-  return { toast, openModal, closeModal, openItem, itemCard, initials, exportarTexto, textoDoItem, fecharMenus };
+  return { toast, openModal, closeModal, confirmar, openItem, itemCard, initials,
+    exportarTexto, textoDoItem, fecharMenus };
 })();
 
 // Sessão: para onde ir quando não há login e para onde voltar depois dele.
@@ -4339,8 +4492,10 @@ function renderShell() {
 }
 
 function ligarSair(root) {
-  root.querySelector("[data-sair]")?.addEventListener("click", () => {
-    if (confirm("Sair da sua conta? Seus conteúdos continuam salvos.")) auth.sair();
+  root.querySelector("[data-sair]")?.addEventListener("click", async () => {
+    const ok = await ui.confirmar("Sair da sua conta? Seus conteúdos continuam salvos.",
+      { titulo: "Sair", acao: "Sair" });
+    if (ok) auth.sair();
   });
 }
 
@@ -4448,12 +4603,22 @@ function initLanding(root = document) {
     }).join("");
   }
 
-  // Escolher um plano leva para o cadastro já com esse plano em mente.
-  root.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-plano]");
-    if (!btn) return;
-    sessionStorage.setItem("corretoresai-plano-escolhido", btn.dataset.plano);
-    location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
+  root.addEventListener("click", async (event) => {
+    // Escolher um plano leva para o cadastro já com esse plano em mente.
+    const plano = event.target.closest("[data-plano]");
+    if (plano) {
+      try { sessionStorage.setItem("corretoresai-plano-escolhido", plano.dataset.plano); } catch { /* ok */ }
+      location.href = SPA ? "#/entrar?modo=cadastro" : "app/entrar.html?modo=cadastro";
+      return;
+    }
+
+    // "Ver a plataforma" entra direto na conta de demonstração.
+    if (event.target.closest("[data-ver-plataforma]")) {
+      await db.garantirDemo();
+      await db.entrar(db.CREDENCIAIS_DEMO.email, db.CREDENCIAIS_DEMO.senha);
+      store.recarregar();
+      location.href = SPA ? "#/dashboard" : "app/dashboard.html";
+    }
   });
 }
 
@@ -5330,19 +5495,22 @@ function initPlanos(root = document) {
     }).join("");
   }
 
-  alvo.addEventListener("click", (event) => {
+  alvo.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-trocar]");
     if (!btn) return;
 
     const novo = PLANOS[btn.dataset.trocar];
-    const atual = store.plano;
-    const descendo = novo.cota < atual.cota;
+    const descendo = novo.cota < store.plano.cota;
 
     const aviso = descendo
-      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Continuar?`
+      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Seus conteúdos continuam salvos.`
       : `Ativar o ${novo.label} por ${novo.preco}/mês? A cota entra valendo na hora.`;
 
-    if (!confirm(aviso)) return;
+    const ok = await ui.confirmar(aviso, {
+      titulo: `Mudar para ${novo.label}`,
+      acao: descendo ? "Mudar mesmo assim" : "Ativar plano"
+    });
+    if (!ok) return;
 
     store.trocarPlano(novo.id);
     ui.toast(`Plano ${novo.label} ativo. Cota renovada.`);
@@ -5507,20 +5675,26 @@ function initConfiguracoes(root = document) {
     });
   });
 
-  root.querySelector("[data-exemplos]").addEventListener("click", () => {
-    if (!confirm("Carregar os conteúdos de exemplo? Isso substitui o que já existe na conta.")) return;
+  root.querySelector("[data-exemplos]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Carregar os conteúdos de exemplo? Isso substitui o que já existe na conta.",
+      { titulo: "Carregar exemplos", acao: "Carregar" });
+    if (!ok) return;
     store.carregarExemplos();
     ui.toast("Acervo de exemplo carregado.");
   });
 
-  root.querySelector("[data-limpar-conteudo]").addEventListener("click", () => {
-    if (!confirm("Apagar todo o conteúdo desta conta? Não dá para desfazer.")) return;
+  root.querySelector("[data-limpar-conteudo]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Apagar todo o conteúdo desta conta? Não dá para desfazer.",
+      { titulo: "Apagar conteúdo", acao: "Apagar tudo", perigo: true });
+    if (!ok) return;
     store.limparTudo();
     ui.toast("Conteúdo apagado.");
   });
 
-  root.querySelector("[data-excluir-conta]").addEventListener("click", () => {
-    if (!confirm("Excluir sua conta e todos os dados dela? Não dá para desfazer.")) return;
+  root.querySelector("[data-excluir-conta]").addEventListener("click", async () => {
+    const ok = await ui.confirmar("Excluir sua conta e todos os dados dela? Não dá para desfazer.",
+      { titulo: "Excluir conta", acao: "Excluir conta", perigo: true });
+    if (!ok) return;
     db.excluirConta();
     location.href = auth.urlEntrar();
   });
