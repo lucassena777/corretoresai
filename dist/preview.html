@@ -6064,9 +6064,16 @@ const assistente = (() => {
           : store.config.horarioPadrao
       };
 
+      // Quando o pedido trouxe a cidade, ela manda: sem apagar a do perfil, o
+      // texto.js leria "Atibaia" como bairro de Campinas e gravaria
+      // "Campinas - Atibaia". O resto do perfil (nome, CRECI, tom) continua.
+      const perfil = entrada.cidade
+        ? { ...store.perfil, cidade: "" }
+        : store.perfil;
+
       // O roteiro sai da engine local: agendar tem que ser instantâneo. O
       // corretor regera pela IA depois, no editor, se quiser.
-      const [ideia] = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      const [ideia] = roteiro.gerarIdeias(dados, perfil, Date.now());
       const { angulo, rotulo, origem, ...limpo } = ideia;
       const item = store.criar({ ...limpo, status: "agendado" });
 
