@@ -63,8 +63,8 @@ foreach ($nome in $telas.Keys) {
 
 $css = @("assets\base.css", "assets\site.css", "assets\app.css") | ForEach-Object { Ler $_ }
 $js = @(
-  "assets\theme.js",
-  "assets\data.js", "assets\db.js", "assets\store.js", "assets\ui.js",
+  "assets\theme.js", "assets\texto.js",
+  "assets\data.js", "assets\roteiro.js", "assets\db.js", "assets\store.js", "assets\ui.js",
   "assets\auth.js", "assets\shell.js", "assets\site.js", "assets\entrar.js",
   "assets\dashboard.js", "assets\central.js", "assets\board.js",
   "assets\biblioteca.js", "assets\historico.js", "assets\planos.js",

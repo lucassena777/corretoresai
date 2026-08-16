@@ -1,4 +1,5 @@
-// Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
+// Central de Conteúdo: trata o que foi digitado, gera três ângulos distintos
+// e transforma a ideia aprovada em conteúdo de verdade.
 
 function initCentral(root = document) {
   if (!auth.exigirLogin()) return;
@@ -8,7 +9,6 @@ function initCentral(root = document) {
   const elQuota = root.querySelector("[data-quota]");
   const cfg = store.config;
 
-  // Preenche a partir das Configurações, do perfil e de ?data= (vindo do calendário).
   form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
   form.area.value = cfg.areaPadrao || store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
@@ -27,6 +27,21 @@ function initCentral(root = document) {
     });
   });
 
+  // Mostra ao vivo como a cidade digitada vai sair no texto.
+  const eco = root.querySelector("[data-eco-cidade]");
+  function atualizarEco() {
+    if (!eco) return;
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    eco.textContent = l.completo ? `Vai sair como: ${l.completo}` : "";
+  }
+  form.cidade.addEventListener("input", atualizarEco);
+  form.cidade.addEventListener("blur", () => {
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    if (l.completo) form.cidade.value = l.completo;
+    atualizarEco();
+  });
+  atualizarEco();
+
   function proximaData() {
     if (dataAlvo) return dataAlvo;
     const ocupadas = new Set(store.board().map((i) => i.date));
@@ -44,12 +59,10 @@ function initCentral(root = document) {
     elQuota.innerHTML = restantes === Infinity
       ? `<svg class="icon"><use href="#i-crown" /></svg> Gerações ilimitadas no seu plano`
       : `<svg class="icon"><use href="#i-sparkle" /></svg> <b>${restantes}</b> de ${store.plano.cota} gerações restantes ·
-         <a href="../index.html#planos" style="color:var(--gold-soft)">assine o Ilimitado</a>`;
+         <a href="${SPA ? "#/planos" : "planos.html"}" style="color:var(--gold-soft)">ver planos</a>`;
   }
 
-  // ---- Escolhas únicas ---------------------------------------------------
-
-  root.querySelectorAll("[data-choice]").forEach((row) => {
+  document.querySelectorAll("[data-choice]").forEach((row) => {
     row.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
       if (!btn) return;
@@ -66,26 +79,15 @@ function initCentral(root = document) {
   let ideias = [];
 
   function gerar() {
-    const area = form.area.value;
-    const cidade = form.cidade.value.trim() || store.perfil.cidade;
-    const briefing = form.briefing.value.trim();
-    const funnel = escolhido("funil");
-    const format = escolhido("formato");
-    const semente = Date.now();
-
-    ideias = [0, 1, 2].map((n) => {
-      const bruto = pick(TITULOS[funnel], semente + n * 7)
-        .replace("{n}", [3, 5, 7][(semente + n) % 3])
-        .replace("{area}", area.toLowerCase())
-        .replace("{cidade}", cidade);
-      const title = bruto[0].toUpperCase() + bruto.slice(1);
-
-      const base = { title, area, format, funnel, city: cidade, briefing,
-        date: proximaData(), time: store.config.horarioPadrao,
-        tags: [area, TAGS_FUNIL[funnel], format] };
-
-      return { ...base, script: buildScript(base, store.perfil) };
-    });
+    ideias = roteiro.gerarIdeias({
+      area: form.area.value,
+      cidade: form.cidade.value,
+      briefing: form.briefing.value,
+      funnel: escolhido("funil"),
+      format: escolhido("formato"),
+      date: proximaData(),
+      time: store.config.horarioPadrao
+    }, store.perfil, Date.now());
 
     render();
   }
@@ -93,19 +95,39 @@ function initCentral(root = document) {
   function render() {
     if (!ideias.length) { elIdeas.innerHTML = ""; return; }
 
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    const f = texto.fatos(form.briefing.value);
+    const ficha = texto.ficha(f);
+
     elIdeas.innerHTML = `
-      <h2 class="section-title" style="font-size:20px;margin:8px 0 0">3 ideias prontas</h2>
-      <p class="hint" style="margin:0 0 4px">Aprovar já joga o conteúdo no calendário e no Kanban.</p>
+      <div class="ideias-head">
+        <h2>Três ângulos para o mesmo imóvel</h2>
+        <p>
+          ${l.completo ? `<b>${l.completo}</b>` : "Sem localização informada"}
+          ${ficha ? ` · ${ficha}` : ""}
+          ${f.caracteristicas.length ? ` · ${texto.lista(f.caracteristicas.slice(0, 3))}` : ""}
+        </p>
+      </div>
       ${ideias.map((ideia, n) => `
         <article class="idea" data-idea="${n}">
           <div class="idea-head">
-            <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
-            <h3>${ideia.title}</h3>
+            <span class="icon-tile is-gold"><svg><use href="#${
+              ideia.angulo === "analise" ? "i-trend" : ideia.angulo === "estilo" ? "i-eye" : "i-check-circle"
+            }" /></svg></span>
+            <div>
+              <span class="idea-rotulo">${ideia.rotulo}</span>
+              <h3>${ideia.title}</h3>
+            </div>
           </div>
-          <p><b>Gancho:</b> ${ideia.script.gancho}</p>
-          <p><b>CTA:</b> ${ideia.script.cta}</p>
-          <p><b>Objetivo:</b> ${ideia.script.objetivo}</p>
-          <div class="kan-tags" style="margin-top:14px">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+
+          <dl class="idea-campos">
+            <div><dt>Gancho</dt><dd>${ideia.script.gancho}</dd></div>
+            <div><dt>Desenvolvimento</dt><dd>${ideia.script.desenvolvimento.replace(/\n\n/g, "<br /><br />")}</dd></div>
+            <div><dt>Chamada</dt><dd>${ideia.script.cta}</dd></div>
+          </dl>
+
+          <div class="kan-tags">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+
           <div class="idea-actions">
             <button class="btn btn-primary" type="button" data-action="aprovar">
               <svg><use href="#i-check-circle" /></svg>Aprovar e agendar
@@ -123,14 +145,14 @@ function initCentral(root = document) {
     const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
     const acao = btn.dataset.action;
 
-    // "Agendar ao aprovar" decide se o card nasce Agendado ou só Aprovado.
     const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
-    const item = store.criar({ ...ideia, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
+    const { angulo, rotulo, ...limpo } = ideia;
+    const item = store.criar({ ...limpo, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
       ui.toast(store.config.agendarAoAprovar
         ? `Agendado para ${formatFull(item.date)}.`
-        : `Aprovado. Defina a data no calendário quando quiser.`);
+        : "Aprovado. Defina a data no calendário quando quiser.");
     } else if (acao === "rascunho") {
       ui.toast("Salvo como rascunho na Biblioteca.");
     } else {
@@ -156,7 +178,11 @@ function initCentral(root = document) {
 
   root.querySelector("[data-limpar]")?.addEventListener("click", () => {
     form.reset();
+    form.area.value = cfg.areaPadrao || AREAS[0];
     form.cidade.value = store.perfil.cidade;
+    marcar("funil", cfg.funilPadrao);
+    marcar("formato", cfg.formatoPadrao);
+    atualizarEco();
     ideias = [];
     render();
   });

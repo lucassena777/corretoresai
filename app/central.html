@@ -35,14 +35,15 @@
 
     <div class="field">
       <label for="briefing">Descreva o imóvel ou conteúdo <small>(opcional)</small></label>
-      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 2 quartos, 65m², varanda gourmet, próximo ao metrô, condomínio com piscina…"></textarea>
-      <p class="hint">Adicione detalhes do imóvel para que a IA personalize as ideias de conteúdo.</p>
+      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 47m², 2 dormitórios, 1 vaga, varanda gourmet, metrô a pé, R$ 890 mil"></textarea>
+      <p class="hint">Metragem, dormitórios, vagas, valor e diferenciais entram direto no roteiro. Acentuação e capitalização são corrigidas automaticamente.</p>
     </div>
 
     <div class="field field-row">
       <div>
         <label for="cidade">Cidade ou região</label>
-        <input id="cidade" name="cidade" />
+        <input id="cidade" name="cidade" placeholder="Ex: São Paulo, Higienópolis" />
+        <p class="hint" data-eco-cidade></p>
       </div>
       <div>
         <label for="foto">Foto do imóvel <small>(link, opcional)</small></label>
@@ -84,7 +85,9 @@
 </main>
 
 <script src="../assets/theme.js"></script>
+<script src="../assets/texto.js"></script>
 <script src="../assets/data.js"></script>
+<script src="../assets/roteiro.js"></script>
 <script src="../assets/db.js"></script>
 <script src="../assets/store.js"></script>
 <script src="../assets/ui.js"></script>

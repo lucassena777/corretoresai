@@ -181,77 +181,8 @@ function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
   };
 }
 
-/* ---------------- Gerador de roteiro ---------------- */
-
-const GANCHOS = {
-  Topo: "Todo mundo procura {area} em {cidade} do jeito errado. Olha o que ninguém te conta.",
-  Meio: "Antes de escolher {area} em {cidade}, tem três coisas que mudam o preço final.",
-  Fundo: "Se você já está decidido por {area} em {cidade}, esse é o momento de agendar a visita.",
-  Personalizado: "{area} em {cidade}: a conversa que eu tenho com todo cliente antes de fechar."
-};
-
-const OBJETIVOS = {
-  Topo: "Alcançar quem ainda não pensou em comprar",
-  Meio: "Convencer quem está comparando opções",
-  Fundo: "Converter quem já está decidido em visita agendada",
-  Personalizado: "Campanha sob medida definida por você"
-};
-
-const TITULOS = {
-  Topo: [
-    "{n} coisas que ninguém te conta sobre {area} em {cidade}",
-    "O erro que quase todo mundo comete ao procurar {area} em {cidade}",
-    "{area} em {cidade}: o que muda o preço do metro quadrado"
-  ],
-  Meio: [
-    "{n} perguntas para fazer antes de fechar {area} em {cidade}",
-    "Pronto ou na planta: o comparativo honesto para {area}",
-    "{area} em {cidade}: o que comparar antes de decidir"
-  ],
-  Fundo: [
-    "Disponível agora: {area} em {cidade} — agende sua visita",
-    "Últimas unidades de {area} em {cidade} com entrada facilitada",
-    "{area} em {cidade}: marque a visita ainda esta semana"
-  ],
-  Personalizado: [
-    "{area} em {cidade}: a campanha que eu faria hoje",
-    "O que eu explico para todo cliente de {area} em {cidade}",
-    "{area} em {cidade}: a conversa antes da proposta"
-  ]
-};
-
-const TAGS_FUNIL = { Topo: "Alcance", Meio: "Comparação", Fundo: "Visita", Personalizado: "Campanha" };
-
-function pick(list, seed) {
-  return list[Math.abs(seed) % list.length];
-}
-
-// Monta os 11 campos entregues em cada conteúdo.
-function buildScript(item, perfil) {
-  const area = item.area.toLowerCase();
-  const cidade = item.city || perfil.cidade || "sua cidade";
-  const gancho = GANCHOS[item.funnel]
-    .replace("{area}", area)
-    .replace("{cidade}", cidade);
-
-  return {
-    titulo: item.title,
-    gancho,
-    desenvolvimento: item.briefing
-      ? `Mostre o imóvel enquanto fala: ${item.briefing}`
-      : "Mostre o imóvel destacando três diferenciais concretos: localização, planta e custo mensal real.",
-    prova: "Traga um número: valor do metro quadrado da região, tempo médio de venda ou economia frente ao aluguel.",
-    cta: "Comente “QUERO” que eu mando a ficha completa e a simulação no seu WhatsApp.",
-    legenda: `${gancho}\n\nSalve esse post para quando for visitar ${area} em ${cidade}. Qualquer dúvida, chama no direct.`,
-    hashtags: `#${area.replace(/\s/g, "")} #${cidade.toLowerCase().replace(/\s/g, "")} #corretordeimoveis #imoveis #${item.format.toLowerCase()}`,
-    objetivo: OBJETIVOS[item.funnel],
-    publico: `Quem procura ${area} em ${cidade} e está na etapa de ${item.funnel.toLowerCase()} do funil`,
-    formatoNota: `${item.format} — corte a cada 3 segundos, legenda queimada e áudio em alta`,
-    gravacao: perfil.tom
-      ? `Tom de voz: ${perfil.tom} Grave na hora dourada e evite plano parado por mais de 4 segundos.`
-      : "Grave na hora dourada, comece já dentro do imóvel e evite plano parado por mais de 4 segundos."
-  };
-}
+/* ---------------- Roteiro ---------------- */
+// A geração em si vive em roteiro.js. Aqui fica só o contrato dos campos.
 
 const CAMPOS_ROTEIRO = [
   ["titulo", "Título"],

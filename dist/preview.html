@@ -2116,20 +2116,74 @@ button { font: inherit; }
 
 /* ---------- Cartões de ideia geradas ---------- */
 
-.ideas { display: grid; gap: 16px; margin-top: 24px; }
+.ideas { display: grid; gap: 18px; margin-top: 28px; }
+
+.ideias-head { margin-bottom: 2px; }
+
+.ideias-head h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.ideias-head p { margin: 0; color: var(--text-muted); font-size: 13.5px; }
+.ideias-head b { color: var(--gold-soft); font-weight: 600; }
 
 .idea {
-  padding: 22px 24px;
+  padding: 24px 26px 26px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
-.idea-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.idea-head h3 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.35; }
-.idea p { margin: 0 0 6px; color: var(--text-muted); font-size: 14px; }
-.idea p b { color: var(--text); font-weight: 600; }
-.idea-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.idea-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+
+.idea-rotulo {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--gold-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.idea-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.idea-campos { display: grid; gap: 15px; margin: 0 0 16px; }
+
+.idea-campos dt {
+  margin-bottom: 4px;
+  color: var(--text-dim);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.idea-campos dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+.idea-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
 
 .quota {
   display: inline-flex;
@@ -2683,14 +2737,15 @@ button { font: inherit; }
 
     <div class="field">
       <label for="briefing">Descreva o imóvel ou conteúdo <small>(opcional)</small></label>
-      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 2 quartos, 65m², varanda gourmet, próximo ao metrô, condomínio com piscina…"></textarea>
-      <p class="hint">Adicione detalhes do imóvel para que a IA personalize as ideias de conteúdo.</p>
+      <textarea id="briefing" name="briefing" placeholder="Ex: Apartamento de 47m², 2 dormitórios, 1 vaga, varanda gourmet, metrô a pé, R$ 890 mil"></textarea>
+      <p class="hint">Metragem, dormitórios, vagas, valor e diferenciais entram direto no roteiro. Acentuação e capitalização são corrigidas automaticamente.</p>
     </div>
 
     <div class="field field-row">
       <div>
         <label for="cidade">Cidade ou região</label>
-        <input id="cidade" name="cidade" />
+        <input id="cidade" name="cidade" placeholder="Ex: São Paulo, Higienópolis" />
+        <p class="hint" data-eco-cidade></p>
       </div>
       <div>
         <label for="foto">Foto do imóvel <small>(link, opcional)</small></label>
@@ -3268,6 +3323,250 @@ button { font: inherit; }
   });
 })();
 
+// Tratamento de texto: acentuação, capitalização e leitura dos fatos do briefing.
+// Tudo o que o corretor digita passa por aqui antes de entrar em um roteiro.
+
+const texto = (() => {
+
+  // Palavras que ficam em minúscula no meio de um nome próprio.
+  const MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e", "no", "na", "em"]);
+
+  const UFS = new Set(["ac", "al", "ap", "am", "ba", "ce", "df", "es", "go", "ma", "mt",
+    "ms", "mg", "pa", "pb", "pr", "pe", "pi", "rj", "rn", "rs", "ro", "rr", "sc", "sp",
+    "se", "to"]);
+
+  // Nomes de lugar por forma sem acento. Cobre capitais, cidades grandes e
+  // bairros que aparecem com frequência em anúncio.
+  const LUGARES = {
+    "sao paulo": "São Paulo", "sp": "SP", "rio de janeiro": "Rio de Janeiro",
+    "belo horizonte": "Belo Horizonte", "brasilia": "Brasília", "salvador": "Salvador",
+    "fortaleza": "Fortaleza", "curitiba": "Curitiba", "recife": "Recife",
+    "porto alegre": "Porto Alegre", "goiania": "Goiânia", "belem": "Belém",
+    "manaus": "Manaus", "vitoria": "Vitória", "florianopolis": "Florianópolis",
+    "natal": "Natal", "joao pessoa": "João Pessoa", "maceio": "Maceió",
+    "teresina": "Teresina", "sao luis": "São Luís", "cuiaba": "Cuiabá",
+    "campo grande": "Campo Grande", "aracaju": "Aracaju", "macapa": "Macapá",
+    "boa vista": "Boa Vista", "porto velho": "Porto Velho", "rio branco": "Rio Branco",
+    "palmas": "Palmas", "campinas": "Campinas", "santos": "Santos",
+    "sao bernardo do campo": "São Bernardo do Campo", "santo andre": "Santo André",
+    "sao caetano do sul": "São Caetano do Sul", "guarulhos": "Guarulhos",
+    "osasco": "Osasco", "barueri": "Barueri", "sorocaba": "Sorocaba",
+    "ribeirao preto": "Ribeirão Preto", "sao jose dos campos": "São José dos Campos",
+    "jundiai": "Jundiaí", "atibaia": "Atibaia", "braganca paulista": "Bragança Paulista",
+    "niteroi": "Niterói", "petropolis": "Petrópolis", "uberlandia": "Uberlândia",
+    "juiz de fora": "Juiz de Fora", "londrina": "Londrina", "maringa": "Maringá",
+    "joinville": "Joinville", "blumenau": "Blumenau", "caxias do sul": "Caxias do Sul",
+
+    // Bairros
+    "higienopolis": "Higienópolis", "jardins": "Jardins", "jardim paulista": "Jardim Paulista",
+    "jardim america": "Jardim América", "jardim europa": "Jardim Europa",
+    "vila nova conceicao": "Vila Nova Conceição", "vila olimpia": "Vila Olímpia",
+    "vila madalena": "Vila Madalena", "vila mariana": "Vila Mariana",
+    "itaim bibi": "Itaim Bibi", "moema": "Moema", "perdizes": "Perdizes",
+    "pinheiros": "Pinheiros", "consolacao": "Consolação", "bela vista": "Bela Vista",
+    "santa cecilia": "Santa Cecília", "pacaembu": "Pacaembu", "brooklin": "Brooklin",
+    "campo belo": "Campo Belo", "morumbi": "Morumbi", "alto de pinheiros": "Alto de Pinheiros",
+    "tatuape": "Tatuapé", "mooca": "Mooca", "ipiranga": "Ipiranga", "santana": "Santana",
+    "aclimacao": "Aclimação", "paraiso": "Paraíso", "cerqueira cesar": "Cerqueira César",
+    "ipanema": "Ipanema", "leblon": "Leblon", "copacabana": "Copacabana",
+    "botafogo": "Botafogo", "flamengo": "Flamengo", "barra da tijuca": "Barra da Tijuca",
+    "laranjeiras": "Laranjeiras", "tijuca": "Tijuca", "lagoa": "Lagoa",
+    "savassi": "Savassi", "lourdes": "Lourdes", "funcionarios": "Funcionários",
+    "meireles": "Meireles", "boa viagem": "Boa Viagem", "batel": "Batel",
+    "moinhos de vento": "Moinhos de Vento", "cambui": "Cambuí"
+  };
+
+  // Vocabulário imobiliário sem acento -> forma correta.
+  const TERMOS = {
+    "imovel": "imóvel", "imoveis": "imóveis", "area": "área", "areas": "áreas",
+    "util": "útil", "uteis": "úteis", "proximo": "próximo", "proxima": "próxima",
+    "condominio": "condomínio", "condominios": "condomínios", "edificio": "edifício",
+    "edificios": "edifícios", "predio": "prédio", "predios": "prédios",
+    "suite": "suíte", "suites": "suítes", "sacada": "sacada", "terraco": "terraço",
+    "deposito": "depósito", "dormitorio": "dormitório", "dormitorios": "dormitórios",
+    "seguranca": "segurança", "valorizacao": "valorização", "localizacao": "localização",
+    "servicos": "serviços", "comercio": "comércio", "otimo": "ótimo", "otima": "ótima",
+    "unico": "único", "unica": "única", "publico": "público", "publica": "pública",
+    "garagem": "garagem", "mobilia": "mobília", "elevadores": "elevadores",
+    "portaria": "portaria", "academia": "academia", "varanda": "varanda",
+    "documentacao": "documentação", "avaliacao": "avaliação", "negociacao": "negociação",
+    "financiamento": "financiamento", "escritura": "escritura", "reformado": "reformado",
+    "andar": "andar", "quintal": "quintal", "jardim": "jardim", "piscina": "piscina",
+    "cozinha": "cozinha", "banheiro": "banheiro", "sala": "sala", "quarto": "quarto",
+    "opcao": "opção", "opcoes": "opções", "regiao": "região", "regioes": "regiões",
+    "padrao": "padrão", "sao": "São", "tres": "três", "voce": "você", "ja": "já",
+    "so": "só", "esta": "está", "ate": "até", "aluguel": "aluguel", "e": "e"
+  };
+
+  // Remove os sinais diacríticos que o NFD separa (faixa combining marks).
+  const semAcento = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const chave = (s) => semAcento(String(s).toLowerCase()).replace(/\s+/g, " ").trim();
+
+  function capitalizar(palavra, primeira) {
+    const base = palavra.toLowerCase();
+    if (UFS.has(base) && base.length === 2) return base.toUpperCase();
+    if (!primeira && MINUSCULAS.has(base)) return base;
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+
+  // "sao paulo higienopolis" -> { cidade: "São Paulo", bairro: "Higienópolis" }
+  function local(entrada, cidadePadrao = "") {
+    const bruto = String(entrada || "").replace(/\s+/g, " ").trim();
+    if (!bruto) return montarLocal(cidadePadrao, "");
+
+    // Separadores explícitos primeiro: vírgula, hífen, barra, "em".
+    const partes = bruto.split(/\s*[,\-–\/|]\s*/).filter(Boolean);
+    if (partes.length >= 2) {
+      return montarLocal(nomeProprio(partes[0]), nomeProprio(partes.slice(1).join(" ")));
+    }
+
+    // Sem separador: procura a cidade conhecida mais longa no começo ou no fim.
+    const palavras = bruto.split(" ");
+    for (let n = Math.min(4, palavras.length); n >= 1; n--) {
+      const inicio = chave(palavras.slice(0, n).join(" "));
+      if (LUGARES[inicio] && n < palavras.length) {
+        return montarLocal(LUGARES[inicio], nomeProprio(palavras.slice(n).join(" ")));
+      }
+      const fim = chave(palavras.slice(palavras.length - n).join(" "));
+      if (LUGARES[fim] && n < palavras.length) {
+        return montarLocal(LUGARES[fim], nomeProprio(palavras.slice(0, palavras.length - n).join(" ")));
+      }
+    }
+
+    // Uma coisa só: é bairro se a cidade do perfil já for conhecida.
+    const unico = nomeProprio(bruto);
+    return cidadePadrao && chave(cidadePadrao) !== chave(unico)
+      ? montarLocal(nomeProprio(cidadePadrao), unico)
+      : montarLocal(unico, "");
+  }
+
+  function montarLocal(cidade, bairro) {
+    const c = cidade || "";
+    const b = bairro || "";
+    return {
+      cidade: c,
+      bairro: b,
+      completo: b ? `${c} - ${b}` : c,
+      curto: b || c,
+      // Para usar dentro de frase: "Higienópolis, em São Paulo".
+      contexto: b && c ? `${b}, em ${c}` : (b || c),
+      tag: semAcento((b || c).toLowerCase()).replace(/[^a-z0-9]/g, "")
+    };
+  }
+
+  // Nome próprio: aplica o dicionário e capitaliza o resto.
+  function nomeProprio(entrada) {
+    const bruto = String(entrada || "").replace(/\s+/g, " ").trim();
+    if (!bruto) return "";
+
+    const inteiro = LUGARES[chave(bruto)];
+    if (inteiro) return inteiro;
+
+    return bruto.split(" ").map((palavra, i) => {
+      const k = chave(palavra);
+      if (LUGARES[k]) return LUGARES[k];
+      if (TERMOS[k] && TERMOS[k] !== k) return capitalizar(TERMOS[k], i === 0);
+      return capitalizar(palavra, i === 0);
+    }).join(" ");
+  }
+
+  // Corrige acentuação e pontuação de um texto corrido (o briefing).
+  function frase(entrada) {
+    let t = String(entrada || "").replace(/\s+/g, " ").trim();
+    if (!t) return "";
+
+    t = t.replace(/\s+([,.;:!?])/g, "$1").replace(/([,;:])(?=\S)/g, "$1 ");
+
+    t = t.split(" ").map((palavra) => {
+      const nucleo = palavra.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "");
+      if (!nucleo) return palavra;
+      const k = chave(nucleo);
+
+      // "metro quadrado" não vira "metrô quadrado".
+      if (k === "metro") return palavra;
+      if (!TERMOS[k] || TERMOS[k] === k) return palavra;
+
+      const corrigido = nucleo[0] === nucleo[0].toUpperCase()
+        ? TERMOS[k].charAt(0).toUpperCase() + TERMOS[k].slice(1)
+        : TERMOS[k];
+      return palavra.replace(nucleo, corrigido);
+    }).join(" ");
+
+    // Maiúscula no começo e depois de ponto final.
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    t = t.replace(/([.!?])\s+([a-zà-ÿ])/g, (_, p, l) => `${p} ${l.toUpperCase()}`);
+
+    if (!/[.!?…]$/.test(t)) t += ".";
+    return t;
+  }
+
+  // Lê números e características do briefing para o roteiro citar fatos reais.
+  function fatos(briefing) {
+    const t = String(briefing || "").toLowerCase();
+    const num = (re) => {
+      const m = t.match(re);
+      return m ? m[1].replace(",", ".") : null;
+    };
+
+    const metragem = num(/(\d+[.,]?\d*)\s*(?:m²|m2|metros quadrados|metros)/);
+    const quartos = num(/(\d+)\s*(?:quartos?|dormit[óo]rios?|dorms?)/);
+    const suites = num(/(\d+)\s*su[ií]tes?/);
+    const vagas = num(/(\d+)\s*vagas?/);
+    const andar = num(/(\d+)\s*[ºo°]?\s*andar/);
+
+    const valorMatch = t.match(/r\$\s*([\d.,]+)\s*(mil|milh(?:ão|ões|ao|oes))?/);
+    const valor = valorMatch
+      ? `R$ ${valorMatch[1]}${valorMatch[2] ? " " + valorMatch[2] : ""}`
+      : null;
+
+    const CARACTERISTICAS = [
+      [/varanda gourmet/, "varanda gourmet"], [/sacada/, "sacada"],
+      [/churrasqueira/, "churrasqueira"], [/piscina/, "piscina"],
+      [/academia/, "academia no condomínio"], [/portaria\s*24/, "portaria 24 horas"],
+      [/metr[oô]/, "metrô a pé"], [/mobiliad/, "mobiliado"],
+      [/reformad/, "reformado"], [/vista livre|vista permanente/, "vista livre"],
+      [/pet/, "aceita pet"], [/coworking/, "coworking"],
+      [/elevador privativo/, "elevador privativo"], [/planta reta/, "planta reta"],
+      [/marcenaria/, "marcenaria planejada"], [/lazer completo/, "lazer completo"],
+      [/alto padr[aã]o/, "acabamento de alto padrão"]
+    ];
+
+    const caracteristicas = CARACTERISTICAS.filter(([re]) => re.test(t)).map(([, nome]) => nome);
+
+    return {
+      metragem: metragem ? `${metragem.replace(".0", "")} m²` : null,
+      quartos, suites, vagas, andar, valor, caracteristicas,
+      temAlgo: Boolean(metragem || quartos || suites || vagas || valor || caracteristicas.length)
+    };
+  }
+
+  // "47 m², 2 dormitórios e 1 vaga" — só com o que existe.
+  function ficha(f) {
+    const partes = [];
+    if (f.metragem) partes.push(f.metragem);
+    if (f.quartos) partes.push(`${f.quartos} ${f.quartos === "1" ? "dormitório" : "dormitórios"}`);
+    if (f.suites) partes.push(`${f.suites} ${f.suites === "1" ? "suíte" : "suítes"}`);
+    if (f.vagas) partes.push(`${f.vagas} ${f.vagas === "1" ? "vaga" : "vagas"}`);
+    if (f.andar) partes.push(`${f.andar}º andar`);
+    if (!partes.length) return "";
+    return partes.length === 1
+      ? partes[0]
+      : `${partes.slice(0, -1).join(", ")} e ${partes.at(-1)}`;
+  }
+
+  function lista(itens, conector = "e") {
+    const l = itens.filter(Boolean);
+    if (!l.length) return "";
+    if (l.length === 1) return l[0];
+    return `${l.slice(0, -1).join(", ")} ${conector} ${l.at(-1)}`;
+  }
+
+  const hashtag = (s) => `#${semAcento(String(s).toLowerCase()).replace(/[^a-z0-9]/g, "")}`;
+
+  return { local, nomeProprio, frase, fatos, ficha, lista, hashtag, semAcento };
+})();
+
 // Sementes e constantes da demonstração.
 // O estado vivo (o que o usuário cria, edita, arrasta e apaga) fica em store.js.
 
@@ -3451,77 +3750,8 @@ function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
   };
 }
 
-/* ---------------- Gerador de roteiro ---------------- */
-
-const GANCHOS = {
-  Topo: "Todo mundo procura {area} em {cidade} do jeito errado. Olha o que ninguém te conta.",
-  Meio: "Antes de escolher {area} em {cidade}, tem três coisas que mudam o preço final.",
-  Fundo: "Se você já está decidido por {area} em {cidade}, esse é o momento de agendar a visita.",
-  Personalizado: "{area} em {cidade}: a conversa que eu tenho com todo cliente antes de fechar."
-};
-
-const OBJETIVOS = {
-  Topo: "Alcançar quem ainda não pensou em comprar",
-  Meio: "Convencer quem está comparando opções",
-  Fundo: "Converter quem já está decidido em visita agendada",
-  Personalizado: "Campanha sob medida definida por você"
-};
-
-const TITULOS = {
-  Topo: [
-    "{n} coisas que ninguém te conta sobre {area} em {cidade}",
-    "O erro que quase todo mundo comete ao procurar {area} em {cidade}",
-    "{area} em {cidade}: o que muda o preço do metro quadrado"
-  ],
-  Meio: [
-    "{n} perguntas para fazer antes de fechar {area} em {cidade}",
-    "Pronto ou na planta: o comparativo honesto para {area}",
-    "{area} em {cidade}: o que comparar antes de decidir"
-  ],
-  Fundo: [
-    "Disponível agora: {area} em {cidade} — agende sua visita",
-    "Últimas unidades de {area} em {cidade} com entrada facilitada",
-    "{area} em {cidade}: marque a visita ainda esta semana"
-  ],
-  Personalizado: [
-    "{area} em {cidade}: a campanha que eu faria hoje",
-    "O que eu explico para todo cliente de {area} em {cidade}",
-    "{area} em {cidade}: a conversa antes da proposta"
-  ]
-};
-
-const TAGS_FUNIL = { Topo: "Alcance", Meio: "Comparação", Fundo: "Visita", Personalizado: "Campanha" };
-
-function pick(list, seed) {
-  return list[Math.abs(seed) % list.length];
-}
-
-// Monta os 11 campos entregues em cada conteúdo.
-function buildScript(item, perfil) {
-  const area = item.area.toLowerCase();
-  const cidade = item.city || perfil.cidade || "sua cidade";
-  const gancho = GANCHOS[item.funnel]
-    .replace("{area}", area)
-    .replace("{cidade}", cidade);
-
-  return {
-    titulo: item.title,
-    gancho,
-    desenvolvimento: item.briefing
-      ? `Mostre o imóvel enquanto fala: ${item.briefing}`
-      : "Mostre o imóvel destacando três diferenciais concretos: localização, planta e custo mensal real.",
-    prova: "Traga um número: valor do metro quadrado da região, tempo médio de venda ou economia frente ao aluguel.",
-    cta: "Comente “QUERO” que eu mando a ficha completa e a simulação no seu WhatsApp.",
-    legenda: `${gancho}\n\nSalve esse post para quando for visitar ${area} em ${cidade}. Qualquer dúvida, chama no direct.`,
-    hashtags: `#${area.replace(/\s/g, "")} #${cidade.toLowerCase().replace(/\s/g, "")} #corretordeimoveis #imoveis #${item.format.toLowerCase()}`,
-    objetivo: OBJETIVOS[item.funnel],
-    publico: `Quem procura ${area} em ${cidade} e está na etapa de ${item.funnel.toLowerCase()} do funil`,
-    formatoNota: `${item.format} — corte a cada 3 segundos, legenda queimada e áudio em alta`,
-    gravacao: perfil.tom
-      ? `Tom de voz: ${perfil.tom} Grave na hora dourada e evite plano parado por mais de 4 segundos.`
-      : "Grave na hora dourada, comece já dentro do imóvel e evite plano parado por mais de 4 segundos."
-  };
-}
+/* ---------------- Roteiro ---------------- */
+// A geração em si vive em roteiro.js. Aqui fica só o contrato dos campos.
 
 const CAMPOS_ROTEIRO = [
   ["titulo", "Título"],
@@ -3564,6 +3794,348 @@ function relativeTime(ts) {
 
 function slugArea(text) {
   return text.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+}
+
+// Engine de conteúdo. Recebe o briefing tratado e devolve os 11 campos.
+//
+// São três ângulos com propósitos diferentes, para que as três ideias de uma
+// mesma geração nunca digam a mesma coisa:
+//   analise     — dinâmica do bairro, infraestrutura e metragem
+//   estilo      — como o espaço resolve a rotina de quem vai morar
+//   decisao     — números de mercado, documentação e momento de compra
+
+const roteiro = (() => {
+
+  const ANGULOS = ["analise", "estilo", "decisao"];
+
+  // Escolha estável: mesma semente, mesmo texto; sementes diferentes, textos
+  // diferentes. Evita a sensação de frase repetida a cada geração.
+  const pick = (lista, semente) => lista[Math.abs(Math.trunc(semente)) % lista.length];
+
+  /* ---------------- Títulos ---------------- */
+
+  const TITULOS = {
+    analise: {
+      Topo: [
+        "{Lugar}: o que sustenta o metro quadrado da região",
+        "O que faz um endereço em {Lugar} valer o que vale",
+        "{Lugar} sob análise: infraestrutura, metragem e liquidez"
+      ],
+      Meio: [
+        "{Ficha} em {Lugar}: como comparar sem se enganar",
+        "Metragem, planta e endereço: a conta real em {Lugar}",
+        "O que separa dois imóveis parecidos em {Lugar}"
+      ],
+      Fundo: [
+        "Análise completa: {Ficha} em {Lugar}",
+        "{Lugar}: por que este imóvel se sustenta no preço",
+        "O laudo honesto deste {Tipo} em {Lugar}"
+      ],
+      Personalizado: [
+        "{Lugar}: leitura de mercado para quem decide com dado",
+        "Um panorama técnico de {Lugar} antes da sua escolha"
+      ]
+    },
+    estilo: {
+      Topo: [
+        "Morar em {Lugar} sem abrir mão de funcionalidade",
+        "A rotina que um bom endereço em {Lugar} devolve para você",
+        "{Lugar}: quando a localização economiza o seu dia"
+      ],
+      Meio: [
+        "{Ficha} bem resolvidos: a planta que muda a rotina",
+        "Planta inteligente em {Lugar}: o que olhar de verdade",
+        "Espaço útil x espaço no papel em {Lugar}"
+      ],
+      Fundo: [
+        "Um dia inteiro neste {Tipo} em {Lugar}",
+        "{Ficha} em {Lugar}: veja como o espaço funciona na prática",
+        "A planta deste {Tipo} em {Lugar}, cômodo por cômodo"
+      ],
+      Personalizado: [
+        "{Lugar} do jeito que você vive: recorte sob medida",
+        "O encaixe entre a sua rotina e um endereço em {Lugar}"
+      ]
+    },
+    decisao: {
+      Topo: [
+        "O que o mercado de {Lugar} está dizendo neste momento",
+        "Três indicadores que explicam {Lugar} hoje",
+        "{Lugar}: o cenário antes de qualquer decisão"
+      ],
+      Meio: [
+        "Antes de assinar em {Lugar}: documentação e viabilidade",
+        "{Lugar}: como saber se o momento é seu",
+        "Segurança jurídica e timing na compra em {Lugar}"
+      ],
+      Fundo: [
+        "{Ficha} em {Lugar}: condições, prazo e próximos passos",
+        "Este {Tipo} em {Lugar} está pronto para proposta",
+        "{Lugar}: o que já está resolvido neste negócio"
+      ],
+      Personalizado: [
+        "{Lugar}: viabilidade sob medida para o seu caso",
+        "Sua decisão em {Lugar}, com os números na mesa"
+      ]
+    }
+  };
+
+  /* ---------------- Ganchos (0–3s) ---------------- */
+
+  const GANCHOS = {
+    analise: [
+      "{Lugar} exige um olhar atento para metragem e localização estratégica — e é aí que a maioria erra a conta.",
+      "Antes de discutir preço em {Lugar}, é preciso entender o que sustenta o metro quadrado da região.",
+      "Dois imóveis com a mesma metragem em {Lugar} podem ter valores muito diferentes. E o motivo raramente está no anúncio."
+    ],
+    estilo: [
+      "Planta inteligente não é sobre tamanho: é sobre quantas decisões ela resolve por você todos os dias.",
+      "Em {Lugar}, o que muda a rotina não é o número no anúncio — é a distância entre a porta e o que você usa.",
+      "Existe uma diferença silenciosa entre um imóvel bonito e um imóvel que funciona. Ela aparece na segunda semana."
+    ],
+    decisao: [
+      "Decisão de compra madura se apoia em três frentes: número, documentação e prazo.",
+      "Quando o cliente me pergunta se é hora de comprar em {Lugar}, eu abro a planilha antes de responder.",
+      "Oportunidade real não é desconto: é imóvel certo, documentação limpa e condição que cabe no seu plano."
+    ]
+  };
+
+  /* ---------------- Desenvolvimento ---------------- */
+
+  const DESENVOLVIMENTO = {
+    analise: (c) => [
+      `${c.sujeitoLugar} concentra três coisas que o mercado cobra caro: infraestrutura consolidada, oferta limitada de terreno e vizinhança estável.`,
+      c.fichaFrase
+        ? `Neste caso são ${c.fichaFrase} — e essa metragem, nessa região, atende quem quer bem localizado sem carregar área ociosa.`
+        : `Nessa faixa de metragem, o que decide é a eficiência da planta: área útil real, circulação curta e aproveitamento de cada parede.`,
+      c.extras
+        ? `Some a isso ${c.extras}, que ${c.extrasVerbo} na comparação com unidades semelhantes.`
+        : `Prédio, idade da construção e padrão de manutenção entram na conta tanto quanto o endereço.`,
+      "Quem compara só o valor total ignora o que realmente sustenta o preço: liquidez, custo mensal e o que a região oferece a pé."
+    ],
+    estilo: (c) => [
+      c.fichaFrase
+        ? `São ${c.fichaFrase}, distribuídos para funcionar de manhã cedo e no fim da tarde — que é quando a casa é mais exigida.`
+        : `A planta foi pensada para funcionar de manhã cedo e no fim da tarde, que é quando a casa é mais exigida.`,
+      `Em ${c.lugarCurto}, você resolve mercado, farmácia e transporte sem entrar no carro. Isso volta como tempo livre no fim do mês.`,
+      c.extras
+        ? `${c.extrasCapitalizado} ${c.extrasMuda} o uso do espaço na prática, não só na descrição.`
+        : `Cada ambiente aqui tem função definida — nada de metro quadrado que só aparece na planta.`,
+      "É o tipo de imóvel que você entende visitando, porque a diferença está no uso, não na foto."
+    ],
+    decisao: (c) => [
+      `${c.sujeitoLugar} tem histórico de liquidez consistente, o que reduz risco para quem compra pensando em prazo médio.`,
+      c.valor
+        ? `A condição atual é ${c.valor}, com espaço para estruturar entrada e financiamento de forma realista.`
+        : `A condição pode ser estruturada entre entrada e financiamento — o desenho certo depende do seu momento, não de uma tabela pronta.`,
+      "Documentação, matrícula e situação do condomínio eu verifico antes de sentar para negociar. Você recebe tudo checado.",
+      "O objetivo não é apressar decisão: é chegar na proposta com todas as respostas prontas."
+    ]
+  };
+
+  /* ---------------- Prova (20–35s) ---------------- */
+
+  const PROVAS = {
+    analise: [
+      "Na última janela de doze meses, unidades bem localizadas nessa faixa mantiveram tempo de venda abaixo da média da cidade.",
+      "Endereço consolidado costuma sustentar preço mesmo em ciclo de queda — é o que separa imóvel de investimento de imóvel de impulso.",
+      "Comparo sempre três unidades semelhantes na mesma região antes de dizer se o preço faz sentido."
+    ],
+    estilo: [
+      "Quem sai de um imóvel maior e mal distribuído para um menor e bem resolvido raramente quer voltar atrás.",
+      "A conta que quase ninguém faz: quanto do seu mês volta quando o trajeto diário some.",
+      "Área útil bem desenhada rende mais no dia a dia do que metro quadrado espalhado."
+    ],
+    decisao: [
+      "Antes de qualquer proposta, eu verifico matrícula, ônus, situação do condomínio e histórico de reformas.",
+      "Financiamento aprovado antes da visita muda a sua posição na negociação — e isso vale mais que qualquer desconto pedido na hora.",
+      "Negócio bem feito é o que continua parecendo bom três anos depois."
+    ]
+  };
+
+  /* ---------------- CTA ---------------- */
+
+  const CTAS = {
+    analise: [
+      "Envie uma mensagem para receber a análise completa deste imóvel.",
+      "Me chame para receber o comparativo com outras unidades da região.",
+      "Peça o estudo de metragem e valor por metro quadrado deste endereço."
+    ],
+    estilo: [
+      "Me chame para uma visita guiada, com calma e sem roteiro de vendedor.",
+      "Envie uma mensagem e eu mando o tour em vídeo, ambiente por ambiente.",
+      "Se fizer sentido para a sua rotina, agendo a visita no seu horário."
+    ],
+    decisao: [
+      "Agende uma conversa e receba a análise de viabilidade antes de qualquer proposta.",
+      "Me chame para montarmos o desenho de entrada e financiamento no seu ritmo.",
+      "Envie uma mensagem para receber a checagem de documentação deste imóvel."
+    ]
+  };
+
+  /* ---------------- Objetivo e público ---------------- */
+
+  const OBJETIVOS = {
+    Topo: "Alcançar quem ainda não começou a procurar, gerando autoridade na região",
+    Meio: "Convencer quem já está comparando opções e precisa de critério",
+    Fundo: "Converter quem está decidido em visita agendada",
+    Personalizado: "Campanha sob medida, com o recorte que você definir"
+  };
+
+  const PUBLICOS = {
+    analise: "Comprador analítico, que pesquisa valor por metro quadrado antes de visitar",
+    estilo: "Quem vai morar no imóvel e decide pela rotina que ele permite",
+    decisao: "Comprador em fase final, com crédito encaminhado e prazo definido"
+  };
+
+  /* ---------------- Formato ---------------- */
+
+  const FORMATOS_NOTA = {
+    Reels: "Reels de 45s — corte a cada 3 segundos, legenda queimada e áudio limpo",
+    TikTok: "TikTok de 40s — comece falando, sem vinheta, e mantenha o ritmo alto",
+    Stories: "Sequência de 4 stories — um argumento por tela, com enquete no terceiro",
+    Carrossel: "Carrossel de 6 lâminas — capa com o gancho, uma ideia por lâmina, CTA no final"
+  };
+
+  const GRAVACAO = {
+    Reels: "Grave na hora dourada, comece já dentro do imóvel e evite plano parado por mais de 4 segundos.",
+    TikTok: "Fale direto para a câmera na abertura, use plano de mão e mostre o ambiente enquanto explica.",
+    Stories: "Grave na vertical, com você aparecendo na primeira tela para dar rosto ao argumento.",
+    Carrossel: "Fotografe com luz natural, uma foto por lâmina, e reserve a última para a chamada."
+  };
+
+  /* ---------------- Montagem ---------------- */
+
+  function contexto(dados, perfil) {
+    const local = texto.local(dados.city || dados.cidade || "", perfil?.cidade || "");
+    const fatos = texto.fatos(dados.briefing);
+    const fichaFrase = texto.ficha(fatos);
+    const extras = texto.lista(fatos.caracteristicas.slice(0, 3));
+
+    const qtdExtras = fatos.caracteristicas.slice(0, 3).length;
+
+    return {
+      local,
+      fatos,
+      fichaFrase,
+      extras,
+      extrasCapitalizado: extras ? extras.charAt(0).toUpperCase() + extras.slice(1) : "",
+      // "pesa" para um diferencial, "pesam" para dois ou mais.
+      extrasVerbo: qtdExtras > 1 ? "pesam" : "pesa",
+      extrasMuda: qtdExtras > 1 ? "mudam" : "muda",
+      valor: fatos.valor,
+      lugarCurto: local.curto || "sua região",
+      // Como sujeito da frase, o aposto precisa fechar com vírgula.
+      sujeitoLugar: local.bairro && local.cidade
+        ? `${local.bairro}, em ${local.cidade},`
+        : (local.curto || "A sua região"),
+      tipo: (dados.area || "Imóveis").replace(/s$/, "").toLowerCase()
+    };
+  }
+
+  function preencher(modelo, c) {
+    return modelo
+      .replace(/\{Lugar\}/g, c.local.curto || "sua cidade")
+      .replace(/\{Ficha\}/g, c.fichaFrase || "a metragem certa")
+      .replace(/\{Tipo\}/g, c.tipo);
+  }
+
+  // Monta um roteiro completo (os 11 campos) para um ângulo.
+  function montar(dados, perfil, angulo, semente = 0) {
+    const c = contexto(dados, perfil);
+    const funil = dados.funnel || "Topo";
+    const formato = dados.format || "Reels";
+    const s = Math.trunc(semente);
+
+    const titulos = TITULOS[angulo][funil] || TITULOS[angulo].Topo;
+    const titulo = dados.title || preencher(pick(titulos, s), c);
+    const gancho = preencher(pick(GANCHOS[angulo], s + 1), c);
+    const cta = pick(CTAS[angulo], s + 2);
+    const prova = pick(PROVAS[angulo], s + 3);
+
+    const blocos = DESENVOLVIMENTO[angulo](c).filter(Boolean);
+
+    const assinatura = [perfil?.nome, perfil?.creci].filter(Boolean).join(" · ");
+    const legenda = [
+      gancho,
+      "",
+      blocos[1],
+      "",
+      cta,
+      assinatura ? `\n${assinatura}` : ""
+    ].filter((l) => l !== undefined).join("\n").trim();
+
+    const tags = [
+      texto.hashtag(c.tipo),
+      c.local.tag ? `#${c.local.tag}` : "",
+      texto.hashtag(formato),
+      "#corretordeimoveis",
+      "#mercadoimobiliario",
+      angulo === "decisao" ? "#investimento" : angulo === "estilo" ? "#morarbem" : "#analisedemercado"
+    ].filter(Boolean);
+
+    return {
+      titulo,
+      gancho,
+      desenvolvimento: blocos.slice(0, 2).join("\n\n"),
+      prova: [blocos[2], prova].filter(Boolean).join("\n\n"),
+      cta,
+      legenda,
+      hashtags: tags.join(" "),
+      objetivo: OBJETIVOS[funil] || OBJETIVOS.Topo,
+      publico: `${PUBLICOS[angulo]}, buscando ${c.tipo} em ${c.lugarCurto}`,
+      formatoNota: FORMATOS_NOTA[formato] || FORMATOS_NOTA.Reels,
+      gravacao: perfil?.tom
+        ? `${GRAVACAO[formato] || GRAVACAO.Reels} Tom de voz: ${perfil.tom}`
+        : (GRAVACAO[formato] || GRAVACAO.Reels)
+    };
+  }
+
+  // As três ideias de uma geração: ângulos diferentes, textos diferentes.
+  function gerarIdeias(dados, perfil, semente = Date.now()) {
+    const c = contexto(dados, perfil);
+    const briefingLimpo = texto.frase(dados.briefing);
+
+    return ANGULOS.map((angulo, n) => {
+      const base = {
+        ...dados,
+        title: undefined,
+        briefing: briefingLimpo,
+        city: c.local.completo,
+        tags: [
+          dados.area,
+          angulo === "analise" ? "Análise" : angulo === "estilo" ? "Estilo de vida" : "Decisão",
+          dados.format
+        ].filter(Boolean)
+      };
+
+      const script = montar(base, perfil, angulo, semente + n * 17);
+
+      return {
+        ...base,
+        angulo,
+        rotulo: angulo === "analise" ? "Análise e valorização"
+          : angulo === "estilo" ? "Estilo de vida e funcionalidade"
+          : "Oportunidade e decisão",
+        title: script.titulo,
+        script
+      };
+    });
+  }
+
+  return { gerarIdeias, montar, ANGULOS };
+})();
+
+// Compatibilidade: itens antigos e do acervo de exemplo continuam com roteiro.
+function buildScript(item, perfil) {
+  const angulo = roteiro.ANGULOS[Math.abs(hashTexto(item.id || item.title)) % 3];
+  return roteiro.montar(item, perfil, angulo, hashTexto(item.title));
+}
+
+function hashTexto(s) {
+  let h = 0;
+  for (const ch of String(s || "")) h = (h * 31 + ch.codePointAt(0)) | 0;
+  return h;
 }
 
 // Banco de dados da aplicação.
@@ -4871,7 +5443,8 @@ function initDashboard(root = document) {
 
 if (!SPA) initDashboard();
 
-// Central de Conteúdo: gera ideias, consome a cota do plano e cria conteúdo de verdade.
+// Central de Conteúdo: trata o que foi digitado, gera três ângulos distintos
+// e transforma a ideia aprovada em conteúdo de verdade.
 
 function initCentral(root = document) {
   if (!auth.exigirLogin()) return;
@@ -4881,7 +5454,6 @@ function initCentral(root = document) {
   const elQuota = root.querySelector("[data-quota]");
   const cfg = store.config;
 
-  // Preenche a partir das Configurações, do perfil e de ?data= (vindo do calendário).
   form.area.innerHTML = AREAS.map((a) => `<option>${a}</option>`).join("");
   form.area.value = cfg.areaPadrao || store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
@@ -4900,6 +5472,21 @@ function initCentral(root = document) {
     });
   });
 
+  // Mostra ao vivo como a cidade digitada vai sair no texto.
+  const eco = root.querySelector("[data-eco-cidade]");
+  function atualizarEco() {
+    if (!eco) return;
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    eco.textContent = l.completo ? `Vai sair como: ${l.completo}` : "";
+  }
+  form.cidade.addEventListener("input", atualizarEco);
+  form.cidade.addEventListener("blur", () => {
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    if (l.completo) form.cidade.value = l.completo;
+    atualizarEco();
+  });
+  atualizarEco();
+
   function proximaData() {
     if (dataAlvo) return dataAlvo;
     const ocupadas = new Set(store.board().map((i) => i.date));
@@ -4917,12 +5504,10 @@ function initCentral(root = document) {
     elQuota.innerHTML = restantes === Infinity
       ? `<svg class="icon"><use href="#i-crown" /></svg> Gerações ilimitadas no seu plano`
       : `<svg class="icon"><use href="#i-sparkle" /></svg> <b>${restantes}</b> de ${store.plano.cota} gerações restantes ·
-         <a href="../index.html#planos" style="color:var(--gold-soft)">assine o Ilimitado</a>`;
+         <a href="${SPA ? "#/planos" : "planos.html"}" style="color:var(--gold-soft)">ver planos</a>`;
   }
 
-  // ---- Escolhas únicas ---------------------------------------------------
-
-  root.querySelectorAll("[data-choice]").forEach((row) => {
+  document.querySelectorAll("[data-choice]").forEach((row) => {
     row.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
       if (!btn) return;
@@ -4939,26 +5524,15 @@ function initCentral(root = document) {
   let ideias = [];
 
   function gerar() {
-    const area = form.area.value;
-    const cidade = form.cidade.value.trim() || store.perfil.cidade;
-    const briefing = form.briefing.value.trim();
-    const funnel = escolhido("funil");
-    const format = escolhido("formato");
-    const semente = Date.now();
-
-    ideias = [0, 1, 2].map((n) => {
-      const bruto = pick(TITULOS[funnel], semente + n * 7)
-        .replace("{n}", [3, 5, 7][(semente + n) % 3])
-        .replace("{area}", area.toLowerCase())
-        .replace("{cidade}", cidade);
-      const title = bruto[0].toUpperCase() + bruto.slice(1);
-
-      const base = { title, area, format, funnel, city: cidade, briefing,
-        date: proximaData(), time: store.config.horarioPadrao,
-        tags: [area, TAGS_FUNIL[funnel], format] };
-
-      return { ...base, script: buildScript(base, store.perfil) };
-    });
+    ideias = roteiro.gerarIdeias({
+      area: form.area.value,
+      cidade: form.cidade.value,
+      briefing: form.briefing.value,
+      funnel: escolhido("funil"),
+      format: escolhido("formato"),
+      date: proximaData(),
+      time: store.config.horarioPadrao
+    }, store.perfil, Date.now());
 
     render();
   }
@@ -4966,19 +5540,39 @@ function initCentral(root = document) {
   function render() {
     if (!ideias.length) { elIdeas.innerHTML = ""; return; }
 
+    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    const f = texto.fatos(form.briefing.value);
+    const ficha = texto.ficha(f);
+
     elIdeas.innerHTML = `
-      <h2 class="section-title" style="font-size:20px;margin:8px 0 0">3 ideias prontas</h2>
-      <p class="hint" style="margin:0 0 4px">Aprovar já joga o conteúdo no calendário e no Kanban.</p>
+      <div class="ideias-head">
+        <h2>Três ângulos para o mesmo imóvel</h2>
+        <p>
+          ${l.completo ? `<b>${l.completo}</b>` : "Sem localização informada"}
+          ${ficha ? ` · ${ficha}` : ""}
+          ${f.caracteristicas.length ? ` · ${texto.lista(f.caracteristicas.slice(0, 3))}` : ""}
+        </p>
+      </div>
       ${ideias.map((ideia, n) => `
         <article class="idea" data-idea="${n}">
           <div class="idea-head">
-            <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
-            <h3>${ideia.title}</h3>
+            <span class="icon-tile is-gold"><svg><use href="#${
+              ideia.angulo === "analise" ? "i-trend" : ideia.angulo === "estilo" ? "i-eye" : "i-check-circle"
+            }" /></svg></span>
+            <div>
+              <span class="idea-rotulo">${ideia.rotulo}</span>
+              <h3>${ideia.title}</h3>
+            </div>
           </div>
-          <p><b>Gancho:</b> ${ideia.script.gancho}</p>
-          <p><b>CTA:</b> ${ideia.script.cta}</p>
-          <p><b>Objetivo:</b> ${ideia.script.objetivo}</p>
-          <div class="kan-tags" style="margin-top:14px">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+
+          <dl class="idea-campos">
+            <div><dt>Gancho</dt><dd>${ideia.script.gancho}</dd></div>
+            <div><dt>Desenvolvimento</dt><dd>${ideia.script.desenvolvimento.replace(/\n\n/g, "<br /><br />")}</dd></div>
+            <div><dt>Chamada</dt><dd>${ideia.script.cta}</dd></div>
+          </dl>
+
+          <div class="kan-tags">${ideia.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+
           <div class="idea-actions">
             <button class="btn btn-primary" type="button" data-action="aprovar">
               <svg><use href="#i-check-circle" /></svg>Aprovar e agendar
@@ -4996,14 +5590,14 @@ function initCentral(root = document) {
     const ideia = ideias[Number(btn.closest("[data-idea]").dataset.idea)];
     const acao = btn.dataset.action;
 
-    // "Agendar ao aprovar" decide se o card nasce Agendado ou só Aprovado.
     const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
-    const item = store.criar({ ...ideia, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
+    const { angulo, rotulo, ...limpo } = ideia;
+    const item = store.criar({ ...limpo, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
       ui.toast(store.config.agendarAoAprovar
         ? `Agendado para ${formatFull(item.date)}.`
-        : `Aprovado. Defina a data no calendário quando quiser.`);
+        : "Aprovado. Defina a data no calendário quando quiser.");
     } else if (acao === "rascunho") {
       ui.toast("Salvo como rascunho na Biblioteca.");
     } else {
@@ -5029,7 +5623,11 @@ function initCentral(root = document) {
 
   root.querySelector("[data-limpar]")?.addEventListener("click", () => {
     form.reset();
+    form.area.value = cfg.areaPadrao || AREAS[0];
     form.cidade.value = store.perfil.cidade;
+    marcar("funil", cfg.funilPadrao);
+    marcar("formato", cfg.formatoPadrao);
+    atualizarEco();
     ideias = [];
     render();
   });
