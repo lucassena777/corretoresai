@@ -1,0 +1,46 @@
+name: Publicar no GitHub Pages
+
+# Todo push na main republica o site. O build da prévia de arquivo único é
+# gerado pelo tools/build-preview.ps1 e commitado junto, então aqui só
+# publicamos o repositório como está.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir que as telas do app existem
+        run: |
+          set -e
+          for arquivo in index.html app/entrar.html app/dashboard.html \
+            app/central.html app/calendario.html app/biblioteca.html \
+            app/historico.html app/planos.html app/perfil.html \
+            app/configuracoes.html; do
+            test -f "$arquivo" || { echo "Faltando: $arquivo"; exit 1; }
+          done
+          echo "Todas as telas presentes."
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploy
+        uses: actions/deploy-pages@v4
