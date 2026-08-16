@@ -90,7 +90,12 @@ function shellHTML({ page, title, subtitle }) {
         </span>
       </a>
 
-      <nav class="side-nav" aria-label="Navegação do app">${links}</nav>
+      <nav class="side-nav" aria-label="Navegação do app">
+        ${links}
+        <button class="side-assistente" type="button" data-abrir-assistente>
+          ${icon("i-assistente")}<span>Assistente IA</span>
+        </button>
+      </nav>
 
       <div class="side-foot">
         <div class="plan-box" data-plan-box></div>
@@ -143,7 +148,11 @@ function renderShell() {
   store.subscribe(renderIdentity);
 
   // O assistente acompanha toda a área logada.
-  if (typeof assistente !== "undefined") assistente.iniciar();
+  if (typeof assistente !== "undefined") {
+    assistente.iniciar();
+    shell.querySelector("[data-abrir-assistente]")
+      ?.addEventListener("click", () => assistente.abrir());
+  }
 }
 
 function ligarSair(root) {

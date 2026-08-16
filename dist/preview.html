@@ -962,6 +962,38 @@ button { font: inherit; }
   background: var(--gold);
 }
 
+/* Assistente IA: mesmo desenho dos itens de navegação, mas é um botão — abre a
+   gaveta em vez de trocar de tela. O fio dourado separa navegar de conversar. */
+.side-assistente {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: 10px;
+  background: rgba(201, 162, 39, 0.07);
+  color: var(--gold-soft);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-assistente svg { width: 18px; height: 18px; flex: none; }
+
+.side-assistente:hover {
+  border-color: rgba(201, 162, 39, 0.55);
+  background: rgba(201, 162, 39, 0.13);
+}
+
+body.assist-aberto .side-assistente {
+  border-color: var(--gold-deep);
+  background: rgba(201, 162, 39, 0.16);
+}
+
 .side-foot { margin-top: auto; display: grid; gap: 16px; }
 
 .plan-box {
@@ -2097,6 +2129,58 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 
 .assist-copiar svg { width: 12px; height: 12px; }
 .assist-copiar:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+/* Cartão de ação executada: o conteúdo que o copiloto agendou. */
+.assist-acao {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 12px;
+  background: rgba(201, 162, 39, 0.09);
+}
+
+.assist-acao .icon-tile { width: 32px; height: 32px; flex: none; }
+.assist-acao .icon-tile svg { width: 16px; height: 16px; }
+.assist-acao > div { min-width: 0; flex: 1; }
+.assist-acao strong { display: block; font-size: 12.5px; color: var(--gold-soft); }
+
+.assist-acao span:not(.icon-tile) {
+  display: block;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assist-acao button {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.assist-acao button:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.assist-acao.is-falha {
+  display: flex;
+  align-items: center;
+  border-color: rgba(220, 90, 90, 0.4);
+  background: rgba(220, 90, 90, 0.1);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.assist-acao.is-falha svg { width: 14px; height: 14px; flex: none; margin-right: 8px; }
 
 /* O que a base de conhecimento entregou para esta resposta. */
 .assist-fontes {
@@ -3665,7 +3749,58 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 
 const CONFIG = {
   assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
-  assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo"
+  assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo",
+
+  // Cabeçalhos de toda chamada ao back-end. A anon key vai nos dois formatos
+  // que o gateway do Supabase aceita.
+  cabecalhos() {
+    return {
+      "content-type": "application/json",
+      "authorization": `Bearer ${this.assistenteChave}`,
+      "apikey": this.assistenteChave
+    };
+  },
+
+  // A prévia de arquivo único roda dentro de um iframe isolado que bloqueia
+  // qualquer conexão externa. Lá a IA nunca vai responder — e é bom dizer isso
+  // com todas as letras em vez de deixar o navegador soltar "Failed to fetch".
+  emPreviaIsolada() {
+    try { return window.top !== window.self; } catch { return true; }
+  },
+
+  // Traduz a falha para algo que se possa agir. `fetch` só rejeita quando a
+  // requisição não chegou ao servidor: CSP, DNS, offline ou CORS. Resposta com
+  // status de erro é outro caminho — essa vem com mensagem nossa no corpo.
+  diagnosticar(e) {
+    console.error("[CorretoresAI] falha ao falar com o back-end:", e);
+
+    if (e?.name === "AbortError") return "A resposta demorou demais e foi interrompida.";
+
+    if (e instanceof TypeError) {
+      if (this.emPreviaIsolada()) {
+        return "esta prévia não faz chamadas externas — abra o site publicado para usar a IA";
+      }
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return "sem conexão com a internet";
+      }
+      return "não foi possível alcançar o servidor da IA";
+    }
+
+    return e?.message || "erro inesperado";
+  },
+
+  // Erro que veio COM resposta HTTP: o corpo traz a mensagem em português que
+  // a Edge Function escreveu.
+  async erroDaResposta(resposta) {
+    let detalhe = `o servidor respondeu ${resposta.status}`;
+    try {
+      const corpo = await resposta.json();
+      if (corpo?.erro) detalhe = corpo.erro;
+    } catch { /* corpo não era JSON */ }
+
+    console.error(`[CorretoresAI] HTTP ${resposta.status} em ${resposta.url}:`, detalhe);
+    return new Error(detalhe);
+  }
 };
 
 // Tratamento de texto: acentuação, capitalização e leitura dos fatos do briefing.
@@ -4504,11 +4639,7 @@ const roteiro = (() => {
       const resposta = await fetch(CONFIG.assistenteUrl, {
         method: "POST",
         signal: controle.signal,
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${CONFIG.assistenteChave}`,
-          "apikey": CONFIG.assistenteChave
-        },
+        headers: CONFIG.cabecalhos(),
         body: JSON.stringify({
           modo: "roteiro",
           contexto: {
@@ -4529,15 +4660,14 @@ const roteiro = (() => {
         })
       });
 
-      if (!resposta.ok) {
-        let detalhe = `Erro ${resposta.status}.`;
-        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
-        throw new Error(detalhe);
-      }
+      if (!resposta.ok) throw await CONFIG.erroDaResposta(resposta);
 
       corpo = await resposta.json();
     } catch (e) {
-      throw new Error(e.name === "AbortError" ? "O back-end demorou demais para responder." : e.message);
+      // Falha de rede vira explicação; erro que já veio do servidor passa reto.
+      throw e instanceof TypeError || e.name === "AbortError"
+        ? new Error(CONFIG.diagnosticar(e))
+        : e;
     } finally {
       clearTimeout(relogio);
     }
@@ -5660,7 +5790,7 @@ const assistente = (() => {
   const PENSANDO = [
     "Consultando a base de conhecimento…",
     "Analisando dinâmica de mercado…",
-    "Consultando base jurídica e comercial…",
+    "Verificando a sua agenda…",
     "Formulando estratégia de alta conversão…"
   ];
 
@@ -5798,6 +5928,12 @@ const assistente = (() => {
         return;
       }
 
+      const abrirItem = event.target.closest("[data-abrir-item]");
+      if (abrirItem) {
+        ui.openItem(abrirItem.dataset.abrirItem);
+        return;
+      }
+
       const copiar = event.target.closest("[data-copiar]");
       if (copiar) {
         const bruto = conversa[Number(copiar.dataset.copiar)]?.texto ?? "";
@@ -5855,6 +5991,7 @@ const assistente = (() => {
         <div class="assist-msg">
           <div class="assist-balao">
             ${m.texto ? formatar(m.texto) : `<p class="assist-pensando"><i></i><i></i><i></i> <span data-pensando>${etapas[0]}</span></p>`}
+            ${(m.acoes ?? []).map(cartaoAcao).join("")}
           </div>
           ${m.texto && !m.parcial && m.fontes?.length
             ? `<p class="assist-fontes">
@@ -5894,9 +6031,65 @@ const assistente = (() => {
     const p = store.perfil;
     return {
       nome: p.nome, creci: p.creci, cidade: p.cidade, imobiliaria: p.imobiliaria,
-      areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label
+      areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label,
+      // Sem isto o modelo não resolve "dia 20" nem "semana que vem".
+      hoje: toIso(HOJE)
     };
   }
+
+  /* ---------------- Ações ----------------
+     O modelo decide; quem executa é aqui, no aparelho do corretor, direto no
+     store da conta dele. */
+
+  function executarAcao(nome, entrada = {}) {
+    if (nome !== "agendar_conteudo") {
+      return { ok: false, erro: `Ação desconhecida: ${nome}` };
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entrada.data ?? "")) {
+      return { ok: false, erro: "A data veio em um formato que não consegui usar." };
+    }
+
+    try {
+      const dados = {
+        area: entrada.area || store.perfil.areas[0] || AREAS[0],
+        cidade: entrada.cidade || store.perfil.cidade,
+        briefing: entrada.tema || "",
+        funnel: entrada.funil || store.config.funilPadrao,
+        format: entrada.formato || store.config.formatoPadrao,
+        date: entrada.data,
+        time: store.config.horarioPadrao
+      };
+
+      // O roteiro sai da engine local: agendar tem que ser instantâneo. O
+      // corretor regera pela IA depois, no editor, se quiser.
+      const [ideia] = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      const { angulo, rotulo, origem, ...limpo } = ideia;
+      const item = store.criar({ ...limpo, status: "agendado" });
+
+      return { ok: true, id: item.id, titulo: item.title, data: item.date, formato: item.format };
+    } catch (e) {
+      console.error("[CorretoresAI] falha ao executar a ação:", e);
+      return { ok: false, erro: e.message };
+    }
+  }
+
+  function cartaoAcao(acao) {
+    if (!acao.ok) {
+      return `<p class="assist-acao is-falha">${icone("i-close")} Não consegui agendar: ${acao.erro}</p>`;
+    }
+    return `
+      <div class="assist-acao">
+        <span class="icon-tile is-gold">${icone("i-calendar-clock")}</span>
+        <div>
+          <strong>Agendado para ${formatFull(acao.data)}</strong>
+          <span>${acao.titulo}</span>
+        </div>
+        <button type="button" data-abrir-item="${acao.id}">Abrir</button>
+      </div>`;
+  }
+
+  const icone = (id) => `<svg><use href="#${id}" /></svg>`;
 
   async function enviar(event) {
     event.preventDefault();
@@ -5933,11 +6126,17 @@ const assistente = (() => {
           if (balao) balao.innerHTML = formatar(resposta.texto);
           rolar();
         },
-        base?.texto
+        base?.texto,
+        (acao) => {
+          resposta.acoes = resposta.acoes ?? [];
+          resposta.acoes.push(executarAcao(acao.nome, acao.entrada));
+        }
       );
 
       if (!resposta.texto.trim()) {
-        resposta.texto = "Não consegui formular uma resposta. Tente reformular a pergunta.";
+        resposta.texto = resposta.acoes?.some((a) => a.ok)
+          ? "Pronto, já está no seu calendário."
+          : "Não consegui formular uma resposta. Tente reformular a pergunta.";
       }
     } catch (e) {
       resposta.texto = `**Não deu para responder agora.** ${e.message}`;
@@ -5952,7 +6151,7 @@ const assistente = (() => {
     }
   }
 
-  async function streamar(mensagens, aoReceber, base) {
+  async function streamar(mensagens, aoReceber, base, aoAgir) {
     if (!CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
       throw new Error("O assistente ainda não está conectado ao back-end. Veja o README para configurar.");
     }
@@ -5970,19 +6169,11 @@ const assistente = (() => {
       const resposta = await fetch(CONFIG.assistenteUrl, {
         method: "POST",
         signal: controle.signal,
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${CONFIG.assistenteChave}`,
-          "apikey": CONFIG.assistenteChave
-        },
+        headers: CONFIG.cabecalhos(),
         body: JSON.stringify({ mensagens, contexto: contexto(), base })
       });
 
-      if (!resposta.ok) {
-        let detalhe = `Erro ${resposta.status}.`;
-        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
-        throw new Error(detalhe);
-      }
+      if (!resposta.ok) throw await CONFIG.erroDaResposta(resposta);
 
       const leitor = resposta.body.getReader();
       const decoder = new TextDecoder();
@@ -6004,12 +6195,14 @@ const assistente = (() => {
           if (!evento || !dados) continue;
 
           if (evento === "texto") aoReceber(JSON.parse(dados));
+          if (evento === "acao") aoAgir?.(JSON.parse(dados));
           if (evento === "erro") throw new Error(JSON.parse(dados).mensagem);
         }
       }
     } catch (e) {
-      if (e.name === "AbortError") throw new Error("O back-end parou de responder no meio do caminho.");
-      throw e;
+      throw e instanceof TypeError || e.name === "AbortError"
+        ? new Error(CONFIG.diagnosticar(e))
+        : e;
     } finally {
       clearTimeout(relogio);
     }
@@ -6020,6 +6213,13 @@ const assistente = (() => {
       if (!store.logado || painel) return;
       carregar();
       montar();
+    },
+
+    // Usado pelo item "Assistente IA" da barra lateral.
+    abrir() {
+      if (!painel) return;
+      if (!aberto) alternar();
+      painel.querySelector("[data-campo]").focus();
     }
   };
 })();
@@ -6141,7 +6341,12 @@ function shellHTML({ page, title, subtitle }) {
         </span>
       </a>
 
-      <nav class="side-nav" aria-label="Navegação do app">${links}</nav>
+      <nav class="side-nav" aria-label="Navegação do app">
+        ${links}
+        <button class="side-assistente" type="button" data-abrir-assistente>
+          ${icon("i-assistente")}<span>Assistente IA</span>
+        </button>
+      </nav>
 
       <div class="side-foot">
         <div class="plan-box" data-plan-box></div>
@@ -6194,7 +6399,11 @@ function renderShell() {
   store.subscribe(renderIdentity);
 
   // O assistente acompanha toda a área logada.
-  if (typeof assistente !== "undefined") assistente.iniciar();
+  if (typeof assistente !== "undefined") {
+    assistente.iniciar();
+    shell.querySelector("[data-abrir-assistente]")
+      ?.addEventListener("click", () => assistente.abrir());
+  }
 }
 
 function ligarSair(root) {
@@ -6715,7 +6924,7 @@ function initCentral(root = document) {
       ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
     } catch (e) {
       ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
-      ui.toast(`Roteiro montado sem a IA (${e.message})`, "erro");
+      ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
       gerando = false;
       botaoGerar.disabled = false;

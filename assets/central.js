@@ -136,7 +136,7 @@ function initCentral(root = document) {
       ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
     } catch (e) {
       ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
-      ui.toast(`Roteiro montado sem a IA (${e.message})`, "erro");
+      ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
       gerando = false;
       botaoGerar.disabled = false;

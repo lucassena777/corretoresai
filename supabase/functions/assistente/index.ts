@@ -39,13 +39,20 @@ function excedeuLimite(ip: string): boolean {
   return janela.total > LIMITE.pedidosPorMinuto;
 }
 
+const origemLiberada = (origem: string | null) =>
+  Boolean(origem) && ORIGENS.some((re) => re.test(origem!));
+
+// O cabeçalho reflete a origem mesmo quando ela não é liberada. Parece
+// contraintuitivo, mas é o que faz a recusa chegar legível no navegador: sem
+// isso o pedido morre no CORS e o site só vê "Failed to fetch", sem motivo.
+// Quem barra é o 403 com mensagem, não a ausência do cabeçalho.
 function cabecalhosCors(origem: string | null) {
-  const liberada = origem && ORIGENS.some((re) => re.test(origem));
   return {
-    "Access-Control-Allow-Origin": liberada ? origem! : "null",
+    "Access-Control-Allow-Origin": origem || "*",
     "Access-Control-Allow-Headers": "authorization, content-type, apikey",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
   };
 }
 
@@ -142,6 +149,57 @@ quem conhece o produto de dentro.
 ${base}`;
 }
 
+/* ---------------- Ferramentas do copiloto ----------------
+   Quem executa é o navegador: a função só decide QUE ação tomar e com que
+   argumentos. O item entra no calendário pelo store da conta, no aparelho do
+   corretor, onde os dados dele já moram. */
+
+const FERRAMENTAS = [
+  {
+    name: "agendar_conteudo",
+    description:
+      "Cria um conteúdo no calendário editorial do corretor, com data marcada. " +
+      "Use quando ele pedir para agendar, marcar, programar ou colocar um post " +
+      "no calendário. Não use para simplesmente escrever um texto — só quando " +
+      "ele quiser a peça registrada numa data.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tema: {
+          type: "string",
+          description: "Do que o conteúdo trata, em uma frase. Ex.: 'apartamentos de 2 dormitórios em Atibaia'.",
+        },
+        area: {
+          type: "string",
+          enum: ["Apartamentos", "Casas", "Lançamentos", "Alto padrão", "Comercial", "Terrenos", "Aluguel"],
+          description: "Área de atuação. Escolha a mais próxima do pedido; na dúvida, use a área principal do corretor.",
+        },
+        data: {
+          type: "string",
+          description: "Data da publicação em AAAA-MM-DD. Se o corretor disser só o dia ('dia 20'), use o mês atual; se a data já passou, use o mês seguinte.",
+        },
+        formato: {
+          type: "string",
+          enum: ["Reels", "Carrossel", "Stories", "TikTok"],
+          description: "Formato da peça. Se ele não disser, use Reels.",
+        },
+        funil: {
+          type: "string",
+          enum: ["Topo", "Meio", "Fundo", "Personalizado"],
+          description: "Etapa do funil. Se ele não disser, escolha pela intenção do conteúdo.",
+        },
+        cidade: {
+          type: "string",
+          description: "Cidade ou bairro citado no pedido. Deixe vazio se ele não citou nenhum.",
+        },
+      },
+      required: ["tema", "area", "data", "formato", "funil"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+];
+
 function systemChat(ctx: Record<string, unknown>) {
   const perfil = perfilEmTexto(ctx);
   return `${PERSONA}
@@ -172,6 +230,16 @@ Entregue em três blocos, nesta ordem, usando estes títulos:
 Duas exceções ao formato, para não ficar burocrático: se a pergunta for objetiva e fechada (um "quanto custa o plano Pro?", um "onde fica o Kanban?"), responda em uma ou duas linhas e pule os blocos. E se você precisar de mais informação, faça a pergunta antes de qualquer bloco.
 
 Nunca abra com resumo do que você vai dizer, nunca feche com resumo do que disse.
+
+# Você executa, não só aconselha
+
+Você tem a ferramenta **agendar_conteudo**, que cria o conteúdo direto no calendário editorial dele. Use sempre que ele pedir para agendar, marcar ou programar alguma coisa — não devolva um passo a passo de como agendar manualmente quando você mesmo pode fazer.
+
+Antes de chamar a ferramenta, escreva uma frase dizendo o que você vai agendar (data, tema e formato), para ele conferir. Depois chame a ferramenta uma vez por peça. Se ele pedir uma sequência ("três posts na semana que vem"), chame uma vez para cada data.
+
+Só peça confirmação antes de agendar se faltar a data ou se o pedido estiver realmente ambíguo. "Agende um post sobre apartamentos em Atibaia para o dia 20" tem tudo o que você precisa: agende.
+
+Hoje é ${ctx.hoje ?? "data não informada"}. Use isso para resolver "amanhã", "sexta", "dia 20" e "semana que vem".
 
 # Limites
 
@@ -284,7 +352,9 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return json({ erro: "Use POST." }, 405);
-  if (cors["Access-Control-Allow-Origin"] === "null") return json({ erro: "Origem não autorizada." }, 403);
+  if (!origemLiberada(origem)) {
+    return json({ erro: `Origem não autorizada: ${origem ?? "(sem origem)"}` }, 403);
+  }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "desconhecido";
   if (excedeuLimite(ip)) return json({ erro: "Muitas requisições seguidas. Espere um minuto." }, 429);
@@ -380,6 +450,7 @@ Deno.serve(async (req: Request) => {
       model: MODELO,
       max_tokens: 2000,
       output_config: { effort: "medium" },
+      tools: FERRAMENTAS,
       system: [
         { type: "text", text: systemChat(contexto), cache_control: { type: "ephemeral" } },
         ...(base ? [{ type: "text" as const, text: blocoBase(base) }] : []),
@@ -402,6 +473,15 @@ Deno.serve(async (req: Request) => {
         try {
           for await (const texto of stream.textStream) enviar("texto", texto);
           const final = await stream.finalMessage();
+
+          // Ações decididas pelo modelo. Chegam depois do texto porque o
+          // tool_use fecha a mensagem; o navegador é quem executa.
+          for (const bloco of final.content) {
+            if (bloco.type === "tool_use") {
+              enviar("acao", { nome: bloco.name, entrada: bloco.input });
+            }
+          }
+
           enviar("fim", { motivo: final.stop_reason });
         } catch (e) {
           enviar("erro", { mensagem: traduzirErro(e).mensagem });

@@ -6,5 +6,56 @@
 
 const CONFIG = {
   assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
-  assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo"
+  assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo",
+
+  // Cabeçalhos de toda chamada ao back-end. A anon key vai nos dois formatos
+  // que o gateway do Supabase aceita.
+  cabecalhos() {
+    return {
+      "content-type": "application/json",
+      "authorization": `Bearer ${this.assistenteChave}`,
+      "apikey": this.assistenteChave
+    };
+  },
+
+  // A prévia de arquivo único roda dentro de um iframe isolado que bloqueia
+  // qualquer conexão externa. Lá a IA nunca vai responder — e é bom dizer isso
+  // com todas as letras em vez de deixar o navegador soltar "Failed to fetch".
+  emPreviaIsolada() {
+    try { return window.top !== window.self; } catch { return true; }
+  },
+
+  // Traduz a falha para algo que se possa agir. `fetch` só rejeita quando a
+  // requisição não chegou ao servidor: CSP, DNS, offline ou CORS. Resposta com
+  // status de erro é outro caminho — essa vem com mensagem nossa no corpo.
+  diagnosticar(e) {
+    console.error("[CorretoresAI] falha ao falar com o back-end:", e);
+
+    if (e?.name === "AbortError") return "A resposta demorou demais e foi interrompida.";
+
+    if (e instanceof TypeError) {
+      if (this.emPreviaIsolada()) {
+        return "esta prévia não faz chamadas externas — abra o site publicado para usar a IA";
+      }
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return "sem conexão com a internet";
+      }
+      return "não foi possível alcançar o servidor da IA";
+    }
+
+    return e?.message || "erro inesperado";
+  },
+
+  // Erro que veio COM resposta HTTP: o corpo traz a mensagem em português que
+  // a Edge Function escreveu.
+  async erroDaResposta(resposta) {
+    let detalhe = `o servidor respondeu ${resposta.status}`;
+    try {
+      const corpo = await resposta.json();
+      if (corpo?.erro) detalhe = corpo.erro;
+    } catch { /* corpo não era JSON */ }
+
+    console.error(`[CorretoresAI] HTTP ${resposta.status} em ${resposta.url}:`, detalhe);
+    return new Error(detalhe);
+  }
 };

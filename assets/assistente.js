@@ -21,7 +21,7 @@ const assistente = (() => {
   const PENSANDO = [
     "Consultando a base de conhecimento…",
     "Analisando dinâmica de mercado…",
-    "Consultando base jurídica e comercial…",
+    "Verificando a sua agenda…",
     "Formulando estratégia de alta conversão…"
   ];
 
@@ -159,6 +159,12 @@ const assistente = (() => {
         return;
       }
 
+      const abrirItem = event.target.closest("[data-abrir-item]");
+      if (abrirItem) {
+        ui.openItem(abrirItem.dataset.abrirItem);
+        return;
+      }
+
       const copiar = event.target.closest("[data-copiar]");
       if (copiar) {
         const bruto = conversa[Number(copiar.dataset.copiar)]?.texto ?? "";
@@ -216,6 +222,7 @@ const assistente = (() => {
         <div class="assist-msg">
           <div class="assist-balao">
             ${m.texto ? formatar(m.texto) : `<p class="assist-pensando"><i></i><i></i><i></i> <span data-pensando>${etapas[0]}</span></p>`}
+            ${(m.acoes ?? []).map(cartaoAcao).join("")}
           </div>
           ${m.texto && !m.parcial && m.fontes?.length
             ? `<p class="assist-fontes">
@@ -255,9 +262,65 @@ const assistente = (() => {
     const p = store.perfil;
     return {
       nome: p.nome, creci: p.creci, cidade: p.cidade, imobiliaria: p.imobiliaria,
-      areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label
+      areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label,
+      // Sem isto o modelo não resolve "dia 20" nem "semana que vem".
+      hoje: toIso(HOJE)
     };
   }
+
+  /* ---------------- Ações ----------------
+     O modelo decide; quem executa é aqui, no aparelho do corretor, direto no
+     store da conta dele. */
+
+  function executarAcao(nome, entrada = {}) {
+    if (nome !== "agendar_conteudo") {
+      return { ok: false, erro: `Ação desconhecida: ${nome}` };
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entrada.data ?? "")) {
+      return { ok: false, erro: "A data veio em um formato que não consegui usar." };
+    }
+
+    try {
+      const dados = {
+        area: entrada.area || store.perfil.areas[0] || AREAS[0],
+        cidade: entrada.cidade || store.perfil.cidade,
+        briefing: entrada.tema || "",
+        funnel: entrada.funil || store.config.funilPadrao,
+        format: entrada.formato || store.config.formatoPadrao,
+        date: entrada.data,
+        time: store.config.horarioPadrao
+      };
+
+      // O roteiro sai da engine local: agendar tem que ser instantâneo. O
+      // corretor regera pela IA depois, no editor, se quiser.
+      const [ideia] = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      const { angulo, rotulo, origem, ...limpo } = ideia;
+      const item = store.criar({ ...limpo, status: "agendado" });
+
+      return { ok: true, id: item.id, titulo: item.title, data: item.date, formato: item.format };
+    } catch (e) {
+      console.error("[CorretoresAI] falha ao executar a ação:", e);
+      return { ok: false, erro: e.message };
+    }
+  }
+
+  function cartaoAcao(acao) {
+    if (!acao.ok) {
+      return `<p class="assist-acao is-falha">${icone("i-close")} Não consegui agendar: ${acao.erro}</p>`;
+    }
+    return `
+      <div class="assist-acao">
+        <span class="icon-tile is-gold">${icone("i-calendar-clock")}</span>
+        <div>
+          <strong>Agendado para ${formatFull(acao.data)}</strong>
+          <span>${acao.titulo}</span>
+        </div>
+        <button type="button" data-abrir-item="${acao.id}">Abrir</button>
+      </div>`;
+  }
+
+  const icone = (id) => `<svg><use href="#${id}" /></svg>`;
 
   async function enviar(event) {
     event.preventDefault();
@@ -294,11 +357,17 @@ const assistente = (() => {
           if (balao) balao.innerHTML = formatar(resposta.texto);
           rolar();
         },
-        base?.texto
+        base?.texto,
+        (acao) => {
+          resposta.acoes = resposta.acoes ?? [];
+          resposta.acoes.push(executarAcao(acao.nome, acao.entrada));
+        }
       );
 
       if (!resposta.texto.trim()) {
-        resposta.texto = "Não consegui formular uma resposta. Tente reformular a pergunta.";
+        resposta.texto = resposta.acoes?.some((a) => a.ok)
+          ? "Pronto, já está no seu calendário."
+          : "Não consegui formular uma resposta. Tente reformular a pergunta.";
       }
     } catch (e) {
       resposta.texto = `**Não deu para responder agora.** ${e.message}`;
@@ -313,7 +382,7 @@ const assistente = (() => {
     }
   }
 
-  async function streamar(mensagens, aoReceber, base) {
+  async function streamar(mensagens, aoReceber, base, aoAgir) {
     if (!CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
       throw new Error("O assistente ainda não está conectado ao back-end. Veja o README para configurar.");
     }
@@ -331,19 +400,11 @@ const assistente = (() => {
       const resposta = await fetch(CONFIG.assistenteUrl, {
         method: "POST",
         signal: controle.signal,
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${CONFIG.assistenteChave}`,
-          "apikey": CONFIG.assistenteChave
-        },
+        headers: CONFIG.cabecalhos(),
         body: JSON.stringify({ mensagens, contexto: contexto(), base })
       });
 
-      if (!resposta.ok) {
-        let detalhe = `Erro ${resposta.status}.`;
-        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
-        throw new Error(detalhe);
-      }
+      if (!resposta.ok) throw await CONFIG.erroDaResposta(resposta);
 
       const leitor = resposta.body.getReader();
       const decoder = new TextDecoder();
@@ -365,12 +426,14 @@ const assistente = (() => {
           if (!evento || !dados) continue;
 
           if (evento === "texto") aoReceber(JSON.parse(dados));
+          if (evento === "acao") aoAgir?.(JSON.parse(dados));
           if (evento === "erro") throw new Error(JSON.parse(dados).mensagem);
         }
       }
     } catch (e) {
-      if (e.name === "AbortError") throw new Error("O back-end parou de responder no meio do caminho.");
-      throw e;
+      throw e instanceof TypeError || e.name === "AbortError"
+        ? new Error(CONFIG.diagnosticar(e))
+        : e;
     } finally {
       clearTimeout(relogio);
     }
@@ -381,6 +444,13 @@ const assistente = (() => {
       if (!store.logado || painel) return;
       carregar();
       montar();
+    },
+
+    // Usado pelo item "Assistente IA" da barra lateral.
+    abrir() {
+      if (!painel) return;
+      if (!aberto) alternar();
+      painel.querySelector("[data-campo]").focus();
     }
   };
 })();

@@ -55,6 +55,38 @@
   background: var(--gold);
 }
 
+/* Assistente IA: mesmo desenho dos itens de navegação, mas é um botão — abre a
+   gaveta em vez de trocar de tela. O fio dourado separa navegar de conversar. */
+.side-assistente {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: 10px;
+  background: rgba(201, 162, 39, 0.07);
+  color: var(--gold-soft);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-assistente svg { width: 18px; height: 18px; flex: none; }
+
+.side-assistente:hover {
+  border-color: rgba(201, 162, 39, 0.55);
+  background: rgba(201, 162, 39, 0.13);
+}
+
+body.assist-aberto .side-assistente {
+  border-color: var(--gold-deep);
+  background: rgba(201, 162, 39, 0.16);
+}
+
 .side-foot { margin-top: auto; display: grid; gap: 16px; }
 
 .plan-box {
@@ -1190,6 +1222,58 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 
 .assist-copiar svg { width: 12px; height: 12px; }
 .assist-copiar:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+/* Cartão de ação executada: o conteúdo que o copiloto agendou. */
+.assist-acao {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 12px;
+  background: rgba(201, 162, 39, 0.09);
+}
+
+.assist-acao .icon-tile { width: 32px; height: 32px; flex: none; }
+.assist-acao .icon-tile svg { width: 16px; height: 16px; }
+.assist-acao > div { min-width: 0; flex: 1; }
+.assist-acao strong { display: block; font-size: 12.5px; color: var(--gold-soft); }
+
+.assist-acao span:not(.icon-tile) {
+  display: block;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assist-acao button {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.assist-acao button:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.assist-acao.is-falha {
+  display: flex;
+  align-items: center;
+  border-color: rgba(220, 90, 90, 0.4);
+  background: rgba(220, 90, 90, 0.1);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.assist-acao.is-falha svg { width: 14px; height: 14px; flex: none; margin-right: 8px; }
 
 /* O que a base de conhecimento entregou para esta resposta. */
 .assist-fontes {

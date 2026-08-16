@@ -361,11 +361,7 @@ const roteiro = (() => {
       const resposta = await fetch(CONFIG.assistenteUrl, {
         method: "POST",
         signal: controle.signal,
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${CONFIG.assistenteChave}`,
-          "apikey": CONFIG.assistenteChave
-        },
+        headers: CONFIG.cabecalhos(),
         body: JSON.stringify({
           modo: "roteiro",
           contexto: {
@@ -386,15 +382,14 @@ const roteiro = (() => {
         })
       });
 
-      if (!resposta.ok) {
-        let detalhe = `Erro ${resposta.status}.`;
-        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
-        throw new Error(detalhe);
-      }
+      if (!resposta.ok) throw await CONFIG.erroDaResposta(resposta);
 
       corpo = await resposta.json();
     } catch (e) {
-      throw new Error(e.name === "AbortError" ? "O back-end demorou demais para responder." : e.message);
+      // Falha de rede vira explicação; erro que já veio do servidor passa reto.
+      throw e instanceof TypeError || e.name === "AbortError"
+        ? new Error(CONFIG.diagnosticar(e))
+        : e;
     } finally {
       clearTimeout(relogio);
     }
