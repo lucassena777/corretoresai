@@ -471,7 +471,10 @@ Deno.serve(async (req: Request) => {
         }, 12_000);
 
         try {
-          for await (const texto of stream.textStream) enviar("texto", texto);
+          // `.on("text")` em vez de `for await (stream.textStream)`: nesta
+          // versão do SDK, rodando em Deno, textStream vem indefinido e a
+          // iteração estoura antes do primeiro token.
+          stream.on("text", (pedaco: string) => enviar("texto", pedaco));
           const final = await stream.finalMessage();
 
           // Ações decididas pelo modelo. Chegam depois do texto porque o
