@@ -40,7 +40,8 @@ assets/roteiro.js       engine de conteúdo: 3 ângulos, local ou pela IA
 assets/db.js            contas, senha com hash e sessão no navegador
 assets/store.js         estado da conta: conteúdos, perfil, plano e histórico
 assets/ui.js            avisos, modal e o editor completo de conteúdo
-assets/assistente.js    botão flutuante e chat do estrategista
+assets/conhecimento.js  base de conhecimento do copiloto + busca por termo
+assets/assistente.js    botão e gaveta do copiloto, no canto esquerdo
 assets/auth.js          guarda de rota: exige login nas telas do app
 assets/shell.js         injeta sprite de ícones, sidebar e topbar em todas as telas
 ```
@@ -115,10 +116,22 @@ são valores fixos. Publicar mais conteúdo aumenta visualizações e leads.
 Duas partes do site falam com um modelo de verdade, pela mesma Edge Function
 (`supabase/functions/assistente/`) e pela mesma chave:
 
-**O assistente** — o botão flutuante no canto inferior direito da área logada
-abre um chat com um estrategista de marketing imobiliário. Nada de resposta
-pronta: ele envia o perfil do corretor (cidade, áreas, tom de voz) como contexto
-e recebe o texto em streaming, palavra por palavra.
+**O copiloto** — o botão no canto inferior esquerdo abre uma gaveta encostada na
+sidebar (a navegação continua inteira e clicável) com um estrategista de
+marketing imobiliário. Nada de resposta pronta: ele envia o perfil do corretor
+(cidade, áreas, tom de voz) como contexto e recebe o texto em streaming.
+
+Antes de enviar, o navegador consulta `assets/conhecimento.js` — a base com a
+documentação da plataforma (Central, Calendário, Kanban, Biblioteca, Histórico,
+Perfil, Planos, Configurações) e com o ofício (objeção de preço, CRECI e
+documentação, financiamento, abordagem, copy, funil, leitura de mercado, e-mail,
+reunião presencial, legenda). A pergunta pontua os verbetes por termo em comum e
+os melhores viajam junto, num bloco de system separado e sem cache — assim o
+prefixo cacheado continua valendo. Não é banco vetorial: para algumas dezenas de
+verbetes, busca por palavra-chave no navegador resolve e não custa latência.
+
+O indicador de raciocínio mostra o que foi realmente consultado ("Consultando:
+Kanban de produção…") e cada resposta apoiada na base diz de onde veio.
 
 **A Central de Conteúdo** — ao gerar, o briefing sai daqui já tratado pelo
 `texto.js` (a IA recebe "São Paulo - Higienópolis", nunca "sao paulo
