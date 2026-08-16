@@ -133,6 +133,12 @@ verbetes, busca por palavra-chave no navegador resolve e não custa latência.
 O indicador de raciocínio mostra o que foi realmente consultado ("Consultando:
 Kanban de produção…") e cada resposta apoiada na base diz de onde veio.
 
+O system prompt manda o modelo percorrer quatro etapas antes de escrever (situar
+o caso, achar a dor e o gatilho de decisão, puxar o repertório certo, estruturar)
+e entregar em três blocos: **Diagnóstico**, **Plano de ação** e **Dica de ouro**.
+Pergunta objetiva e fechada pula os blocos e é respondida em duas linhas — o
+formato existe para dar profundidade, não para inflar resposta curta.
+
 **A Central de Conteúdo** — ao gerar, o briefing sai daqui já tratado pelo
 `texto.js` (a IA recebe "São Paulo - Higienópolis", nunca "sao paulo
 higienopolis") e volta como três ideias completas, uma por ângulo, em JSON com
@@ -154,9 +160,18 @@ nunca fica sem gerar.
 **Para ligar**, só falta a chave — é o único passo que precisa ser seu, porque
 uma chave de API não deve passar por chat nem entrar no repositório:
 
-1. Pegue uma chave em https://platform.claude.com → API Keys.
+1. Pegue uma chave em https://platform.claude.com/settings/keys
 2. Abra https://supabase.com/dashboard/project/cksboexpaegtdprkksix/settings/functions
 3. Em **Edge Function Secrets**, adicione `ANTHROPIC_API_KEY` com a sua chave.
+
+Chave que passou por chat, e-mail ou print deixou de ser secreta: revogue e gere
+outra antes de usar.
+
+Erro da API vira mensagem em português com o status certo — chave recusada, sem
+crédito, sobrecarga, tempo esgotado — e falha transitória (429, 529, 5xx) ganha
+uma retentativa automática. No chat, o servidor manda um pulso a cada 12s para a
+conexão não cair enquanto o primeiro token não vem, e o navegador desiste depois
+de 3 minutos de silêncio.
 
 Sem a chave, o assistente responde dizendo que ainda não foi configurado e a
 Central gera pelo modelo local — o resto do site funciona normalmente.

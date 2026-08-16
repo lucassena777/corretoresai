@@ -1,6 +1,6 @@
 // Back-end de IA do CorretoresAI. Dois modos, uma chave:
 //
-//   modo "chat"     — o assistente virtual da área logada (resposta em streaming)
+//   modo "chat"     — o Copiloto da área logada (resposta em streaming)
 //   modo "roteiro"  — a Central de Conteúdo (3 ideias com os 11 campos, em JSON)
 //
 // A função existe por um motivo só: a chave da API não pode ficar no navegador.
@@ -49,6 +49,58 @@ function cabecalhosCors(origem: string | null) {
   };
 }
 
+/* ---------------- Tratamento de erro ----------------
+   Erro de API vira mensagem em português que o corretor entende, com o status
+   certo: o que ele pode resolver (esperar, reescrever) separado do que só o
+   dono do projeto resolve (chave, cota). */
+
+function traduzirErro(e: unknown): { mensagem: string; status: number } {
+  const bruto = e instanceof Error ? e.message : String(e);
+  const status = (e as { status?: number })?.status ?? 0;
+
+  if (status === 401 || /invalid x-api-key|authentication_error/i.test(bruto)) {
+    return {
+      mensagem: "A chave da API foi recusada. Confira o secret ANTHROPIC_API_KEY no projeto.",
+      status: 503,
+    };
+  }
+  if (status === 403) {
+    return { mensagem: "Esta chave não tem permissão para usar o modelo.", status: 503 };
+  }
+  if (status === 400 && /credit balance|billing/i.test(bruto)) {
+    return { mensagem: "A conta da API está sem créditos.", status: 503 };
+  }
+  if (status === 429) {
+    return { mensagem: "Muitos pedidos agora. Espere alguns segundos e tente de novo.", status: 429 };
+  }
+  if (status === 529 || /overloaded/i.test(bruto)) {
+    return { mensagem: "O modelo está sobrecarregado. Tente de novo em instantes.", status: 503 };
+  }
+  if (/abort|timed out|timeout/i.test(bruto)) {
+    return { mensagem: "A resposta demorou demais e foi interrompida.", status: 504 };
+  }
+  if (status >= 500) {
+    return { mensagem: "A API teve uma falha temporária. Tente de novo.", status: 502 };
+  }
+  return { mensagem: bruto || "Erro inesperado.", status: 500 };
+}
+
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Uma tentativa extra para falha transitória (sobrecarga, 429, 5xx). Erro de
+// chave ou de crédito não se resolve tentando de novo — esse sobe na hora.
+async function comRetentativa<T>(tarefa: () => Promise<T>): Promise<T> {
+  try {
+    return await tarefa();
+  } catch (e) {
+    const status = (e as { status?: number })?.status ?? 0;
+    const transitorio = status === 429 || status === 529 || status >= 500;
+    if (!transitorio) throw e;
+    await esperar(1200);
+    return await tarefa();
+  }
+}
+
 /* ---------------- Persona compartilhada ---------------- */
 
 function perfilEmTexto(ctx: Record<string, unknown>) {
@@ -63,13 +115,13 @@ function perfilEmTexto(ctx: Record<string, unknown>) {
   ].filter(Boolean).join("\n");
 }
 
-const PERSONA = `Você é o estrategista de vendas da CorretoresAI: um consultor sênior de marketing imobiliário que trabalha ao lado de corretores de imóveis brasileiros, do primeiro imóvel ao alto padrão.
+const PERSONA = `Você é o **Copiloto CorretoresAI**: mentor imobiliário sênior, estrategista de vendas e especialista em copywriting de alto padrão. Trabalha ao lado de corretores de imóveis brasileiros, do primeiro imóvel ao alto padrão.
 
-Fale como consultor, não como manual: frases diretas, fundamentadas, sem jargão de guru de internet. Nada de "arrase nas redes", "bombar", emoji de fogo ou listas genéricas de dicas.
+Fale como consultor, não como manual: frases diretas, fundamentadas, sem jargão de guru de internet. Nada de "arrase nas redes", "bombar", emoji de fogo ou lista genérica de dicas.
 
-Quando falar de mercado, seja concreto sobre o mecanismo (o que sustenta preço numa região, o que reduz tempo de venda, o que trava um financiamento) e honesto quando não souber um dado específico daquela cidade. Nunca invente índice, percentual ou pesquisa — se citar um número, ele tem que vir do briefing.
+Quando falar de mercado, seja concreto sobre o mecanismo (o que sustenta preço numa região, o que reduz tempo de venda, o que trava um financiamento) e honesto quando não souber um dado específico daquela cidade. Nunca invente índice, percentual ou pesquisa — se citar um número, ele tem que vir do que o corretor te contou.
 
-Escreva em português do Brasil, com acentuação e pontuação corretas.`;
+Escreva em português do Brasil, com acentuação, concordância e pontuação impecáveis.`;
 
 /* ---------------- Modo chat ---------------- */
 
@@ -94,28 +146,38 @@ function systemChat(ctx: Record<string, unknown>) {
   const perfil = perfilEmTexto(ctx);
   return `${PERSONA}
 
-Você é o copiloto dentro do CorretoresAI — a plataforma onde este corretor
-planeja e produz o conteúdo dele. Além de estratégia de mercado, você atende o
-que a Central de Conteúdo não faz: e-mail para cliente, resposta a objeção,
-roteiro de reunião presencial, legenda avulsa e dúvida sobre a própria
-plataforma.
+Você é o copiloto dentro do CorretoresAI — a plataforma onde este corretor planeja e produz o conteúdo dele. Além de estratégia de mercado, você atende o que a Central de Conteúdo não faz: e-mail para cliente, resposta a objeção, roteiro de reunião presencial, legenda avulsa e dúvida sobre a própria plataforma.
 
-# Como você pensa antes de responder
+# Como você raciocina antes de escrever
 
-Antes de escrever, situe três coisas:
-1. **Quem é este corretor** — a região onde ele atua, o tipo de imóvel que ele vende e o público que compra isso. Um studio de 30 m² perto do metrô e uma casa de 400 m² em condomínio fechado não se vendem com o mesmo argumento.
-2. **Qual é o objetivo real por trás da pergunta** — alcance, autoridade, conversão em visita ou fechamento. A pergunta que chega quase nunca é a pergunta que importa.
-3. **Em que etapa está o cliente dele** — quem ainda não pensou em comprar, quem está comparando, ou quem já decidiu.
+Percorra estas quatro etapas internamente, sem mostrá-las na resposta:
+
+1. **Situe o caso** — que imóvel e que cliente estão em jogo. Região, faixa de preço, tipo de comprador. Um studio de 30 m² perto do metrô e uma casa de 400 m² em condomínio fechado não se vendem com o mesmo argumento.
+2. **Encontre a dor real e o gatilho de decisão** — o que trava esse cliente (medo de errar, falta de referência de preço, orçamento, prazo, decisor ausente) e o que destrava (prova, comparação, segurança jurídica, urgência legítima). A pergunta que chega quase nunca é a pergunta que importa.
+3. **Puxe o repertório certo** — legislação e documentação, precificação por metro quadrado, tratamento de objeção, técnica de persuasão honesta. Use o que se aplica a ESTE caso, não o que é genericamente verdadeiro.
+4. **Estruture a entrega** — no formato abaixo, com gramática impecável e postura de quem já fez isso muitas vezes.
 
 Se faltar informação para responder bem, pergunte **uma** coisa — a que mais muda a resposta — e responda o resto com o que já tem.
 
-# Como você responde
+# Formato da resposta
 
-Traga sempre algo aplicável hoje: um gancho pronto, um roteiro em blocos, uma pergunta para fazer ao cliente. Quando sugerir um texto para o corretor usar, escreva o texto — não descreva o que ele deveria dizer.
+Entregue em três blocos, nesta ordem, usando estes títulos:
+
+**Diagnóstico** — duas ou três linhas situando estrategicamente o que está em jogo naquela dúvida. Não repita a pergunta de volta; mostre o que ela revela.
+
+**Plano de ação** — o miolo: o roteiro, o texto, os passos ou a explicação. Direto e aplicável hoje. Quando sugerir algo para o corretor dizer ou enviar, **escreva o texto pronto** — não descreva o que ele deveria dizer. Use lista numerada só quando a ordem importar.
+
+**Dica de ouro** — uma linha ou duas sobre como se posicionar ao usar isso na prática: o que falar antes, o que não entregar de graça, onde a maioria dos corretores erra o timing.
+
+Duas exceções ao formato, para não ficar burocrático: se a pergunta for objetiva e fechada (um "quanto custa o plano Pro?", um "onde fica o Kanban?"), responda em uma ou duas linhas e pule os blocos. E se você precisar de mais informação, faça a pergunta antes de qualquer bloco.
+
+Nunca abra com resumo do que você vai dizer, nunca feche com resumo do que disse.
+
+# Limites
 
 Sobre legislação e tributos: explique o funcionamento geral com clareza (CRECI, contrato, matrícula, ITBI, escritura, direito de arrependimento) e deixe explícito quando o caso exige advogado ou contador. Você orienta; você não substitui parecer jurídico.
 
-Mantenha a resposta no tamanho do que foi perguntado. Uma dúvida objetiva merece uma resposta curta. Não abra com resumo do que você vai dizer, não feche com resumo do que disse, e não ofereça uma lista de próximos passos que ninguém pediu.
+Nunca prometa valorização garantida nem rentabilidade futura em percentual.
 
 # O corretor com quem você está falando
 
@@ -172,7 +234,7 @@ Você escreve roteiros de conteúdo para redes sociais a partir de um briefing d
 2. **estilo** — Estilo de vida e funcionalidade. Como a planta e a localização resolvem a rotina de quem vai morar. Concreto sobre o dia a dia, não adjetivo solto.
 3. **decisao** — Oportunidade e decisão. Números de mercado, documentação, segurança jurídica e por que este é o momento (ou não é) de fechar.
 
-As três ideias falam do mesmo imóvel e não podem se repetir: título, gancho, chamada e argumento têm que ser diferentes entre elas.
+Antes de escrever, identifique quem compra este imóvel e qual é o gatilho de decisão dessa pessoa. As três ideias falam do mesmo imóvel e não podem se repetir: título, gancho, chamada e argumento têm que ser diferentes entre elas.
 
 # Os campos
 
@@ -227,9 +289,12 @@ Deno.serve(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "desconhecido";
   if (excedeuLimite(ip)) return json({ erro: "Muitas requisições seguidas. Espere um minuto." }, 429);
 
-  const chave = Deno.env.get("ANTHROPIC_API_KEY");
+  const chave = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
   if (!chave) {
     return json({ erro: "A IA ainda não foi configurada: falta a chave da API no projeto." }, 503);
+  }
+  if (!chave.startsWith("sk-ant-")) {
+    return json({ erro: "O secret ANTHROPIC_API_KEY não parece uma chave válida." }, 503);
   }
 
   let corpo: {
@@ -245,14 +310,16 @@ Deno.serve(async (req: Request) => {
     return json({ erro: "Corpo inválido." }, 400);
   }
 
-  const anthropic = new Anthropic({ apiKey: chave });
+  // maxRetries: 0 porque a retentativa é nossa (comRetentativa), com o critério
+  // que a gente escolheu. timeout corta a conexão pendurada antes do gateway.
+  const anthropic = new Anthropic({ apiKey: chave, maxRetries: 0, timeout: 120_000 });
   const contexto = corpo.contexto ?? {};
 
   /* ----- Roteiro: resposta única em JSON ----- */
 
   if (corpo.modo === "roteiro") {
     try {
-      const resposta = await anthropic.messages.create({
+      const resposta = await comRetentativa(() => anthropic.messages.create({
         model: MODELO,
         max_tokens: 8000,
         output_config: {
@@ -264,7 +331,7 @@ Deno.serve(async (req: Request) => {
           role: "user",
           content: `Escreva as três ideias para este briefing:\n\n${briefingEmTexto(corpo.briefing ?? {})}`,
         }],
-      });
+      }));
 
       if (resposta.stop_reason === "refusal") {
         return json({ erro: "O modelo recusou este briefing. Tente reescrevê-lo." }, 422);
@@ -273,11 +340,20 @@ Deno.serve(async (req: Request) => {
       const bloco = resposta.content.find((b) => b.type === "text");
       if (!bloco || bloco.type !== "text") return json({ erro: "Resposta vazia do modelo." }, 502);
 
-      const dados = JSON.parse(bloco.text);
-      return json({ ideias: (dados.ideias ?? []).slice(0, 3) });
+      let dados: { ideias?: unknown[] };
+      try {
+        dados = JSON.parse(bloco.text);
+      } catch {
+        return json({ erro: "O modelo devolveu um JSON que não deu para ler." }, 502);
+      }
+
+      const ideias = Array.isArray(dados.ideias) ? dados.ideias.slice(0, 3) : [];
+      if (!ideias.length) return json({ erro: "O modelo não devolveu nenhuma ideia." }, 502);
+
+      return json({ ideias });
     } catch (e) {
-      const mensagem = e instanceof Error ? e.message : "Erro inesperado.";
-      return json({ erro: mensagem }, /api key|authentication/i.test(mensagem) ? 503 : 500);
+      const { mensagem, status } = traduzirErro(e);
+      return json({ erro: mensagem }, status);
     }
   }
 
@@ -317,15 +393,26 @@ Deno.serve(async (req: Request) => {
         const enviar = (evento: string, dados: unknown) =>
           controller.enqueue(encoder.encode(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`));
 
+        // O primeiro token pode demorar. Um comentário SSE a cada 12s segura a
+        // conexão de pé sem sujar o texto — o cliente ignora linhas ":".
+        const pulso = setInterval(() => {
+          try { controller.enqueue(encoder.encode(": vivo\n\n")); } catch { /* fechado */ }
+        }, 12_000);
+
         try {
           for await (const texto of stream.textStream) enviar("texto", texto);
           const final = await stream.finalMessage();
           enviar("fim", { motivo: final.stop_reason });
         } catch (e) {
-          enviar("erro", { mensagem: e instanceof Error ? e.message : "Falha ao gerar a resposta." });
+          enviar("erro", { mensagem: traduzirErro(e).mensagem });
         } finally {
+          clearInterval(pulso);
           controller.close();
         }
+      },
+      cancel() {
+        // Aba fechada ou pergunta cancelada: não continue gastando token.
+        stream.abort();
       },
     });
 
@@ -335,10 +422,11 @@ Deno.serve(async (req: Request) => {
         "content-type": "text/event-stream; charset=utf-8",
         "cache-control": "no-cache",
         "connection": "keep-alive",
+        "x-accel-buffering": "no",
       },
     });
   } catch (e) {
-    const mensagem = e instanceof Error ? e.message : "Erro inesperado.";
-    return json({ erro: mensagem }, /api key|authentication/i.test(mensagem) ? 503 : 500);
+    const { mensagem, status } = traduzirErro(e);
+    return json({ erro: mensagem }, status);
   }
 });

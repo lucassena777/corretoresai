@@ -20,10 +20,13 @@ const assistente = (() => {
   // substituída pelo que foi realmente encontrado na base de conhecimento.
   const PENSANDO = [
     "Consultando a base de conhecimento…",
-    "Analisando estratégias de mercado…",
-    "Considerando o seu perfil e a sua região…",
-    "Formulando a resposta…"
+    "Analisando dinâmica de mercado…",
+    "Consultando base jurídica e comercial…",
+    "Formulando estratégia de alta conversão…"
   ];
+
+  // Corta a espera se o back-end pendurar a conexão sem mandar nada.
+  const TEMPO_LIMITE = 180000;
 
   let aberto = false;
   let ocupado = false;
@@ -315,42 +318,61 @@ const assistente = (() => {
       throw new Error("O assistente ainda não está conectado ao back-end. Veja o README para configurar.");
     }
 
-    const resposta = await fetch(CONFIG.assistenteUrl, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "authorization": `Bearer ${CONFIG.assistenteChave}`,
-        "apikey": CONFIG.assistenteChave
-      },
-      body: JSON.stringify({ mensagens, contexto: contexto(), base })
-    });
+    const controle = new AbortController();
+    let relogio = setTimeout(() => controle.abort(), TEMPO_LIMITE);
+    // Cada pedaço que chega renova o prazo: o limite é de silêncio, não de
+    // resposta longa.
+    const renovar = () => {
+      clearTimeout(relogio);
+      relogio = setTimeout(() => controle.abort(), TEMPO_LIMITE);
+    };
 
-    if (!resposta.ok) {
-      let detalhe = `Erro ${resposta.status}.`;
-      try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
-      throw new Error(detalhe);
-    }
+    try {
+      const resposta = await fetch(CONFIG.assistenteUrl, {
+        method: "POST",
+        signal: controle.signal,
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${CONFIG.assistenteChave}`,
+          "apikey": CONFIG.assistenteChave
+        },
+        body: JSON.stringify({ mensagens, contexto: contexto(), base })
+      });
 
-    const leitor = resposta.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await leitor.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const blocos = buffer.split("\n\n");
-      buffer = blocos.pop() ?? "";
-
-      for (const bloco of blocos) {
-        const evento = bloco.match(/^event: (.*)$/m)?.[1];
-        const dados = bloco.match(/^data: (.*)$/m)?.[1];
-        if (!evento || !dados) continue;
-
-        if (evento === "texto") aoReceber(JSON.parse(dados));
-        if (evento === "erro") throw new Error(JSON.parse(dados).mensagem);
+      if (!resposta.ok) {
+        let detalhe = `Erro ${resposta.status}.`;
+        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
+        throw new Error(detalhe);
       }
+
+      const leitor = resposta.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await leitor.read();
+        if (done) break;
+        renovar();
+
+        buffer += decoder.decode(value, { stream: true });
+        const blocos = buffer.split("\n\n");
+        buffer = blocos.pop() ?? "";
+
+        for (const bloco of blocos) {
+          // Linhas ":" são o pulso que segura a conexão; não têm evento.
+          const evento = bloco.match(/^event: (.*)$/m)?.[1];
+          const dados = bloco.match(/^data: (.*)$/m)?.[1];
+          if (!evento || !dados) continue;
+
+          if (evento === "texto") aoReceber(JSON.parse(dados));
+          if (evento === "erro") throw new Error(JSON.parse(dados).mensagem);
+        }
+      }
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("O back-end parou de responder no meio do caminho.");
+      throw e;
+    } finally {
+      clearTimeout(relogio);
     }
   }
 
