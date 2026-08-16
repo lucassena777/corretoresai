@@ -21,6 +21,8 @@ const ORIGENS = [
 const LIMITE = {
   mensagensPorTurno: 24,
   caracteresPorMensagem: 4000,
+  // Trechos da base de conhecimento que o navegador manda junto com a pergunta.
+  caracteresDaBase: 12000,
   pedidosPorMinuto: 12,
 };
 
@@ -71,9 +73,32 @@ Escreva em português do Brasil, com acentuação e pontuação corretas.`;
 
 /* ---------------- Modo chat ---------------- */
 
+// Os trechos recuperados vão num bloco separado, SEM cache: eles mudam a cada
+// pergunta, e marcá-los como cacheáveis invalidaria o prefixo a cada turno.
+function blocoBase(base: string) {
+  return `# Base de conhecimento da plataforma
+
+Os trechos abaixo vieram da base interna do CorretoresAI e são a fonte correta
+sobre como a plataforma funciona. Quando a pergunta for sobre ela, responda POR
+ELES — nunca invente tela, botão, preço ou funcionalidade que não esteja aqui.
+Se a base não cobrir o que foi perguntado, diga isso e responda com o que você
+sabe de mercado.
+
+Não cite "a base de conhecimento" nem diga que consultou um documento: fale como
+quem conhece o produto de dentro.
+
+${base}`;
+}
+
 function systemChat(ctx: Record<string, unknown>) {
   const perfil = perfilEmTexto(ctx);
   return `${PERSONA}
+
+Você é o copiloto dentro do CorretoresAI — a plataforma onde este corretor
+planeja e produz o conteúdo dele. Além de estratégia de mercado, você atende o
+que a Central de Conteúdo não faz: e-mail para cliente, resposta a objeção,
+roteiro de reunião presencial, legenda avulsa e dúvida sobre a própria
+plataforma.
 
 # Como você pensa antes de responder
 
@@ -212,6 +237,7 @@ Deno.serve(async (req: Request) => {
     mensagens?: { papel: string; texto: string }[];
     briefing?: Record<string, unknown>;
     contexto?: Record<string, unknown>;
+    base?: string;
   };
   try {
     corpo = await req.json();
@@ -269,12 +295,19 @@ Deno.serve(async (req: Request) => {
     return json({ erro: "Nenhuma pergunta recebida." }, 400);
   }
 
+  const base = typeof corpo.base === "string"
+    ? corpo.base.slice(0, LIMITE.caracteresDaBase)
+    : "";
+
   try {
     const stream = anthropic.messages.stream({
       model: MODELO,
       max_tokens: 2000,
       output_config: { effort: "medium" },
-      system: [{ type: "text", text: systemChat(contexto), cache_control: { type: "ephemeral" } }],
+      system: [
+        { type: "text", text: systemChat(contexto), cache_control: { type: "ephemeral" } },
+        ...(base ? [{ type: "text" as const, text: blocoBase(base) }] : []),
+      ],
       messages: mensagens,
     });
 

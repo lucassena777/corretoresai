@@ -995,52 +995,58 @@
   .config-grid, .perfil-grid { grid-template-columns: 1fr; }
 }
 
-/* ---------- Assistente virtual ---------- */
+/* ---------- Assistente virtual ----------
+   Vive no canto esquerdo, encostado na sidebar (270px) em vez de por cima
+   dela: a navegação continua inteira e clicável com o painel aberto. */
 
 .assist-botao {
   position: fixed;
-  right: 26px;
+  left: calc(270px + 26px);
   bottom: 26px;
   z-index: 60;
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 20px 0 15px;
   border: 0;
   border-radius: 999px;
   background: linear-gradient(150deg, var(--gold-bright), var(--gold) 45%, var(--gold-deep));
   color: var(--on-gold);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   box-shadow: 0 14px 34px -10px rgba(201, 162, 39, 0.55);
   transition: transform 0.18s ease, filter 0.18s ease;
 }
 
-.assist-botao svg { width: 26px; height: 26px; }
-.assist-botao:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.06); }
-body.assist-aberto .assist-botao { transform: scale(0.9); opacity: 0.55; }
+.assist-botao svg { width: 22px; height: 22px; flex: none; }
+.assist-botao:hover { transform: translateY(-2px); filter: brightness(1.06); }
+body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 
 .assist-painel {
   position: fixed;
-  right: 26px;
-  bottom: 96px;
+  left: 270px;
+  top: 0;
+  bottom: 0;
   z-index: 61;
   display: flex;
   flex-direction: column;
-  width: min(420px, calc(100vw - 40px));
-  height: min(620px, calc(100vh - 140px));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  width: min(430px, calc(100vw - 290px));
+  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   background: var(--bg-alt);
-  box-shadow: 0 30px 80px -28px rgba(0, 0, 0, 0.8);
+  box-shadow: 34px 0 80px -30px rgba(0, 0, 0, 0.8);
   overflow: hidden;
-  animation: assist-entra 0.18s ease;
+  animation: assist-entra 0.2s ease;
 }
 
 /* Sem isto o display:flex acima vence o atributo hidden e o painel nasce aberto. */
 .assist-painel[hidden] { display: none; }
 
 @keyframes assist-entra {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateX(-16px); }
   to { opacity: 1; transform: none; }
 }
 
@@ -1185,6 +1191,20 @@ body.assist-aberto .assist-botao { transform: scale(0.9); opacity: 0.55; }
 .assist-copiar svg { width: 12px; height: 12px; }
 .assist-copiar:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
 
+/* O que a base de conhecimento entregou para esta resposta. */
+.assist-fontes {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 9px 0 0;
+  padding-left: 2px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.assist-fontes svg { width: 12px; height: 12px; flex: none; color: var(--gold-deep); }
+
 .assist-envio {
   display: flex;
   align-items: flex-end;
@@ -1229,15 +1249,22 @@ body.assist-aberto .assist-botao { transform: scale(0.9); opacity: 0.55; }
 .assist-enviar:hover { filter: brightness(1.07); }
 .assist-painel.is-ocupado .assist-enviar { opacity: 0.45; pointer-events: none; }
 
-@media (max-width: 560px) {
+/* Abaixo de 900px a sidebar deixa de ser coluna fixa: a gaveta encosta na
+   borda da tela e o botão volta a ser redondo, para sobrar largura. */
+@media (max-width: 900px) {
   .assist-painel {
-    right: 12px;
-    left: 12px;
-    bottom: 88px;
-    width: auto;
-    height: min(70vh, calc(100vh - 120px));
+    left: 0;
+    width: min(400px, 100vw);
   }
-  .assist-botao { right: 16px; bottom: 16px; }
+  .assist-botao {
+    left: 16px;
+    bottom: 16px;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    justify-content: center;
+  }
+  .assist-botao span { display: none; }
 }
 
 /* ---------- Login e cadastro ---------- */

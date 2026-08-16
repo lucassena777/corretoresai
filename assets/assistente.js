@@ -1,22 +1,28 @@
-// Assistente virtual — botão flutuante + painel de conversa na área logada.
+// Assistente virtual — copiloto do corretor, ancorado no canto esquerdo.
+//
+// Antes de enviar a pergunta, consulta a base de conhecimento local
+// (conhecimento.js) e leva os verbetes relevantes junto. É o que faz o
+// assistente responder sobre a plataforma com o texto certo na mão, em vez de
+// deduzir como o site funciona.
 //
 // O navegador nunca vê a chave da API: ele fala com a Edge Function do projeto
 // Supabase (assets/config.js), que guarda a chave e conversa com o modelo.
 
 const assistente = (() => {
   const SUGESTOES = [
-    "Como abordar um cliente de alto padrão?",
-    "Ajude-me a melhorar este gancho para Stories",
-    "O que destacar em um apartamento de 47 m²?",
-    "Como responder quem diz que está só pesquisando?"
+    "Como responder uma objeção de preço alto?",
+    "Me explique como funciona o Calendário Editorial da plataforma.",
+    "Crie um e-mail formal para enviar uma proposta de imóvel.",
+    "Como montar uma estratégia de postagens para um lançamento?"
   ];
 
-  // Frases do indicador de carregamento, trocadas enquanto a resposta vem.
+  // Etapas do raciocínio, trocadas enquanto a resposta vem. A primeira é
+  // substituída pelo que foi realmente encontrado na base de conhecimento.
   const PENSANDO = [
-    "Analisando estratégia de mercado…",
-    "Considerando o perfil do seu cliente…",
-    "Ajustando o argumento para a sua região…",
-    "Montando a recomendação…"
+    "Consultando a base de conhecimento…",
+    "Analisando estratégias de mercado…",
+    "Considerando o seu perfil e a sua região…",
+    "Formulando a resposta…"
   ];
 
   let aberto = false;
@@ -24,6 +30,7 @@ const assistente = (() => {
   let conversa = [];
   let painel = null;
   let timerPensando = null;
+  let etapas = [...PENSANDO];
 
   const K_CONVERSA = "corretoresai-assistente";
 
@@ -91,8 +98,8 @@ const assistente = (() => {
     const botao = document.createElement("button");
     botao.className = "assist-botao";
     botao.type = "button";
-    botao.setAttribute("aria-label", "Abrir o assistente");
-    botao.innerHTML = `<svg><use href="#i-assistente" /></svg>`;
+    botao.setAttribute("aria-label", "Abrir o copiloto");
+    botao.innerHTML = `<svg><use href="#i-assistente" /></svg><span>Copiloto</span>`;
     botao.addEventListener("click", alternar);
     document.body.appendChild(botao);
 
@@ -103,8 +110,8 @@ const assistente = (() => {
       <header class="assist-topo">
         <span class="icon-tile is-gold"><svg><use href="#i-assistente" /></svg></span>
         <div>
-          <strong>Estrategista CorretoresAI</strong>
-          <span>Marketing, abordagem e negociação</span>
+          <strong>Copiloto CorretoresAI</strong>
+          <span>Plataforma, mercado e criação</span>
         </div>
         <button class="assist-limpar" type="button" data-limpar title="Começar do zero">
           <svg><use href="#i-trash" /></svg>
@@ -177,6 +184,7 @@ const assistente = (() => {
 
   function limpar() {
     conversa = [];
+    etapas = [...PENSANDO];
     guardar();
     render();
   }
@@ -189,7 +197,7 @@ const assistente = (() => {
         <div class="assist-vazio">
           <span class="icon-tile"><svg><use href="#i-assistente" /></svg></span>
           <h3>Em que posso ajudar hoje?</h3>
-          <p>Pergunte sobre abordagem de cliente, gancho de conteúdo, precificação, negociação ou o básico da parte legal.</p>
+          <p>Conheço a plataforma inteira e o mercado imobiliário. Pergunte sobre negociação, objeção, documentação, e-mail para cliente, estratégia de postagem — ou sobre como usar qualquer tela daqui.</p>
           <div class="assist-sugestoes">
             ${SUGESTOES.map((s) => `<button type="button" data-sugestao>${s}</button>`).join("")}
           </div>
@@ -204,8 +212,13 @@ const assistente = (() => {
       return `
         <div class="assist-msg">
           <div class="assist-balao">
-            ${m.texto ? formatar(m.texto) : `<p class="assist-pensando"><i></i><i></i><i></i> <span data-pensando>${PENSANDO[0]}</span></p>`}
+            ${m.texto ? formatar(m.texto) : `<p class="assist-pensando"><i></i><i></i><i></i> <span data-pensando>${etapas[0]}</span></p>`}
           </div>
+          ${m.texto && !m.parcial && m.fontes?.length
+            ? `<p class="assist-fontes">
+                 <svg><use href="#i-book" /></svg> Base consultada: ${m.fontes.join(" · ")}
+               </p>`
+            : ""}
           ${m.texto && !m.parcial
             ? `<button class="assist-copiar" type="button" data-copiar="${n}">
                  <svg><use href="#i-copy" /></svg> Copiar
@@ -228,8 +241,8 @@ const assistente = (() => {
     timerPensando = setInterval(() => {
       const alvo = painel.querySelector("[data-pensando]");
       if (!alvo) return clearInterval(timerPensando);
-      n = (n + 1) % PENSANDO.length;
-      alvo.textContent = PENSANDO[n];
+      n = (n + 1) % etapas.length;
+      alvo.textContent = etapas[n];
     }, 2600);
   }
 
@@ -254,8 +267,14 @@ const assistente = (() => {
     campo.value = "";
     campo.style.height = "auto";
 
+    // Recuperação: o que a base local tem a ver com esta pergunta.
+    const base = conhecimento.contexto(pergunta);
+    etapas = base
+      ? [`Consultando: ${base.fontes.join(", ")}…`, ...PENSANDO.slice(1)]
+      : [...PENSANDO];
+
     conversa.push({ papel: "usuario", texto: pergunta });
-    conversa.push({ papel: "assistente", texto: "", parcial: true });
+    conversa.push({ papel: "assistente", texto: "", parcial: true, fontes: base?.fontes ?? [] });
     ocupado = true;
     painel.classList.add("is-ocupado");
     render();
@@ -271,7 +290,8 @@ const assistente = (() => {
           const balao = painel.querySelector(".assist-msg:last-child .assist-balao");
           if (balao) balao.innerHTML = formatar(resposta.texto);
           rolar();
-        }
+        },
+        base?.texto
       );
 
       if (!resposta.texto.trim()) {
@@ -279,6 +299,7 @@ const assistente = (() => {
       }
     } catch (e) {
       resposta.texto = `**Não deu para responder agora.** ${e.message}`;
+      resposta.fontes = [];
     } finally {
       delete resposta.parcial;
       ocupado = false;
@@ -289,7 +310,7 @@ const assistente = (() => {
     }
   }
 
-  async function streamar(mensagens, aoReceber) {
+  async function streamar(mensagens, aoReceber, base) {
     if (!CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
       throw new Error("O assistente ainda não está conectado ao back-end. Veja o README para configurar.");
     }
@@ -301,7 +322,7 @@ const assistente = (() => {
         "authorization": `Bearer ${CONFIG.assistenteChave}`,
         "apikey": CONFIG.assistenteChave
       },
-      body: JSON.stringify({ mensagens, contexto: contexto() })
+      body: JSON.stringify({ mensagens, contexto: contexto(), base })
     });
 
     if (!resposta.ok) {
