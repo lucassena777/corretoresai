@@ -20,22 +20,33 @@ python -m http.server 5173
 
 ```
 index.html              landing page (preto e dourado)
+app/entrar.html         login e criação de conta
 app/dashboard.html      resumo da operação: métricas, próximos posts, atividades
 app/central.html        gerador de roteiros (área, funil, formato)
 app/calendario.html     calendário editorial + Kanban, com arrastar-e-soltar
-app/biblioteca.html     acervo com busca e filtros + histórico
-app/perfil.html         perfil do corretor + configurações
+app/biblioteca.html     acervo com busca e filtros
+app/historico.html      linha do tempo de tudo que aconteceu na conta
+app/planos.html         planos e cota de gerações
+app/perfil.html         perfil do corretor
+app/configuracoes.html  padrões da Central, tema e dados da conta
 assets/base.css         tokens de design, reset e componentes compartilhados
 assets/site.css         estilos da landing
-assets/app.css          estilos do shell do app, modal e avisos
-assets/data.js          sementes, constantes e o gerador de roteiro
-assets/store.js         estado único: conteúdos, perfil, plano e histórico
-assets/ui.js            avisos, modal e o editor completo de conteúdo
-assets/shell.js         injeta sprite de ícones, sidebar e topbar em todas as telas
+assets/app.css          estilos do shell do app, modal, assistente e avisos
 assets/theme.js         alternância de tema (claro/escuro), salva no navegador
+assets/config.js        endereço público do back-end
+assets/texto.js         acentuação, cidades, bairros e leitura do briefing
+assets/data.js          sementes, constantes, planos e helpers de data
+assets/roteiro.js       engine de conteúdo: 3 ângulos, local ou pela IA
+assets/db.js            contas, senha com hash e sessão no navegador
+assets/store.js         estado da conta: conteúdos, perfil, plano e histórico
+assets/ui.js            avisos, modal e o editor completo de conteúdo
+assets/assistente.js    botão flutuante e chat do estrategista
+assets/auth.js          guarda de rota: exige login nas telas do app
+assets/shell.js         injeta sprite de ícones, sidebar e topbar em todas as telas
 ```
 
-Os scripts carregam sempre nesta ordem: `theme → data → store → ui → shell → tela`.
+Os scripts carregam sempre nesta ordem: `theme → texto → data → roteiro → db →
+store → config → ui → assistente → auth → shell → tela`.
 
 ## Prévia publicada
 
@@ -99,22 +110,33 @@ uma linha, com tempo relativo, no dashboard e na Biblioteca.
 Os números do dashboard e do mock da landing são calculados do acervo real — não
 são valores fixos. Publicar mais conteúdo aumenta visualizações e leads.
 
-## Assistente virtual (back-end)
+## A IA de verdade (back-end)
 
-O botão flutuante no canto inferior direito da área logada abre um chat com um
-estrategista de marketing imobiliário. Ele **não** usa respostas prontas: fala
-com um modelo de verdade, e envia junto o perfil do corretor (cidade, áreas,
-tom de voz) como contexto.
+Duas partes do site falam com um modelo de verdade, pela mesma Edge Function
+(`supabase/functions/assistente/`) e pela mesma chave:
 
-A chave da IA nunca chega ao navegador. O site estático chama uma Edge Function
-do Supabase (`supabase/functions/assistente/`), que guarda a chave como secret,
-conversa com o modelo e devolve a resposta em streaming.
+**O assistente** — o botão flutuante no canto inferior direito da área logada
+abre um chat com um estrategista de marketing imobiliário. Nada de resposta
+pronta: ele envia o perfil do corretor (cidade, áreas, tom de voz) como contexto
+e recebe o texto em streaming, palavra por palavra.
+
+**A Central de Conteúdo** — ao gerar, o briefing sai daqui já tratado pelo
+`texto.js` (a IA recebe "São Paulo - Higienópolis", nunca "sao paulo
+higienopolis") e volta como três ideias completas, uma por ângulo, em JSON com
+schema fechado nos 11 campos do roteiro. O selo acima dos cartões diz de onde
+veio o texto: **Escrito pela IA** ou **Modelo local**.
+
+A chave da IA nunca chega ao navegador — ela vive como secret do projeto.
 
 ```
 navegador ──POST──▶ Edge Function (Supabase) ──▶ API Claude
    ▲                  guarda ANTHROPIC_API_KEY
-   └──── SSE, texto em tempo real ─────────┘
+   └──── SSE (chat) ou JSON (roteiro) ─────┘
 ```
+
+Se o back-end não responder — sem chave, sem internet, fora do ar — a Central
+cai sozinha na engine local do `roteiro.js` e avisa no rodapé da tela. O site
+nunca fica sem gerar.
 
 **Para ligar**, só falta a chave — é o único passo que precisa ser seu, porque
 uma chave de API não deve passar por chat nem entrar no repositório:
@@ -123,8 +145,8 @@ uma chave de API não deve passar por chat nem entrar no repositório:
 2. Abra https://supabase.com/dashboard/project/cksboexpaegtdprkksix/settings/functions
 3. Em **Edge Function Secrets**, adicione `ANTHROPIC_API_KEY` com a sua chave.
 
-Sem a chave, o assistente responde dizendo que ainda não foi configurado — o
-resto do site funciona normalmente.
+Sem a chave, o assistente responde dizendo que ainda não foi configurado e a
+Central gera pelo modelo local — o resto do site funciona normalmente.
 
 Para republicar a função depois de editá-la:
 
@@ -138,9 +160,10 @@ e corta mensagens muito longas.
 
 ## O que ainda é demonstração
 
-- A geração de roteiro é montada no navegador a partir do briefing, do perfil e
-  de modelos de texto. A IA de verdade entra quando houver back-end.
-- Não existe autenticação: "Entrar" leva direto ao dashboard da conta de exemplo.
+- As contas são do navegador: e-mail e senha (com hash) ficam no `localStorage`
+  da máquina, não num servidor. Serve para testar o fluxo inteiro, não para
+  valer entre dispositivos.
+- Os planos não cobram nada — trocar de plano só muda a cota de gerações.
 - Visualizações e leads são estimativas derivadas do número de publicados.
 - Tudo vive no navegador. Limpar o `localStorage` (ou usar "Restaurar o acervo
   original", em Configurações) volta ao acervo de fábrica.

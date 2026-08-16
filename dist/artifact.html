@@ -1391,6 +1391,12 @@ button { font: inherit; }
 .generate-btn svg { width: 18px; height: 18px; }
 .generate-btn:hover { filter: brightness(1.06); }
 
+.generate-btn:disabled {
+  filter: saturate(0.35) brightness(0.85);
+  box-shadow: none;
+  cursor: progress;
+}
+
 /* ---------- Calendário editorial ---------- */
 
 .board-bar {
@@ -2367,6 +2373,61 @@ body.assist-aberto .assist-botao { transform: scale(0.9); opacity: 0.55; }
 
 .ideias-head p { margin: 0; color: var(--text-muted); font-size: 13.5px; }
 .ideias-head b { color: var(--gold-soft); font-weight: 600; }
+
+/* De onde veio o texto: do modelo de verdade ou da engine local. */
+.selo-origem {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  vertical-align: middle;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.selo-origem.is-ia {
+  border-color: rgba(201, 162, 39, 0.42);
+  background: rgba(201, 162, 39, 0.12);
+  color: var(--gold-soft);
+}
+
+/* ---------- Espera da geração ---------- */
+
+.ideias-carregando { display: grid; gap: 14px; justify-items: center; }
+
+.ideias-carregando p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.skeleton-idea {
+  width: 100%;
+  height: 96px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(100deg,
+    var(--surface) 30%, var(--surface-2, rgba(255, 255, 255, 0.05)) 50%, var(--surface) 70%);
+  background-size: 300% 100%;
+  animation: ideia-brilho 1.5s ease-in-out infinite;
+}
+
+.skeleton-idea:nth-child(4) { animation-delay: 0.18s; opacity: 0.75; }
+.skeleton-idea:nth-child(5) { animation-delay: 0.36s; opacity: 0.5; }
+
+@keyframes ideia-brilho {
+  from { background-position: 130% 0; }
+  to   { background-position: -30% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-idea { animation: none; }
+}
 
 .idea {
   padding: 24px 26px 26px;
@@ -4364,16 +4425,128 @@ const roteiro = (() => {
       return {
         ...base,
         angulo,
-        rotulo: angulo === "analise" ? "Análise e valorização"
-          : angulo === "estilo" ? "Estilo de vida e funcionalidade"
-          : "Oportunidade e decisão",
+        rotulo: ROTULOS[angulo],
         title: script.titulo,
-        script
+        script,
+        origem: "local"
       };
     });
   }
 
-  return { gerarIdeias, montar, ANGULOS };
+  /* ---------------- Geração pela IA de verdade ---------------- */
+  //
+  // Mesmo formato de saída de gerarIdeias(), só que o texto vem do modelo em
+  // vez dos modelos de frase daqui. O briefing é enviado já tratado pelo
+  // texto.js — a IA recebe "São Paulo - Higienópolis", nunca "sao paulo".
+  //
+  // Quem chama deve tratar a exceção e cair no gerarIdeias() local: sem chave
+  // configurada, sem internet ou com o back-end fora do ar, o site continua
+  // gerando.
+
+  const ROTULOS = {
+    analise: "Análise e valorização",
+    estilo: "Estilo de vida e funcionalidade",
+    decisao: "Oportunidade e decisão"
+  };
+
+  const CAMPOS = [
+    "titulo", "gancho", "desenvolvimento", "prova", "cta",
+    "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao"
+  ];
+
+  async function gerarIdeiasIA(dados, perfil, { timeoutMs = 90000 } = {}) {
+    if (typeof CONFIG === "undefined" || !CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
+      throw new Error("O back-end de IA ainda não está configurado.");
+    }
+
+    const c = contexto(dados, perfil);
+    const briefingLimpo = texto.frase(dados.briefing);
+
+    const controle = new AbortController();
+    const relogio = setTimeout(() => controle.abort(), timeoutMs);
+
+    let corpo;
+    try {
+      const resposta = await fetch(CONFIG.assistenteUrl, {
+        method: "POST",
+        signal: controle.signal,
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${CONFIG.assistenteChave}`,
+          "apikey": CONFIG.assistenteChave
+        },
+        body: JSON.stringify({
+          modo: "roteiro",
+          contexto: {
+            nome: perfil?.nome, creci: perfil?.creci, cidade: perfil?.cidade,
+            imobiliaria: perfil?.imobiliaria, areas: perfil?.areas,
+            bio: perfil?.bio, tom: perfil?.tom
+          },
+          briefing: {
+            area: dados.area,
+            local: c.local.completo,
+            funil: dados.funnel || "Topo",
+            formato: dados.format || "Reels",
+            ficha: c.fichaFrase,
+            valor: c.valor,
+            caracteristicas: c.extras,
+            descricao: briefingLimpo
+          }
+        })
+      });
+
+      if (!resposta.ok) {
+        let detalhe = `Erro ${resposta.status}.`;
+        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
+        throw new Error(detalhe);
+      }
+
+      corpo = await resposta.json();
+    } catch (e) {
+      throw new Error(e.name === "AbortError" ? "O back-end demorou demais para responder." : e.message);
+    } finally {
+      clearTimeout(relogio);
+    }
+
+    const vindas = Array.isArray(corpo.ideias) ? corpo.ideias : [];
+    if (!vindas.length) throw new Error("O back-end não devolveu nenhuma ideia.");
+
+    return ANGULOS.map((angulo, n) => {
+      const bruta = vindas.find((i) => i.angulo === angulo) ?? vindas[n] ?? {};
+
+      const base = {
+        ...dados,
+        title: undefined,
+        briefing: briefingLimpo,
+        city: c.local.completo,
+        tags: (Array.isArray(bruta.tags) && bruta.tags.length ? bruta.tags : [
+          dados.area,
+          angulo === "analise" ? "Análise" : angulo === "estilo" ? "Estilo de vida" : "Decisão",
+          dados.format
+        ]).filter(Boolean).slice(0, 4)
+      };
+
+      // Campo que o modelo deixou vazio volta para o texto local, para que o
+      // roteiro nunca chegue incompleto no editor.
+      const local = montar(base, perfil, angulo, hashTexto(c.local.completo + angulo));
+      const script = {};
+      for (const campo of CAMPOS) {
+        const valor = typeof bruta[campo] === "string" ? bruta[campo].trim() : "";
+        script[campo] = valor || local[campo];
+      }
+
+      return {
+        ...base,
+        angulo,
+        rotulo: ROTULOS[angulo],
+        title: script.titulo,
+        script,
+        origem: "ia"
+      };
+    });
+  }
+
+  return { gerarIdeias, gerarIdeiasIA, montar, ANGULOS };
 })();
 
 // Compatibilidade: itens antigos e do acervo de exemplo continuam com roteiro.
@@ -6120,9 +6293,42 @@ function initCentral(root = document) {
   // ---- Geração -----------------------------------------------------------
 
   let ideias = [];
+  let gerando = false;
+  let timerEtapa = null;
 
-  function gerar() {
-    ideias = roteiro.gerarIdeias({
+  const botaoGerar = form.querySelector("[type=submit]");
+
+  // Frases do carregamento — a geração pela IA leva alguns segundos e a tela
+  // precisa contar o que está acontecendo.
+  const ETAPAS = [
+    "Lendo o briefing e a localização…",
+    "Comparando com o que a região oferece…",
+    "Escrevendo os três ângulos…",
+    "Ajustando ganchos e chamadas…"
+  ];
+
+  function mostrarCarregando() {
+    elIdeas.innerHTML = `
+      <div class="ideias-carregando">
+        <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
+        <p data-etapa>${ETAPAS[0]}</p>
+        <div class="skeleton-idea"></div>
+        <div class="skeleton-idea"></div>
+        <div class="skeleton-idea"></div>
+      </div>`;
+
+    let n = 0;
+    clearInterval(timerEtapa);
+    timerEtapa = setInterval(() => {
+      const alvo = elIdeas.querySelector("[data-etapa]");
+      if (!alvo) return clearInterval(timerEtapa);
+      n = (n + 1) % ETAPAS.length;
+      alvo.textContent = ETAPAS[n];
+    }, 2800);
+  }
+
+  function dadosDoForm() {
+    return {
       area: form.area.value,
       cidade: form.cidade.value,
       briefing: form.briefing.value,
@@ -6130,7 +6336,28 @@ function initCentral(root = document) {
       format: escolhido("formato"),
       date: proximaData(),
       time: store.config.horarioPadrao
-    }, store.perfil, Date.now());
+    };
+  }
+
+  // Tenta a IA de verdade; se o back-end não responder, cai na engine local
+  // para que a Central nunca fique sem gerar.
+  async function gerar() {
+    const dados = dadosDoForm();
+
+    gerando = true;
+    botaoGerar.disabled = true;
+    mostrarCarregando();
+
+    try {
+      ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
+    } catch (e) {
+      ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      ui.toast(`Roteiro montado sem a IA (${e.message})`, "erro");
+    } finally {
+      gerando = false;
+      botaoGerar.disabled = false;
+      clearInterval(timerEtapa);
+    }
 
     render();
   }
@@ -6144,7 +6371,11 @@ function initCentral(root = document) {
 
     elIdeas.innerHTML = `
       <div class="ideias-head">
-        <h2>Três ângulos para o mesmo imóvel</h2>
+        <h2>Três ângulos para o mesmo imóvel
+          <span class="selo-origem${ideias[0]?.origem === "ia" ? " is-ia" : ""}">
+            ${ideias[0]?.origem === "ia" ? "Escrito pela IA" : "Modelo local"}
+          </span>
+        </h2>
         <p>
           ${l.completo ? `<b>${l.completo}</b>` : "Sem localização informada"}
           ${ficha ? ` · ${ficha}` : ""}
@@ -6189,7 +6420,7 @@ function initCentral(root = document) {
     const acao = btn.dataset.action;
 
     const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
-    const { angulo, rotulo, ...limpo } = ideia;
+    const { angulo, rotulo, origem, ...limpo } = ideia;
     const item = store.criar({ ...limpo, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
@@ -6209,6 +6440,7 @@ function initCentral(root = document) {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (gerando) return;
 
     if (!store.consumirGeracao()) {
       ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");

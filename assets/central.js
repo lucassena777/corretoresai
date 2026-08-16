@@ -77,9 +77,42 @@ function initCentral(root = document) {
   // ---- Geração -----------------------------------------------------------
 
   let ideias = [];
+  let gerando = false;
+  let timerEtapa = null;
 
-  function gerar() {
-    ideias = roteiro.gerarIdeias({
+  const botaoGerar = form.querySelector("[type=submit]");
+
+  // Frases do carregamento — a geração pela IA leva alguns segundos e a tela
+  // precisa contar o que está acontecendo.
+  const ETAPAS = [
+    "Lendo o briefing e a localização…",
+    "Comparando com o que a região oferece…",
+    "Escrevendo os três ângulos…",
+    "Ajustando ganchos e chamadas…"
+  ];
+
+  function mostrarCarregando() {
+    elIdeas.innerHTML = `
+      <div class="ideias-carregando">
+        <span class="icon-tile is-gold"><svg><use href="#i-sparkle" /></svg></span>
+        <p data-etapa>${ETAPAS[0]}</p>
+        <div class="skeleton-idea"></div>
+        <div class="skeleton-idea"></div>
+        <div class="skeleton-idea"></div>
+      </div>`;
+
+    let n = 0;
+    clearInterval(timerEtapa);
+    timerEtapa = setInterval(() => {
+      const alvo = elIdeas.querySelector("[data-etapa]");
+      if (!alvo) return clearInterval(timerEtapa);
+      n = (n + 1) % ETAPAS.length;
+      alvo.textContent = ETAPAS[n];
+    }, 2800);
+  }
+
+  function dadosDoForm() {
+    return {
       area: form.area.value,
       cidade: form.cidade.value,
       briefing: form.briefing.value,
@@ -87,7 +120,28 @@ function initCentral(root = document) {
       format: escolhido("formato"),
       date: proximaData(),
       time: store.config.horarioPadrao
-    }, store.perfil, Date.now());
+    };
+  }
+
+  // Tenta a IA de verdade; se o back-end não responder, cai na engine local
+  // para que a Central nunca fique sem gerar.
+  async function gerar() {
+    const dados = dadosDoForm();
+
+    gerando = true;
+    botaoGerar.disabled = true;
+    mostrarCarregando();
+
+    try {
+      ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
+    } catch (e) {
+      ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      ui.toast(`Roteiro montado sem a IA (${e.message})`, "erro");
+    } finally {
+      gerando = false;
+      botaoGerar.disabled = false;
+      clearInterval(timerEtapa);
+    }
 
     render();
   }
@@ -101,7 +155,11 @@ function initCentral(root = document) {
 
     elIdeas.innerHTML = `
       <div class="ideias-head">
-        <h2>Três ângulos para o mesmo imóvel</h2>
+        <h2>Três ângulos para o mesmo imóvel
+          <span class="selo-origem${ideias[0]?.origem === "ia" ? " is-ia" : ""}">
+            ${ideias[0]?.origem === "ia" ? "Escrito pela IA" : "Modelo local"}
+          </span>
+        </h2>
         <p>
           ${l.completo ? `<b>${l.completo}</b>` : "Sem localização informada"}
           ${ficha ? ` · ${ficha}` : ""}
@@ -146,7 +204,7 @@ function initCentral(root = document) {
     const acao = btn.dataset.action;
 
     const statusAoAprovar = store.config.agendarAoAprovar ? "agendado" : "aprovado";
-    const { angulo, rotulo, ...limpo } = ideia;
+    const { angulo, rotulo, origem, ...limpo } = ideia;
     const item = store.criar({ ...limpo, status: acao === "aprovar" ? statusAoAprovar : "rascunho" });
 
     if (acao === "aprovar") {
@@ -166,6 +224,7 @@ function initCentral(root = document) {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (gerando) return;
 
     if (!store.consumirGeracao()) {
       ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");

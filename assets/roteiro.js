@@ -316,16 +316,128 @@ const roteiro = (() => {
       return {
         ...base,
         angulo,
-        rotulo: angulo === "analise" ? "Análise e valorização"
-          : angulo === "estilo" ? "Estilo de vida e funcionalidade"
-          : "Oportunidade e decisão",
+        rotulo: ROTULOS[angulo],
         title: script.titulo,
-        script
+        script,
+        origem: "local"
       };
     });
   }
 
-  return { gerarIdeias, montar, ANGULOS };
+  /* ---------------- Geração pela IA de verdade ---------------- */
+  //
+  // Mesmo formato de saída de gerarIdeias(), só que o texto vem do modelo em
+  // vez dos modelos de frase daqui. O briefing é enviado já tratado pelo
+  // texto.js — a IA recebe "São Paulo - Higienópolis", nunca "sao paulo".
+  //
+  // Quem chama deve tratar a exceção e cair no gerarIdeias() local: sem chave
+  // configurada, sem internet ou com o back-end fora do ar, o site continua
+  // gerando.
+
+  const ROTULOS = {
+    analise: "Análise e valorização",
+    estilo: "Estilo de vida e funcionalidade",
+    decisao: "Oportunidade e decisão"
+  };
+
+  const CAMPOS = [
+    "titulo", "gancho", "desenvolvimento", "prova", "cta",
+    "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao"
+  ];
+
+  async function gerarIdeiasIA(dados, perfil, { timeoutMs = 90000 } = {}) {
+    if (typeof CONFIG === "undefined" || !CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
+      throw new Error("O back-end de IA ainda não está configurado.");
+    }
+
+    const c = contexto(dados, perfil);
+    const briefingLimpo = texto.frase(dados.briefing);
+
+    const controle = new AbortController();
+    const relogio = setTimeout(() => controle.abort(), timeoutMs);
+
+    let corpo;
+    try {
+      const resposta = await fetch(CONFIG.assistenteUrl, {
+        method: "POST",
+        signal: controle.signal,
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${CONFIG.assistenteChave}`,
+          "apikey": CONFIG.assistenteChave
+        },
+        body: JSON.stringify({
+          modo: "roteiro",
+          contexto: {
+            nome: perfil?.nome, creci: perfil?.creci, cidade: perfil?.cidade,
+            imobiliaria: perfil?.imobiliaria, areas: perfil?.areas,
+            bio: perfil?.bio, tom: perfil?.tom
+          },
+          briefing: {
+            area: dados.area,
+            local: c.local.completo,
+            funil: dados.funnel || "Topo",
+            formato: dados.format || "Reels",
+            ficha: c.fichaFrase,
+            valor: c.valor,
+            caracteristicas: c.extras,
+            descricao: briefingLimpo
+          }
+        })
+      });
+
+      if (!resposta.ok) {
+        let detalhe = `Erro ${resposta.status}.`;
+        try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
+        throw new Error(detalhe);
+      }
+
+      corpo = await resposta.json();
+    } catch (e) {
+      throw new Error(e.name === "AbortError" ? "O back-end demorou demais para responder." : e.message);
+    } finally {
+      clearTimeout(relogio);
+    }
+
+    const vindas = Array.isArray(corpo.ideias) ? corpo.ideias : [];
+    if (!vindas.length) throw new Error("O back-end não devolveu nenhuma ideia.");
+
+    return ANGULOS.map((angulo, n) => {
+      const bruta = vindas.find((i) => i.angulo === angulo) ?? vindas[n] ?? {};
+
+      const base = {
+        ...dados,
+        title: undefined,
+        briefing: briefingLimpo,
+        city: c.local.completo,
+        tags: (Array.isArray(bruta.tags) && bruta.tags.length ? bruta.tags : [
+          dados.area,
+          angulo === "analise" ? "Análise" : angulo === "estilo" ? "Estilo de vida" : "Decisão",
+          dados.format
+        ]).filter(Boolean).slice(0, 4)
+      };
+
+      // Campo que o modelo deixou vazio volta para o texto local, para que o
+      // roteiro nunca chegue incompleto no editor.
+      const local = montar(base, perfil, angulo, hashTexto(c.local.completo + angulo));
+      const script = {};
+      for (const campo of CAMPOS) {
+        const valor = typeof bruta[campo] === "string" ? bruta[campo].trim() : "";
+        script[campo] = valor || local[campo];
+      }
+
+      return {
+        ...base,
+        angulo,
+        rotulo: ROTULOS[angulo],
+        title: script.titulo,
+        script,
+        origem: "ia"
+      };
+    });
+  }
+
+  return { gerarIdeias, gerarIdeiasIA, montar, ANGULOS };
 })();
 
 // Compatibilidade: itens antigos e do acervo de exemplo continuam com roteiro.
