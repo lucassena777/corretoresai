@@ -1,15 +1,22 @@
 // Back-end de IA do CorretoresAI. Dois modos, uma chave:
 //
-//   modo "chat"     — o Copiloto da área logada (resposta em streaming)
+//   modo "chat"     — o Copiloto da área logada (streaming + ações)
 //   modo "roteiro"  — a Central de Conteúdo (3 ideias com os 11 campos, em JSON)
 //
 // A função existe por um motivo só: a chave da API não pode ficar no navegador.
 // O site é estático e público — qualquer chave publicada ali seria copiada e
 // cobrada de você. Aqui ela vive como secret do projeto e nunca sai daqui.
+//
+// Provedor: Google Gemini (AI Studio), via REST puro — sem SDK, sem npm. O
+// contrato com o navegador não mudou: os mesmos eventos SSE (texto, acao, fim,
+// erro) e o mesmo JSON de roteiro. Trocar de provedor de novo mexe só aqui.
 
-import Anthropic from "@anthropic-ai/sdk";
-
-const MODELO = "claude-opus-5";
+// Por que flash e não pro: com uma chave nova do AI Studio, gemini-2.5-pro e
+// gemini-2.5-flash respondem 404 ("no longer available to new users") e
+// gemini-pro-latest responde 429 (o plano gratuito não dá cota para os modelos
+// pro). O flash é o que o plano gratuito realmente entrega — testado.
+const MODELO = "gemini-3.5-flash";
+const BASE_API = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const ORIGENS = [
   /^https:\/\/lucassena777\.github\.io$/,
@@ -56,56 +63,74 @@ function cabecalhosCors(origem: string | null) {
   };
 }
 
-/* ---------------- Tratamento de erro ----------------
-   Erro de API vira mensagem em português que o corretor entende, com o status
-   certo: o que ele pode resolver (esperar, reescrever) separado do que só o
-   dono do projeto resolve (chave, cota). */
+/* ---------------- Chamada ao Gemini ---------------- */
 
-function traduzirErro(e: unknown): { mensagem: string; status: number } {
-  const bruto = e instanceof Error ? e.message : String(e);
-  const status = (e as { status?: number })?.status ?? 0;
+function chamar(caminho: string, chave: string, corpo: unknown, sinal?: AbortSignal) {
+  return fetch(`${BASE_API}/${MODELO}:${caminho}`, {
+    method: "POST",
+    signal: sinal,
+    headers: {
+      "content-type": "application/json",
+      "x-goog-api-key": chave,
+    },
+    body: JSON.stringify(corpo),
+  });
+}
 
-  if (status === 401 || /invalid x-api-key|authentication_error/i.test(bruto)) {
-    return {
-      mensagem: "A chave da API foi recusada. Confira o secret ANTHROPIC_API_KEY no projeto.",
-      status: 503,
-    };
+// Erro do Google chega como {"error":{"code":429,"status":"RESOURCE_EXHAUSTED",
+// "message":"..."}}. Vira mensagem em português com o status certo: o que o
+// corretor resolve (esperar) separado do que só o dono do projeto resolve.
+function traduzirHttp(status: number, texto: string): { mensagem: string; status: number } {
+  let detalhe = texto;
+  let situacao = "";
+  try {
+    const erro = JSON.parse(texto)?.error;
+    if (erro?.message) detalhe = erro.message;
+    if (erro?.status) situacao = erro.status;
+  } catch { /* deixa o texto cru */ }
+
+  if (status === 400 && /API key not valid|API_KEY_INVALID/i.test(detalhe)) {
+    return { mensagem: "A chave do Gemini foi recusada. Confira o secret GEMINI_API_KEY no projeto.", status: 503 };
   }
-  if (status === 403) {
+  if (status === 403 || situacao === "PERMISSION_DENIED") {
     return { mensagem: "Esta chave não tem permissão para usar o modelo.", status: 503 };
   }
-  if (status === 400 && /credit balance|billing/i.test(bruto)) {
-    return { mensagem: "A conta da API está sem créditos.", status: 503 };
+  if (status === 404) {
+    return { mensagem: `O modelo ${MODELO} não está disponível para esta chave.`, status: 503 };
   }
-  if (status === 429) {
-    return { mensagem: "Muitos pedidos agora. Espere alguns segundos e tente de novo.", status: 429 };
+  if (status === 429 || situacao === "RESOURCE_EXHAUSTED") {
+    return { mensagem: "O limite do plano gratuito do Gemini foi atingido. Espere um pouco e tente de novo.", status: 429 };
   }
-  if (status === 529 || /overloaded/i.test(bruto)) {
+  if (status === 503 || situacao === "UNAVAILABLE") {
     return { mensagem: "O modelo está sobrecarregado. Tente de novo em instantes.", status: 503 };
   }
+  if (status >= 500) {
+    return { mensagem: "A API do Gemini teve uma falha temporária. Tente de novo.", status: 502 };
+  }
+  return { mensagem: detalhe || `Erro ${status} na API do Gemini.`, status: 500 };
+}
+
+function traduzirExcecao(e: unknown): { mensagem: string; status: number } {
+  const bruto = e instanceof Error ? e.message : String(e);
   if (/abort|timed out|timeout/i.test(bruto)) {
     return { mensagem: "A resposta demorou demais e foi interrompida.", status: 504 };
-  }
-  if (status >= 500) {
-    return { mensagem: "A API teve uma falha temporária. Tente de novo.", status: 502 };
   }
   return { mensagem: bruto || "Erro inesperado.", status: 500 };
 }
 
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Uma tentativa extra para falha transitória (sobrecarga, 429, 5xx). Erro de
-// chave ou de crédito não se resolve tentando de novo — esse sobe na hora.
-async function comRetentativa<T>(tarefa: () => Promise<T>): Promise<T> {
-  try {
-    return await tarefa();
-  } catch (e) {
-    const status = (e as { status?: number })?.status ?? 0;
-    const transitorio = status === 429 || status === 529 || status >= 500;
-    if (!transitorio) throw e;
-    await esperar(1200);
-    return await tarefa();
-  }
+// Uma tentativa extra para falha transitória (limite momentâneo, sobrecarga,
+// 5xx). Chave inválida não se resolve tentando de novo — essa sobe na hora.
+async function comRetentativa(tarefa: () => Promise<Response>): Promise<Response> {
+  const resposta = await tarefa();
+  if (resposta.ok) return resposta;
+
+  const transitorio = resposta.status === 429 || resposta.status >= 500;
+  if (!transitorio) return resposta;
+
+  await esperar(1500);
+  return await tarefa();
 }
 
 /* ---------------- Persona compartilhada ---------------- */
@@ -132,8 +157,6 @@ Escreva em português do Brasil, com acentuação, concordância e pontuação i
 
 /* ---------------- Modo chat ---------------- */
 
-// Os trechos recuperados vão num bloco separado, SEM cache: eles mudam a cada
-// pergunta, e marcá-los como cacheáveis invalidaria o prefixo a cada turno.
 function blocoBase(base: string) {
   return `# Base de conhecimento da plataforma
 
@@ -152,53 +175,58 @@ ${base}`;
 /* ---------------- Ferramentas do copiloto ----------------
    Quem executa é o navegador: a função só decide QUE ação tomar e com que
    argumentos. O item entra no calendário pelo store da conta, no aparelho do
-   corretor, onde os dados dele já moram. */
+   corretor, onde os dados dele já moram.
 
-const FERRAMENTAS = [
-  {
+   O schema segue o subconjunto de OpenAPI que o Gemini aceita: tipos em
+   maiúsculas e sem additionalProperties. */
+
+const FERRAMENTAS = [{
+  functionDeclarations: [{
     name: "agendar_conteudo",
     description:
       "Cria um conteúdo no calendário editorial do corretor, com data marcada. " +
       "Use quando ele pedir para agendar, marcar, programar ou colocar um post " +
       "no calendário. Não use para simplesmente escrever um texto — só quando " +
       "ele quiser a peça registrada numa data.",
-    input_schema: {
-      type: "object",
+    parameters: {
+      type: "OBJECT",
       properties: {
         tema: {
-          type: "string",
+          type: "STRING",
           description: "Do que o conteúdo trata, em uma frase. Ex.: 'apartamentos de 2 dormitórios em Atibaia'.",
         },
         area: {
-          type: "string",
+          type: "STRING",
           enum: ["Apartamentos", "Casas", "Lançamentos", "Alto padrão", "Comercial", "Terrenos", "Aluguel"],
           description: "Área de atuação. Escolha a mais próxima do pedido; na dúvida, use a área principal do corretor.",
         },
         data: {
-          type: "string",
+          type: "STRING",
           description: "Data da publicação em AAAA-MM-DD. Se o corretor disser só o dia ('dia 20'), use o mês atual; se a data já passou, use o mês seguinte.",
         },
+        horario: {
+          type: "STRING",
+          description: "Hora da publicação em HH:MM (24h). Se ele não disser, deixe vazio.",
+        },
         formato: {
-          type: "string",
+          type: "STRING",
           enum: ["Reels", "Carrossel", "Stories", "TikTok"],
           description: "Formato da peça. Se ele não disser, use Reels.",
         },
         funil: {
-          type: "string",
+          type: "STRING",
           enum: ["Topo", "Meio", "Fundo", "Personalizado"],
           description: "Etapa do funil. Se ele não disser, escolha pela intenção do conteúdo.",
         },
         cidade: {
-          type: "string",
+          type: "STRING",
           description: "Cidade ou bairro citado no pedido. Deixe vazio se ele não citou nenhum.",
         },
       },
       required: ["tema", "area", "data", "formato", "funil"],
-      additionalProperties: false,
     },
-    strict: true,
-  },
-];
+  }],
+}];
 
 function systemChat(ctx: Record<string, unknown>) {
   const perfil = perfilEmTexto(ctx);
@@ -254,40 +282,42 @@ ${perfil || "(perfil ainda não preenchido — pergunte a cidade e a área de at
 
 /* ---------------- Modo roteiro ---------------- */
 
-const CAMPOS = [
-  "titulo", "gancho", "desenvolvimento", "prova", "cta",
-  "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao",
-];
+const TEXTO = { type: "STRING" };
 
 const ESQUEMA = {
-  type: "object",
+  type: "OBJECT",
   properties: {
     ideias: {
-      type: "array",
+      type: "ARRAY",
       items: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          angulo: { type: "string", enum: ["analise", "estilo", "decisao"] },
-          titulo: { type: "string" },
-          gancho: { type: "string" },
-          desenvolvimento: { type: "string" },
-          prova: { type: "string" },
-          cta: { type: "string" },
-          legenda: { type: "string" },
-          hashtags: { type: "string" },
-          objetivo: { type: "string" },
-          publico: { type: "string" },
-          formatoNota: { type: "string" },
-          gravacao: { type: "string" },
-          tags: { type: "array", items: { type: "string" } },
+          angulo: { type: "STRING", enum: ["analise", "estilo", "decisao"] },
+          titulo: TEXTO,
+          gancho: TEXTO,
+          desenvolvimento: TEXTO,
+          prova: TEXTO,
+          cta: TEXTO,
+          legenda: TEXTO,
+          hashtags: TEXTO,
+          objetivo: TEXTO,
+          publico: TEXTO,
+          formatoNota: TEXTO,
+          gravacao: TEXTO,
+          tags: { type: "ARRAY", items: TEXTO },
         },
-        required: ["angulo", ...CAMPOS, "tags"],
-        additionalProperties: false,
+        required: [
+          "angulo", "titulo", "gancho", "desenvolvimento", "prova", "cta",
+          "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao", "tags",
+        ],
+        propertyOrdering: [
+          "angulo", "titulo", "gancho", "desenvolvimento", "prova", "cta",
+          "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao", "tags",
+        ],
       },
     },
   },
   required: ["ideias"],
-  additionalProperties: false,
 };
 
 function systemRoteiro(ctx: Record<string, unknown>) {
@@ -359,12 +389,9 @@ Deno.serve(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "desconhecido";
   if (excedeuLimite(ip)) return json({ erro: "Muitas requisições seguidas. Espere um minuto." }, 429);
 
-  const chave = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
+  const chave = (Deno.env.get("GEMINI_API_KEY") ?? "").trim();
   if (!chave) {
     return json({ erro: "A IA ainda não foi configurada: falta a chave da API no projeto." }, 503);
-  }
-  if (!chave.startsWith("sk-ant-")) {
-    return json({ erro: "O secret ANTHROPIC_API_KEY não parece uma chave válida." }, 503);
   }
 
   let corpo: {
@@ -380,49 +407,61 @@ Deno.serve(async (req: Request) => {
     return json({ erro: "Corpo inválido." }, 400);
   }
 
-  // maxRetries: 0 porque a retentativa é nossa (comRetentativa), com o critério
-  // que a gente escolheu. timeout corta a conexão pendurada antes do gateway.
-  const anthropic = new Anthropic({ apiKey: chave, maxRetries: 0, timeout: 120_000 });
   const contexto = corpo.contexto ?? {};
 
   /* ----- Roteiro: resposta única em JSON ----- */
 
   if (corpo.modo === "roteiro") {
     try {
-      const resposta = await comRetentativa(() => anthropic.messages.create({
-        model: MODELO,
-        max_tokens: 8000,
-        output_config: {
-          effort: "medium",
-          format: { type: "json_schema", schema: ESQUEMA },
-        },
-        system: [{ type: "text", text: systemRoteiro(contexto), cache_control: { type: "ephemeral" } }],
-        messages: [{
+      const resposta = await comRetentativa(() => chamar("generateContent", chave, {
+        systemInstruction: { parts: [{ text: systemRoteiro(contexto) }] },
+        contents: [{
           role: "user",
-          content: `Escreva as três ideias para este briefing:\n\n${briefingEmTexto(corpo.briefing ?? {})}`,
+          parts: [{
+            text: `Escreva as três ideias para este briefing:\n\n${briefingEmTexto(corpo.briefing ?? {})}`,
+          }],
         }],
+        generationConfig: {
+          maxOutputTokens: 12000,
+          responseMimeType: "application/json",
+          responseSchema: ESQUEMA,
+        },
       }));
 
-      if (resposta.stop_reason === "refusal") {
-        return json({ erro: "O modelo recusou este briefing. Tente reescrevê-lo." }, 422);
+      if (!resposta.ok) {
+        const { mensagem, status } = traduzirHttp(resposta.status, await resposta.text());
+        return json({ erro: mensagem }, status);
       }
 
-      const bloco = resposta.content.find((b) => b.type === "text");
-      if (!bloco || bloco.type !== "text") return json({ erro: "Resposta vazia do modelo." }, 502);
+      const dados = await resposta.json();
+      const candidato = dados?.candidates?.[0];
 
-      let dados: { ideias?: unknown[] };
+      if (candidato?.finishReason === "SAFETY" || candidato?.finishReason === "PROHIBITED_CONTENT") {
+        return json({ erro: "O modelo recusou este briefing. Tente reescrevê-lo." }, 422);
+      }
+      if (candidato?.finishReason === "MAX_TOKENS") {
+        return json({ erro: "A resposta passou do tamanho máximo. Encurte o briefing." }, 502);
+      }
+
+      const texto = (candidato?.content?.parts ?? [])
+        .map((p: { text?: string }) => p.text ?? "")
+        .join("");
+
+      if (!texto.trim()) return json({ erro: "Resposta vazia do modelo." }, 502);
+
+      let saida: { ideias?: unknown[] };
       try {
-        dados = JSON.parse(bloco.text);
+        saida = JSON.parse(texto);
       } catch {
         return json({ erro: "O modelo devolveu um JSON que não deu para ler." }, 502);
       }
 
-      const ideias = Array.isArray(dados.ideias) ? dados.ideias.slice(0, 3) : [];
+      const ideias = Array.isArray(saida.ideias) ? saida.ideias.slice(0, 3) : [];
       if (!ideias.length) return json({ erro: "O modelo não devolveu nenhuma ideia." }, 502);
 
       return json({ ideias });
     } catch (e) {
-      const { mensagem, status } = traduzirErro(e);
+      const { mensagem, status } = traduzirExcecao(e);
       return json({ erro: mensagem }, status);
     }
   }
@@ -433,8 +472,8 @@ Deno.serve(async (req: Request) => {
     .slice(-LIMITE.mensagensPorTurno)
     .filter((m) => m && typeof m.texto === "string" && m.texto.trim())
     .map((m) => ({
-      role: m.papel === "assistente" ? ("assistant" as const) : ("user" as const),
-      content: m.texto.slice(0, LIMITE.caracteresPorMensagem),
+      role: m.papel === "assistente" ? "model" : "user",
+      parts: [{ text: m.texto.slice(0, LIMITE.caracteresPorMensagem) }],
     }));
 
   if (!mensagens.length || mensagens[0].role !== "user") {
@@ -445,18 +484,22 @@ Deno.serve(async (req: Request) => {
     ? corpo.base.slice(0, LIMITE.caracteresDaBase)
     : "";
 
+  const instrucao = base
+    ? `${systemChat(contexto)}\n\n${blocoBase(base)}`
+    : systemChat(contexto);
+
   try {
-    const stream = anthropic.messages.stream({
-      model: MODELO,
-      max_tokens: 2000,
-      output_config: { effort: "medium" },
+    const resposta = await chamar("streamGenerateContent?alt=sse", chave, {
+      systemInstruction: { parts: [{ text: instrucao }] },
+      contents: mensagens,
       tools: FERRAMENTAS,
-      system: [
-        { type: "text", text: systemChat(contexto), cache_control: { type: "ephemeral" } },
-        ...(base ? [{ type: "text" as const, text: blocoBase(base) }] : []),
-      ],
-      messages: mensagens,
+      generationConfig: { maxOutputTokens: 4000 },
     });
+
+    if (!resposta.ok || !resposta.body) {
+      const { mensagem, status } = traduzirHttp(resposta.status, await resposta.text());
+      return json({ erro: mensagem }, status);
+    }
 
     const encoder = new TextEncoder();
     const sse = new ReadableStream({
@@ -464,38 +507,79 @@ Deno.serve(async (req: Request) => {
         const enviar = (evento: string, dados: unknown) =>
           controller.enqueue(encoder.encode(`event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`));
 
-        // O primeiro token pode demorar. Um comentário SSE a cada 12s segura a
-        // conexão de pé sem sujar o texto — o cliente ignora linhas ":".
+        // O primeiro token pode demorar (o modelo pensa antes). Um comentário
+        // SSE a cada 12s segura a conexão sem sujar o texto — o cliente ignora
+        // linhas que começam com ":".
         const pulso = setInterval(() => {
           try { controller.enqueue(encoder.encode(": vivo\n\n")); } catch { /* fechado */ }
         }, 12_000);
 
-        try {
-          // `.on("text")` em vez de `for await (stream.textStream)`: nesta
-          // versão do SDK, rodando em Deno, textStream vem indefinido e a
-          // iteração estoura antes do primeiro token.
-          stream.on("text", (pedaco: string) => enviar("texto", pedaco));
-          const final = await stream.finalMessage();
+        const leitor = resposta.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let motivo = "";
 
-          // Ações decididas pelo modelo. Chegam depois do texto porque o
-          // tool_use fecha a mensagem; o navegador é quem executa.
-          for (const bloco of final.content) {
-            if (bloco.type === "tool_use") {
-              enviar("acao", { nome: bloco.name, entrada: bloco.input });
+        // Cada "data:" do Gemini traz um pedaço com partes de texto e, quando
+        // ele decide agir, partes functionCall.
+        const consumir = (bruto: string) => {
+          let pacote;
+          try { pacote = JSON.parse(bruto); } catch { return; }
+
+          if (pacote.error) throw new Error(pacote.error.message ?? "Erro do Gemini.");
+
+          const candidato = pacote.candidates?.[0];
+          if (!candidato) return;
+          if (candidato.finishReason) motivo = candidato.finishReason;
+
+          for (const parte of candidato.content?.parts ?? []) {
+            if (typeof parte.text === "string" && parte.text) enviar("texto", parte.text);
+            if (parte.functionCall) {
+              enviar("acao", { nome: parte.functionCall.name, entrada: parte.functionCall.args ?? {} });
             }
           }
+        };
 
-          enviar("fim", { motivo: final.stop_reason });
+        // O Gemini separa os eventos com CRLF duplo, não LF duplo. Cortar em
+        // "\n\n" não acha separador nenhum: tudo fica no buffer e a resposta
+        // chega vazia. Por isso a expressão aceita as duas formas.
+        const lerBlocos = (texto: string) => {
+          for (const bloco of texto.split(/\r?\n\r?\n/)) {
+            for (const linha of bloco.split(/\r?\n/)) {
+              if (linha.startsWith("data:")) consumir(linha.slice(5).trim());
+            }
+          }
+        };
+
+        try {
+          while (true) {
+            const { done, value } = await leitor.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const corte = buffer.lastIndexOf("\n\n");
+            if (corte === -1) continue;
+
+            lerBlocos(buffer.slice(0, corte));
+            buffer = buffer.slice(corte + 2);
+          }
+
+          if (buffer.trim()) lerBlocos(buffer);
+
+          if (motivo === "SAFETY" || motivo === "PROHIBITED_CONTENT") {
+            enviar("erro", { mensagem: "O modelo preferiu não responder a essa pergunta." });
+          } else {
+            enviar("fim", { motivo });
+          }
         } catch (e) {
-          enviar("erro", { mensagem: traduzirErro(e).mensagem });
+          enviar("erro", { mensagem: traduzirExcecao(e).mensagem });
         } finally {
           clearInterval(pulso);
           controller.close();
         }
       },
       cancel() {
-        // Aba fechada ou pergunta cancelada: não continue gastando token.
-        stream.abort();
+        // Aba fechada ou pergunta cancelada: não continue baixando resposta.
+        resposta.body?.cancel().catch(() => {});
       },
     });
 
@@ -509,7 +593,7 @@ Deno.serve(async (req: Request) => {
       },
     });
   } catch (e) {
-    const { mensagem, status } = traduzirErro(e);
+    const { mensagem, status } = traduzirExcecao(e);
     return json({ erro: mensagem }, status);
   }
 });

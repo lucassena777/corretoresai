@@ -289,7 +289,10 @@ const assistente = (() => {
         funnel: entrada.funil || store.config.funilPadrao,
         format: entrada.formato || store.config.formatoPadrao,
         date: entrada.data,
-        time: store.config.horarioPadrao
+        // A hora só vem quando o corretor pediu ("às 14h"); senão, o padrão.
+        time: /^\d{1,2}:\d{2}$/.test(entrada.horario ?? "")
+          ? entrada.horario.padStart(5, "0")
+          : store.config.horarioPadrao
       };
 
       // O roteiro sai da engine local: agendar tem que ser instantâneo. O
@@ -298,7 +301,7 @@ const assistente = (() => {
       const { angulo, rotulo, origem, ...limpo } = ideia;
       const item = store.criar({ ...limpo, status: "agendado" });
 
-      return { ok: true, id: item.id, titulo: item.title, data: item.date, formato: item.format };
+      return { ok: true, id: item.id, titulo: item.title, data: item.date, hora: item.time };
     } catch (e) {
       console.error("[CorretoresAI] falha ao executar a ação:", e);
       return { ok: false, erro: e.message };
@@ -313,7 +316,7 @@ const assistente = (() => {
       <div class="assist-acao">
         <span class="icon-tile is-gold">${icone("i-calendar-clock")}</span>
         <div>
-          <strong>Agendado para ${formatFull(acao.data)}</strong>
+          <strong>Agendado para ${formatFull(acao.data)}, às ${acao.hora}</strong>
           <span>${acao.titulo}</span>
         </div>
         <button type="button" data-abrir-item="${acao.id}">Abrir</button>

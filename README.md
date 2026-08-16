@@ -147,10 +147,17 @@ veio o texto: **Escrito pela IA** ou **Modelo local**.
 
 A chave da IA nunca chega ao navegador — ela vive como secret do projeto.
 
+**O Copiloto executa, não só aconselha.** Ele tem a ferramenta
+`agendar_conteudo`: pedir "agende um post sobre casas em Atibaia para a próxima
+terça às 14h" faz o modelo resolver a data e chamar a ferramenta, e o **navegador**
+criar o conteúdo no calendário — com roteiro pronto. Quem decide é o modelo;
+quem executa é a máquina do corretor, direto no store da conta. Os dados dele
+não passam pelo servidor.
+
 ```
-navegador ──POST──▶ Edge Function (Supabase) ──▶ API Claude
-   ▲                  guarda ANTHROPIC_API_KEY
-   └──── SSE (chat) ou JSON (roteiro) ─────┘
+navegador ──POST──▶ Edge Function (Supabase) ──▶ API Gemini
+   ▲                  guarda GEMINI_API_KEY
+   └──── SSE (texto + ações) ou JSON (roteiro) ────┘
 ```
 
 Se o back-end não responder — sem chave, sem internet, fora do ar — a Central
@@ -160,18 +167,33 @@ nunca fica sem gerar.
 **Para ligar**, só falta a chave — é o único passo que precisa ser seu, porque
 uma chave de API não deve passar por chat nem entrar no repositório:
 
-1. Pegue uma chave em https://platform.claude.com/settings/keys
+1. Pegue uma chave em https://aistudio.google.com/apikey
 2. Abra https://supabase.com/dashboard/project/cksboexpaegtdprkksix/settings/functions
-3. Em **Edge Function Secrets**, adicione `ANTHROPIC_API_KEY` com a sua chave.
+3. Em **Edge Function Secrets**, adicione `GEMINI_API_KEY` com a sua chave.
 
 Chave que passou por chat, e-mail ou print deixou de ser secreta: revogue e gere
 outra antes de usar.
 
+### Notas de campo sobre o Gemini
+
+Coisas que só aparecem testando, e que custaram tempo aqui:
+
+- **O modelo importa mais do que parece.** Com uma chave nova do AI Studio,
+  `gemini-2.5-pro` e `gemini-2.5-flash` respondem **404** ("no longer available
+  to new users") e `gemini-pro-latest` responde **429** — o plano gratuito não
+  dá cota para os modelos pro. O que funciona de graça é flash; daí
+  `gemini-3.5-flash`. Trocar de modelo é uma linha: a constante `MODELO`.
+- **O stream vem com CRLF.** O Gemini separa os eventos SSE com `\r\n\r\n`, não
+  `\n\n`. Um parser que corta em `\n\n` não acha separador nenhum, acumula tudo
+  no buffer e entrega resposta vazia, sem erro. O parser aceita as duas formas.
+- **O schema não é JSON Schema puro.** É um subconjunto de OpenAPI: tipos em
+  maiúsculas (`"STRING"`, `"OBJECT"`) e nada de `additionalProperties`.
+
 Erro da API vira mensagem em português com o status certo — chave recusada, sem
-crédito, sobrecarga, tempo esgotado — e falha transitória (429, 529, 5xx) ganha
-uma retentativa automática. No chat, o servidor manda um pulso a cada 12s para a
-conexão não cair enquanto o primeiro token não vem, e o navegador desiste depois
-de 3 minutos de silêncio.
+permissão, limite do plano gratuito, sobrecarga, tempo esgotado — e falha
+transitória (429, 5xx) ganha uma retentativa automática. No chat, o servidor
+manda um pulso a cada 12s para a conexão não cair enquanto o primeiro token não
+vem, e o navegador desiste depois de 3 minutos de silêncio.
 
 Sem a chave, o assistente responde dizendo que ainda não foi configurado e a
 Central gera pelo modelo local — o resto do site funciona normalmente.
