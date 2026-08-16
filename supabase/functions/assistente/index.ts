@@ -496,8 +496,12 @@ Deno.serve(async (req: Request) => {
     ? corpo.base.slice(0, LIMITE.caracteresDaBase)
     : "";
 
+  // A base de conhecimento vem ANTES das regras de operação, nunca depois.
+  // Com ela no fim, os trechos recuperados ficavam na posição de maior peso e
+  // o modelo escrevia um texto sobre estratégia de conteúdo em vez de chamar a
+  // ferramenta de agendar. Contexto primeiro, ordem de trabalho por último.
   const instrucao = base
-    ? `${systemChat(contexto)}\n\n${blocoBase(base)}`
+    ? `${blocoBase(base)}\n\n---\n\n${systemChat(contexto)}`
     : systemChat(contexto);
 
   try {

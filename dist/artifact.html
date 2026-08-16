@@ -6141,6 +6141,13 @@ const assistente = (() => {
           ? "Pronto, já está no seu calendário."
           : "Não consegui formular uma resposta. Tente reformular a pergunta.";
       }
+
+      // Rede de proteção: de vez em quando o modelo anuncia o agendamento e
+      // esquece de executá-lo. Sem este aviso o corretor sai daqui achando que
+      // o post está na agenda — o pior desfecho possível.
+      if (!resposta.acoes?.length && /\bvou (agendar|marcar|programar)|\bagendei\b|\bmarquei\b/i.test(resposta.texto)) {
+        resposta.acoes = [{ ok: false, erro: "o assistente descreveu o agendamento mas não chegou a criá-lo. Nada entrou no calendário — peça de novo." }];
+      }
     } catch (e) {
       resposta.texto = `**Não deu para responder agora.** ${e.message}`;
       resposta.fontes = [];
