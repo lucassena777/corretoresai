@@ -99,6 +99,43 @@ uma linha, com tempo relativo, no dashboard e na Biblioteca.
 Os números do dashboard e do mock da landing são calculados do acervo real — não
 são valores fixos. Publicar mais conteúdo aumenta visualizações e leads.
 
+## Assistente virtual (back-end)
+
+O botão flutuante no canto inferior direito da área logada abre um chat com um
+estrategista de marketing imobiliário. Ele **não** usa respostas prontas: fala
+com um modelo de verdade, e envia junto o perfil do corretor (cidade, áreas,
+tom de voz) como contexto.
+
+A chave da IA nunca chega ao navegador. O site estático chama uma Edge Function
+do Supabase (`supabase/functions/assistente/`), que guarda a chave como secret,
+conversa com o modelo e devolve a resposta em streaming.
+
+```
+navegador ──POST──▶ Edge Function (Supabase) ──▶ API Claude
+   ▲                  guarda ANTHROPIC_API_KEY
+   └──── SSE, texto em tempo real ─────────┘
+```
+
+**Para ligar**, só falta a chave — é o único passo que precisa ser seu, porque
+uma chave de API não deve passar por chat nem entrar no repositório:
+
+1. Pegue uma chave em https://platform.claude.com → API Keys.
+2. Abra https://supabase.com/dashboard/project/cksboexpaegtdprkksix/settings/functions
+3. Em **Edge Function Secrets**, adicione `ANTHROPIC_API_KEY` com a sua chave.
+
+Sem a chave, o assistente responde dizendo que ainda não foi configurado — o
+resto do site funciona normalmente.
+
+Para republicar a função depois de editá-la:
+
+```bash
+supabase functions deploy assistente --project-ref cksboexpaegtdprkksix
+```
+
+A `anon key` em `assets/config.js` é pública por definição (só identifica o
+projeto). A função ainda checa a origem, limita 12 perguntas por minuto por IP
+e corta mensagens muito longas.
+
 ## O que ainda é demonstração
 
 - A geração de roteiro é montada no navegador a partir do briefing, do perfil e

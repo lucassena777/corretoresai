@@ -37,6 +37,7 @@ const ICONS = `
 <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
 <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
 <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
+<symbol id="i-assistente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4v1h1.5A2.5 2.5 0 0 1 20 10.5v5a2.5 2.5 0 0 1-2.5 2.5H14l-3.4 2.6a.6.6 0 0 1-1-.5V18H6.5A2.5 2.5 0 0 1 4 15.5v-5A2.5 2.5 0 0 1 6.5 8H8V7a4 4 0 0 1 4-4z"/><path d="M9.5 12.5h.01M14.5 12.5h.01"/></symbol>
 </svg>`;
 
 // href: navegação por arquivos (site multipágina).
@@ -44,8 +45,8 @@ const ICONS = `
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "i-grid", href: "dashboard.html", rota: "#/dashboard" },
   { id: "central", label: "Central de Conteúdo", icon: "i-wand", href: "central.html", rota: "#/central" },
+  // Kanban não aparece aqui de propósito: é uma aba dentro do Calendário Editorial.
   { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
-  { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
   { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
   { id: "historico", label: "Histórico", icon: "i-history", href: "historico.html", rota: "#/historico" },
   { id: "planos", label: "Planos", icon: "i-card", href: "planos.html", rota: "#/planos" },
@@ -140,6 +141,9 @@ function renderShell() {
   ligarSair(shell);
   renderIdentity();
   store.subscribe(renderIdentity);
+
+  // O assistente acompanha toda a área logada.
+  if (typeof assistente !== "undefined") assistente.iniciar();
 }
 
 function ligarSair(root) {

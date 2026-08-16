@@ -182,7 +182,13 @@ function initBoard(root = document, opts = {}) {
       b.setAttribute("aria-pressed", String(b.dataset.view === name)));
     panels.calendario.classList.toggle("is-hidden", name !== "calendario");
     panels.kanban.classList.toggle("is-hidden", name !== "kanban");
+
+    // A aba fica no endereço para o link poder ser compartilhado, mas sem sair
+    // da rota do Calendário Editorial.
     if (!SPA) history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
+    else if (location.hash !== "#/kanban") {
+      history.replaceState(null, "", name === "kanban" ? "#/calendario?aba=kanban" : "#/calendario");
+    }
   }
 
   switcher.addEventListener("click", (event) => {
@@ -193,7 +199,9 @@ function initBoard(root = document, opts = {}) {
   store.subscribe(render);
   render();
 
-  const inicial = opts.view || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
+  const inicial = opts.view
+    || routeParams().get("aba")
+    || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
   if (inicial === "kanban") showView("kanban");
 }
 

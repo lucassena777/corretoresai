@@ -1889,6 +1889,251 @@ button { font: inherit; }
   .config-grid, .perfil-grid { grid-template-columns: 1fr; }
 }
 
+/* ---------- Assistente virtual ---------- */
+
+.assist-botao {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold) 45%, var(--gold-deep));
+  color: var(--on-gold);
+  cursor: pointer;
+  box-shadow: 0 14px 34px -10px rgba(201, 162, 39, 0.55);
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.assist-botao svg { width: 26px; height: 26px; }
+.assist-botao:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.06); }
+body.assist-aberto .assist-botao { transform: scale(0.9); opacity: 0.55; }
+
+.assist-painel {
+  position: fixed;
+  right: 26px;
+  bottom: 96px;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 40px));
+  height: min(620px, calc(100vh - 140px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-alt);
+  box-shadow: 0 30px 80px -28px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  animation: assist-entra 0.18s ease;
+}
+
+/* Sem isto o display:flex acima vence o atributo hidden e o painel nasce aberto. */
+.assist-painel[hidden] { display: none; }
+
+@keyframes assist-entra {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.assist-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.assist-topo .icon-tile { width: 34px; height: 34px; border-radius: 10px; }
+.assist-topo .icon-tile svg { width: 17px; height: 17px; }
+.assist-topo strong { display: block; font-size: 14px; font-weight: 700; }
+.assist-topo > div > span { color: var(--text-dim); font-size: 11.5px; }
+
+.assist-limpar, .assist-fechar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.assist-limpar { margin-left: auto; }
+.assist-limpar svg, .assist-fechar svg { width: 15px; height: 15px; }
+.assist-limpar:hover, .assist-fechar:hover { background: var(--surface-2); color: var(--text); }
+
+.assist-corpo {
+  flex: 1;
+  padding: 18px 16px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.assist-vazio { display: grid; justify-items: center; text-align: center; padding: 18px 6px; }
+.assist-vazio .icon-tile { width: 48px; height: 48px; border-radius: 14px; margin-bottom: 14px; }
+.assist-vazio .icon-tile svg { width: 22px; height: 22px; }
+
+.assist-vazio h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.assist-vazio p { margin: 0 0 20px; color: var(--text-muted); font-size: 13.5px; line-height: 1.6; }
+
+.assist-sugestoes { display: grid; gap: 8px; width: 100%; }
+
+.assist-sugestoes button {
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.assist-sugestoes button:hover { border-color: var(--gold-deep); color: var(--text); }
+
+.assist-msg { margin-bottom: 18px; }
+.assist-msg.is-eu { display: flex; justify-content: flex-end; }
+
+.assist-balao {
+  max-width: 92%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.assist-msg.is-eu .assist-balao {
+  max-width: 85%;
+  border-color: transparent;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+}
+
+.assist-balao p { margin: 0 0 10px; }
+.assist-balao p:last-child { margin-bottom: 0; }
+.assist-balao h4 { margin: 14px 0 8px; font-size: 13.5px; font-weight: 700; }
+.assist-balao h4:first-child { margin-top: 0; }
+.assist-balao ul, .assist-balao ol { margin: 0 0 10px; padding-left: 20px; }
+.assist-balao ul { list-style: disc; }
+.assist-balao ol { list-style: decimal; }
+.assist-balao li { margin-bottom: 5px; }
+.assist-balao strong { color: var(--text); font-weight: 700; }
+.assist-msg.is-eu .assist-balao strong { color: inherit; }
+
+.assist-balao code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+.assist-pensando { display: flex; align-items: center; gap: 4px; color: var(--text-dim); font-size: 13px; }
+.assist-pensando span { margin-left: 6px; }
+
+.assist-pensando i {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  animation: assist-pulsa 1.2s infinite ease-in-out;
+}
+
+.assist-pensando i:nth-child(2) { animation-delay: 0.16s; }
+.assist-pensando i:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes assist-pulsa {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.assist-copiar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.assist-copiar svg { width: 12px; height: 12px; }
+.assist-copiar:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.assist-envio {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 13px 14px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.assist-envio textarea {
+  flex: 1;
+  min-height: 42px;
+  max-height: 132px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.assist-envio textarea:focus { outline: none; border-color: var(--gold-deep); }
+.assist-envio textarea::placeholder { color: var(--text-dim); }
+
+.assist-enviar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
+  color: var(--on-gold);
+  cursor: pointer;
+}
+
+.assist-enviar svg { width: 17px; height: 17px; }
+.assist-enviar:hover { filter: brightness(1.07); }
+.assist-painel.is-ocupado .assist-enviar { opacity: 0.45; pointer-events: none; }
+
+@media (max-width: 560px) {
+  .assist-painel {
+    right: 12px;
+    left: 12px;
+    bottom: 88px;
+    width: auto;
+    height: min(70vh, calc(100vh - 120px));
+  }
+  .assist-botao { right: 16px; bottom: 16px; }
+}
+
 /* ---------- Login e cadastro ---------- */
 
 .auth {
@@ -2314,6 +2559,7 @@ button { font: inherit; }
 <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
 <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
 <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
+<symbol id="i-assistente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4v1h1.5A2.5 2.5 0 0 1 20 10.5v5a2.5 2.5 0 0 1-2.5 2.5H14l-3.4 2.6a.6.6 0 0 1-1-.5V18H6.5A2.5 2.5 0 0 1 4 15.5v-5A2.5 2.5 0 0 1 6.5 8H8V7a4 4 0 0 1 4-4z"/><path d="M9.5 12.5h.01M14.5 12.5h.01"/></symbol>
 </svg>
 
 <div data-landing>
@@ -3315,6 +3561,17 @@ button { font: inherit; }
     gravar(proximo);
   });
 })();
+
+// Endereços públicos do back-end.
+//
+// A chave abaixo é a "anon key" do Supabase — publicável por definição: ela só
+// identifica o projeto e não dá acesso a nada. A chave da IA fica como secret
+// dentro da Edge Function e nunca chega ao navegador.
+
+const CONFIG = {
+  assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
+  assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo"
+};
 
 // Tratamento de texto: acentuação, capitalização e leitura dos fatos do briefing.
 // Tudo o que o corretor digita passa por aqui antes de entrar em um roteiro.
@@ -4887,6 +5144,350 @@ const ui = (() => {
     exportarTexto, textoDoItem, fecharMenus };
 })();
 
+// Assistente virtual — botão flutuante + painel de conversa na área logada.
+//
+// O navegador nunca vê a chave da API: ele fala com a Edge Function do projeto
+// Supabase (assets/config.js), que guarda a chave e conversa com o modelo.
+
+const assistente = (() => {
+  const SUGESTOES = [
+    "Como abordar um cliente de alto padrão?",
+    "Ajude-me a melhorar este gancho para Stories",
+    "O que destacar em um apartamento de 47 m²?",
+    "Como responder quem diz que está só pesquisando?"
+  ];
+
+  // Frases do indicador de carregamento, trocadas enquanto a resposta vem.
+  const PENSANDO = [
+    "Analisando estratégia de mercado…",
+    "Considerando o perfil do seu cliente…",
+    "Ajustando o argumento para a sua região…",
+    "Montando a recomendação…"
+  ];
+
+  let aberto = false;
+  let ocupado = false;
+  let conversa = [];
+  let painel = null;
+  let timerPensando = null;
+
+  const K_CONVERSA = "corretoresai-assistente";
+
+  function carregar() {
+    try {
+      const salvo = JSON.parse(localStorage.getItem(K_CONVERSA));
+      conversa = Array.isArray(salvo) ? salvo.slice(-30) : [];
+    } catch { conversa = []; }
+  }
+
+  function guardar() {
+    try { localStorage.setItem(K_CONVERSA, JSON.stringify(conversa.slice(-30))); } catch { /* ok */ }
+  }
+
+  /* ---------------- Markdown mínimo ---------------- */
+  // O modelo responde em texto corrido com **negrito**, listas e parágrafos.
+
+  const escapar = (s) => s
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function formatar(texto) {
+    const linhas = escapar(texto).split("\n");
+    let html = "";
+    let lista = null;
+
+    const fecharLista = () => { if (lista) { html += `</${lista}>`; lista = null; } };
+
+    for (const linha of linhas) {
+      const l = linha.trim();
+      if (!l) { fecharLista(); continue; }
+
+      const titulo = l.match(/^#{1,4}\s+(.*)$/);
+      if (titulo) { fecharLista(); html += `<h4>${enfase(titulo[1])}</h4>`; continue; }
+
+      const numerada = l.match(/^\d+[.)]\s+(.*)$/);
+      if (numerada) {
+        if (lista !== "ol") { fecharLista(); html += "<ol>"; lista = "ol"; }
+        html += `<li>${enfase(numerada[1])}</li>`;
+        continue;
+      }
+
+      const marcador = l.match(/^[-*•]\s+(.*)$/);
+      if (marcador) {
+        if (lista !== "ul") { fecharLista(); html += "<ul>"; lista = "ul"; }
+        html += `<li>${enfase(marcador[1])}</li>`;
+        continue;
+      }
+
+      fecharLista();
+      html += `<p>${enfase(l)}</p>`;
+    }
+
+    fecharLista();
+    return html;
+  }
+
+  const enfase = (s) => s
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+  /* ---------------- Interface ---------------- */
+
+  function montar() {
+    const botao = document.createElement("button");
+    botao.className = "assist-botao";
+    botao.type = "button";
+    botao.setAttribute("aria-label", "Abrir o assistente");
+    botao.innerHTML = `<svg><use href="#i-assistente" /></svg>`;
+    botao.addEventListener("click", alternar);
+    document.body.appendChild(botao);
+
+    painel = document.createElement("section");
+    painel.className = "assist-painel";
+    painel.hidden = true;
+    painel.innerHTML = `
+      <header class="assist-topo">
+        <span class="icon-tile is-gold"><svg><use href="#i-assistente" /></svg></span>
+        <div>
+          <strong>Estrategista CorretoresAI</strong>
+          <span>Marketing, abordagem e negociação</span>
+        </div>
+        <button class="assist-limpar" type="button" data-limpar title="Começar do zero">
+          <svg><use href="#i-trash" /></svg>
+        </button>
+        <button class="assist-fechar" type="button" data-fechar aria-label="Fechar">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </header>
+
+      <div class="assist-corpo" data-corpo></div>
+
+      <form class="assist-envio" data-form>
+        <textarea rows="1" placeholder="Escreva sua pergunta…" data-campo></textarea>
+        <button class="assist-enviar" type="submit" aria-label="Enviar">
+          <svg><use href="#i-arrow" /></svg>
+        </button>
+      </form>`;
+
+    document.body.appendChild(painel);
+
+    painel.querySelector("[data-fechar]").addEventListener("click", alternar);
+    painel.querySelector("[data-limpar]").addEventListener("click", limpar);
+    painel.querySelector("[data-form]").addEventListener("submit", enviar);
+
+    const campo = painel.querySelector("[data-campo]");
+    campo.addEventListener("input", () => {
+      campo.style.height = "auto";
+      campo.style.height = `${Math.min(campo.scrollHeight, 132)}px`;
+    });
+    campo.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        painel.querySelector("[data-form]").requestSubmit();
+      }
+    });
+
+    painel.addEventListener("click", (event) => {
+      const sugestao = event.target.closest("[data-sugestao]");
+      if (sugestao) {
+        campo.value = sugestao.textContent.trim();
+        painel.querySelector("[data-form]").requestSubmit();
+        return;
+      }
+
+      const copiar = event.target.closest("[data-copiar]");
+      if (copiar) {
+        const bruto = conversa[Number(copiar.dataset.copiar)]?.texto ?? "";
+        navigator.clipboard?.writeText(bruto)
+          .then(() => ui.toast("Resposta copiada."))
+          .catch(() => ui.toast("Não foi possível copiar.", "erro"));
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && aberto && !document.querySelector(".modal")) alternar();
+    });
+
+    render();
+  }
+
+  function alternar() {
+    aberto = !aberto;
+    painel.hidden = !aberto;
+    document.body.classList.toggle("assist-aberto", aberto);
+    if (aberto) {
+      painel.querySelector("[data-campo]").focus();
+      rolar();
+    }
+  }
+
+  function limpar() {
+    conversa = [];
+    guardar();
+    render();
+  }
+
+  function render() {
+    const corpo = painel.querySelector("[data-corpo]");
+
+    if (!conversa.length) {
+      corpo.innerHTML = `
+        <div class="assist-vazio">
+          <span class="icon-tile"><svg><use href="#i-assistente" /></svg></span>
+          <h3>Em que posso ajudar hoje?</h3>
+          <p>Pergunte sobre abordagem de cliente, gancho de conteúdo, precificação, negociação ou o básico da parte legal.</p>
+          <div class="assist-sugestoes">
+            ${SUGESTOES.map((s) => `<button type="button" data-sugestao>${s}</button>`).join("")}
+          </div>
+        </div>`;
+      return;
+    }
+
+    corpo.innerHTML = conversa.map((m, n) => {
+      if (m.papel === "usuario") {
+        return `<div class="assist-msg is-eu"><div class="assist-balao">${formatar(m.texto)}</div></div>`;
+      }
+      return `
+        <div class="assist-msg">
+          <div class="assist-balao">
+            ${m.texto ? formatar(m.texto) : `<p class="assist-pensando"><i></i><i></i><i></i> <span data-pensando>${PENSANDO[0]}</span></p>`}
+          </div>
+          ${m.texto && !m.parcial
+            ? `<button class="assist-copiar" type="button" data-copiar="${n}">
+                 <svg><use href="#i-copy" /></svg> Copiar
+               </button>`
+            : ""}
+        </div>`;
+    }).join("");
+
+    rolar();
+  }
+
+  function rolar() {
+    const corpo = painel.querySelector("[data-corpo]");
+    corpo.scrollTop = corpo.scrollHeight;
+  }
+
+  function girarPensando() {
+    let n = 0;
+    clearInterval(timerPensando);
+    timerPensando = setInterval(() => {
+      const alvo = painel.querySelector("[data-pensando]");
+      if (!alvo) return clearInterval(timerPensando);
+      n = (n + 1) % PENSANDO.length;
+      alvo.textContent = PENSANDO[n];
+    }, 2600);
+  }
+
+  /* ---------------- Conversa ---------------- */
+
+  function contexto() {
+    const p = store.perfil;
+    return {
+      nome: p.nome, creci: p.creci, cidade: p.cidade, imobiliaria: p.imobiliaria,
+      areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label
+    };
+  }
+
+  async function enviar(event) {
+    event.preventDefault();
+    if (ocupado) return;
+
+    const campo = painel.querySelector("[data-campo]");
+    const pergunta = campo.value.trim();
+    if (!pergunta) return;
+
+    campo.value = "";
+    campo.style.height = "auto";
+
+    conversa.push({ papel: "usuario", texto: pergunta });
+    conversa.push({ papel: "assistente", texto: "", parcial: true });
+    ocupado = true;
+    painel.classList.add("is-ocupado");
+    render();
+    girarPensando();
+
+    const resposta = conversa[conversa.length - 1];
+
+    try {
+      await streamar(
+        conversa.slice(0, -1).map(({ papel, texto }) => ({ papel, texto })),
+        (pedaco) => {
+          resposta.texto += pedaco;
+          const balao = painel.querySelector(".assist-msg:last-child .assist-balao");
+          if (balao) balao.innerHTML = formatar(resposta.texto);
+          rolar();
+        }
+      );
+
+      if (!resposta.texto.trim()) {
+        resposta.texto = "Não consegui formular uma resposta. Tente reformular a pergunta.";
+      }
+    } catch (e) {
+      resposta.texto = `**Não deu para responder agora.** ${e.message}`;
+    } finally {
+      delete resposta.parcial;
+      ocupado = false;
+      clearInterval(timerPensando);
+      painel.classList.remove("is-ocupado");
+      guardar();
+      render();
+    }
+  }
+
+  async function streamar(mensagens, aoReceber) {
+    if (!CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
+      throw new Error("O assistente ainda não está conectado ao back-end. Veja o README para configurar.");
+    }
+
+    const resposta = await fetch(CONFIG.assistenteUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${CONFIG.assistenteChave}`,
+        "apikey": CONFIG.assistenteChave
+      },
+      body: JSON.stringify({ mensagens, contexto: contexto() })
+    });
+
+    if (!resposta.ok) {
+      let detalhe = `Erro ${resposta.status}.`;
+      try { detalhe = (await resposta.json()).erro ?? detalhe; } catch { /* ok */ }
+      throw new Error(detalhe);
+    }
+
+    const leitor = resposta.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await leitor.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const blocos = buffer.split("\n\n");
+      buffer = blocos.pop() ?? "";
+
+      for (const bloco of blocos) {
+        const evento = bloco.match(/^event: (.*)$/m)?.[1];
+        const dados = bloco.match(/^data: (.*)$/m)?.[1];
+        if (!evento || !dados) continue;
+
+        if (evento === "texto") aoReceber(JSON.parse(dados));
+        if (evento === "erro") throw new Error(JSON.parse(dados).mensagem);
+      }
+    }
+  }
+
+  return {
+    iniciar() {
+      if (!store.logado || painel) return;
+      carregar();
+      montar();
+    }
+  };
+})();
+
 // Sessão: para onde ir quando não há login e para onde voltar depois dele.
 
 const auth = {
@@ -4951,6 +5552,7 @@ const ICONS = `
 <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
 <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
 <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></symbol>
+<symbol id="i-assistente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4v1h1.5A2.5 2.5 0 0 1 20 10.5v5a2.5 2.5 0 0 1-2.5 2.5H14l-3.4 2.6a.6.6 0 0 1-1-.5V18H6.5A2.5 2.5 0 0 1 4 15.5v-5A2.5 2.5 0 0 1 6.5 8H8V7a4 4 0 0 1 4-4z"/><path d="M9.5 12.5h.01M14.5 12.5h.01"/></symbol>
 </svg>`;
 
 // href: navegação por arquivos (site multipágina).
@@ -4958,8 +5560,8 @@ const ICONS = `
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "i-grid", href: "dashboard.html", rota: "#/dashboard" },
   { id: "central", label: "Central de Conteúdo", icon: "i-wand", href: "central.html", rota: "#/central" },
+  // Kanban não aparece aqui de propósito: é uma aba dentro do Calendário Editorial.
   { id: "calendario", label: "Calendário Editorial", icon: "i-calendar", href: "calendario.html", rota: "#/calendario" },
-  { id: "kanban", label: "Kanban", icon: "i-kanban", href: "calendario.html#kanban", rota: "#/kanban" },
   { id: "biblioteca", label: "Biblioteca", icon: "i-book", href: "biblioteca.html", rota: "#/biblioteca" },
   { id: "historico", label: "Histórico", icon: "i-history", href: "historico.html", rota: "#/historico" },
   { id: "planos", label: "Planos", icon: "i-card", href: "planos.html", rota: "#/planos" },
@@ -5054,6 +5656,9 @@ function renderShell() {
   ligarSair(shell);
   renderIdentity();
   store.subscribe(renderIdentity);
+
+  // O assistente acompanha toda a área logada.
+  if (typeof assistente !== "undefined") assistente.iniciar();
 }
 
 function ligarSair(root) {
@@ -5817,7 +6422,13 @@ function initBoard(root = document, opts = {}) {
       b.setAttribute("aria-pressed", String(b.dataset.view === name)));
     panels.calendario.classList.toggle("is-hidden", name !== "calendario");
     panels.kanban.classList.toggle("is-hidden", name !== "kanban");
+
+    // A aba fica no endereço para o link poder ser compartilhado, mas sem sair
+    // da rota do Calendário Editorial.
     if (!SPA) history.replaceState(null, "", name === "kanban" ? "#kanban" : " ");
+    else if (location.hash !== "#/kanban") {
+      history.replaceState(null, "", name === "kanban" ? "#/calendario?aba=kanban" : "#/calendario");
+    }
   }
 
   switcher.addEventListener("click", (event) => {
@@ -5828,7 +6439,9 @@ function initBoard(root = document, opts = {}) {
   store.subscribe(render);
   render();
 
-  const inicial = opts.view || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
+  const inicial = opts.view
+    || routeParams().get("aba")
+    || (!SPA && location.hash === "#kanban" ? "kanban" : "calendario");
   if (inicial === "kanban") showView("kanban");
 }
 
