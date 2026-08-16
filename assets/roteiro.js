@@ -236,10 +236,14 @@ const roteiro = (() => {
   }
 
   function preencher(modelo, c) {
-    return modelo
+    const texto = modelo
       .replace(/\{Lugar\}/g, c.local.curto || "sua cidade")
       .replace(/\{Ficha\}/g, c.fichaFrase || "a metragem certa")
       .replace(/\{Tipo\}/g, c.tipo);
+
+    // Os campos entram em minúscula ("47 m², 2 dormitórios"), e alguns modelos
+    // começam por eles — sem isto o título nasce com inicial minúscula.
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   // Monta um roteiro completo (os 11 campos) para um ângulo.

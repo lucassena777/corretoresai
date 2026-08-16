@@ -263,8 +263,9 @@ const assistente = (() => {
     return {
       nome: p.nome, creci: p.creci, cidade: p.cidade, imobiliaria: p.imobiliaria,
       areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label,
-      // Sem isto o modelo não resolve "dia 20" nem "semana que vem".
-      hoje: toIso(HOJE)
+      // Com a data sozinha o modelo errava o dia da semana ("próxima terça"
+      // virava quarta). Mandando o dia por extenso ele não precisa calcular.
+      hoje: `${DIAS_SEMANA[HOJE.getDay()]}, ${toIso(HOJE)}`
     };
   }
 
@@ -283,7 +284,9 @@ const assistente = (() => {
 
     try {
       const dados = {
-        area: entrada.area || store.perfil.areas[0] || AREAS[0],
+        // O enum da ferramenta não é idêntico às AREAS do app; área que o app
+        // não conhece quebraria os filtros da Biblioteca.
+        area: AREAS.includes(entrada.area) ? entrada.area : (store.perfil.areas[0] || AREAS[0]),
         cidade: entrada.cidade || store.perfil.cidade,
         briefing: entrada.tema || "",
         funnel: entrada.funil || store.config.funilPadrao,

@@ -4061,6 +4061,10 @@ const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
 const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez"];
 
+// Índice = Date.getDay(). Usado para dizer à IA que dia da semana é hoje.
+const DIAS_SEMANA = ["domingo", "segunda-feira", "terça-feira", "quarta-feira",
+  "quinta-feira", "sexta-feira", "sábado"];
+
 const AREAS = ["Apartamentos", "Casas", "Studios", "Terrenos", "Condomínios",
   "Lançamentos", "Comercial", "Alto padrão", "Rural"];
 
@@ -4514,10 +4518,14 @@ const roteiro = (() => {
   }
 
   function preencher(modelo, c) {
-    return modelo
+    const texto = modelo
       .replace(/\{Lugar\}/g, c.local.curto || "sua cidade")
       .replace(/\{Ficha\}/g, c.fichaFrase || "a metragem certa")
       .replace(/\{Tipo\}/g, c.tipo);
+
+    // Os campos entram em minúscula ("47 m², 2 dormitórios"), e alguns modelos
+    // começam por eles — sem isto o título nasce com inicial minúscula.
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   // Monta um roteiro completo (os 11 campos) para um ângulo.
@@ -6032,8 +6040,9 @@ const assistente = (() => {
     return {
       nome: p.nome, creci: p.creci, cidade: p.cidade, imobiliaria: p.imobiliaria,
       areas: p.areas, bio: p.bio, tom: p.tom, plano: store.plano.label,
-      // Sem isto o modelo não resolve "dia 20" nem "semana que vem".
-      hoje: toIso(HOJE)
+      // Com a data sozinha o modelo errava o dia da semana ("próxima terça"
+      // virava quarta). Mandando o dia por extenso ele não precisa calcular.
+      hoje: `${DIAS_SEMANA[HOJE.getDay()]}, ${toIso(HOJE)}`
     };
   }
 
@@ -6052,7 +6061,9 @@ const assistente = (() => {
 
     try {
       const dados = {
-        area: entrada.area || store.perfil.areas[0] || AREAS[0],
+        // O enum da ferramenta não é idêntico às AREAS do app; área que o app
+        // não conhece quebraria os filtros da Biblioteca.
+        area: AREAS.includes(entrada.area) ? entrada.area : (store.perfil.areas[0] || AREAS[0]),
         cidade: entrada.cidade || store.perfil.cidade,
         briefing: entrada.tema || "",
         funnel: entrada.funil || store.config.funilPadrao,

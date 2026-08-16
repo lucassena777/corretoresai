@@ -12,6 +12,10 @@ const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
 const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez"];
 
+// Índice = Date.getDay(). Usado para dizer à IA que dia da semana é hoje.
+const DIAS_SEMANA = ["domingo", "segunda-feira", "terça-feira", "quarta-feira",
+  "quinta-feira", "sexta-feira", "sábado"];
+
 const AREAS = ["Apartamentos", "Casas", "Studios", "Terrenos", "Condomínios",
   "Lançamentos", "Comercial", "Alto padrão", "Rural"];
 
