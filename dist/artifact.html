@@ -1977,6 +1977,10 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 /* Sem isto o display:flex acima vence o atributo hidden e o painel nasce aberto. */
 .assist-painel[hidden] { display: none; }
 
+/* Landing e login: o copiloto é da área logada e não aparece por lá. */
+body.fora-do-app .assist-botao,
+body.fora-do-app .assist-painel { display: none; }
+
 @keyframes assist-entra {
   from { opacity: 0; transform: translateX(-16px); }
   to { opacity: 1; transform: none; }
@@ -2506,6 +2510,25 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
   background: rgba(201, 162, 39, 0.12);
   color: var(--gold-soft);
 }
+
+/* Aviso de que a prévia não alcança a IA. */
+.aviso-previa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 820px;
+  margin: 0 0 20px;
+  padding: 13px 16px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 12px;
+  background: rgba(201, 162, 39, 0.09);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.aviso-previa svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--gold-soft); }
+.aviso-previa a { color: var(--gold-soft); text-decoration: underline; }
 
 /* ---------- Espera da geração ---------- */
 
@@ -6236,9 +6259,17 @@ const assistente = (() => {
       montar();
     },
 
+    fechar() {
+      if (painel && aberto) alternar();
+    },
+
     // Usado pelo item "Assistente IA" da barra lateral.
     abrir() {
-      if (!painel) return;
+      if (!painel) {
+        // Não deveria acontecer: só se ligarAssistente() não tiver rodado.
+        console.error("[CorretoresAI] o assistente não foi iniciado nesta tela.");
+        return;
+      }
       if (!aberto) alternar();
       painel.querySelector("[data-campo]").focus();
     }
@@ -6419,12 +6450,27 @@ function renderShell() {
   renderIdentity();
   store.subscribe(renderIdentity);
 
-  // O assistente acompanha toda a área logada.
-  if (typeof assistente !== "undefined") {
-    assistente.iniciar();
-    shell.querySelector("[data-abrir-assistente]")
-      ?.addEventListener("click", () => assistente.abrir());
-  }
+  ligarAssistente(shell);
+}
+
+// Liga o assistente à sidebar recém-montada. Existe separado do renderShell
+// porque a prévia de arquivo único monta a sidebar pelo próprio roteador, sem
+// passar por aqui — e sem esta função o botão "Assistente IA" ficava sem
+// listener e o assistente nem chegava a ser criado lá.
+function ligarAssistente(raiz) {
+  if (typeof assistente === "undefined") return;
+
+  document.body.classList.remove("fora-do-app");
+  assistente.iniciar();
+
+  raiz.querySelector("[data-abrir-assistente]")
+    ?.addEventListener("click", () => assistente.abrir());
+}
+
+// Landing e login não têm assistente: some com o botão flutuante por lá.
+function desligarAssistente() {
+  document.body.classList.add("fora-do-app");
+  if (typeof assistente !== "undefined") assistente.fechar();
 }
 
 function ligarSair(root) {
@@ -6822,6 +6868,19 @@ function initCentral(root = document) {
   form.area.value = cfg.areaPadrao || store.perfil.areas[0] || AREAS[0];
   form.cidade.value = store.perfil.cidade;
   const dataAlvo = routeParams().get("data");
+
+  // Na prévia de arquivo único a IA nunca vai responder: aquele visualizador
+  // proíbe conexão externa. Melhor dizer isso na chegada do que deixar o
+  // corretor descobrir depois de preencher o formulário inteiro.
+  if (CONFIG.emPreviaIsolada()) {
+    form.insertAdjacentHTML("beforebegin", `
+      <p class="aviso-previa">
+        <svg><use href="#i-globe" /></svg>
+        Esta é a prévia navegável, e ela não faz chamadas externas — os roteiros
+        aqui saem do modelo local. Para gerar com a IA,
+        <a href="https://lucassena777.github.io/corretoresai/app/central.html" target="_blank" rel="noopener">abra o site publicado</a>.
+      </p>`);
+  }
 
   const marcar = (grupo, valor) => {
     root.querySelectorAll(`[data-choice="${grupo}"] button`).forEach((b) =>
@@ -7778,6 +7837,7 @@ if (!SPA) initConfiguracoes();
     elLanding.hidden = false;
 
     store.dropSubscribers();
+    desligarAssistente();
     if (!landingPronta) { initLanding(elLanding); landingPronta = true; }
 
     const alvo = ancora && elLanding.querySelector("#" + ancora);
@@ -7793,6 +7853,7 @@ if (!SPA) initConfiguracoes();
     elApp.className = "";
     elApp.innerHTML = "";
     elApp.appendChild(document.querySelector('[data-tela="entrar"]').content.cloneNode(true));
+    desligarAssistente();
     initEntrar(elApp);
     window.scrollTo(0, 0);
   }
@@ -7815,6 +7876,9 @@ if (!SPA) initConfiguracoes();
 
     renderIdentity();
     store.subscribe(renderIdentity);
+    // A previa monta a sidebar aqui, sem passar pelo renderShell: sem esta
+    // linha o assistente nunca era criado e o item da sidebar nao respondia.
+    ligarAssistente(elApp);
     INITS[nome](coluna.querySelector(".view"), opts);
 
     const alvo = opts.ancora && coluna.querySelector("#" + opts.ancora);

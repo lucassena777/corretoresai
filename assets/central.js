@@ -14,6 +14,19 @@ function initCentral(root = document) {
   form.cidade.value = store.perfil.cidade;
   const dataAlvo = routeParams().get("data");
 
+  // Na prévia de arquivo único a IA nunca vai responder: aquele visualizador
+  // proíbe conexão externa. Melhor dizer isso na chegada do que deixar o
+  // corretor descobrir depois de preencher o formulário inteiro.
+  if (CONFIG.emPreviaIsolada()) {
+    form.insertAdjacentHTML("beforebegin", `
+      <p class="aviso-previa">
+        <svg><use href="#i-globe" /></svg>
+        Esta é a prévia navegável, e ela não faz chamadas externas — os roteiros
+        aqui saem do modelo local. Para gerar com a IA,
+        <a href="https://lucassena777.github.io/corretoresai/app/central.html" target="_blank" rel="noopener">abra o site publicado</a>.
+      </p>`);
+  }
+
   const marcar = (grupo, valor) => {
     root.querySelectorAll(`[data-choice="${grupo}"] button`).forEach((b) =>
       b.setAttribute("aria-pressed", String(b.textContent.trim() === valor)));

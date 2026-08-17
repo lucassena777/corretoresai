@@ -466,9 +466,17 @@ const assistente = (() => {
       montar();
     },
 
+    fechar() {
+      if (painel && aberto) alternar();
+    },
+
     // Usado pelo item "Assistente IA" da barra lateral.
     abrir() {
-      if (!painel) return;
+      if (!painel) {
+        // Não deveria acontecer: só se ligarAssistente() não tiver rodado.
+        console.error("[CorretoresAI] o assistente não foi iniciado nesta tela.");
+        return;
+      }
       if (!aberto) alternar();
       painel.querySelector("[data-campo]").focus();
     }

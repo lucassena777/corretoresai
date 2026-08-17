@@ -147,12 +147,27 @@ function renderShell() {
   renderIdentity();
   store.subscribe(renderIdentity);
 
-  // O assistente acompanha toda a área logada.
-  if (typeof assistente !== "undefined") {
-    assistente.iniciar();
-    shell.querySelector("[data-abrir-assistente]")
-      ?.addEventListener("click", () => assistente.abrir());
-  }
+  ligarAssistente(shell);
+}
+
+// Liga o assistente à sidebar recém-montada. Existe separado do renderShell
+// porque a prévia de arquivo único monta a sidebar pelo próprio roteador, sem
+// passar por aqui — e sem esta função o botão "Assistente IA" ficava sem
+// listener e o assistente nem chegava a ser criado lá.
+function ligarAssistente(raiz) {
+  if (typeof assistente === "undefined") return;
+
+  document.body.classList.remove("fora-do-app");
+  assistente.iniciar();
+
+  raiz.querySelector("[data-abrir-assistente]")
+    ?.addEventListener("click", () => assistente.abrir());
+}
+
+// Landing e login não têm assistente: some com o botão flutuante por lá.
+function desligarAssistente() {
+  document.body.classList.add("fora-do-app");
+  if (typeof assistente !== "undefined") assistente.fechar();
 }
 
 function ligarSair(root) {

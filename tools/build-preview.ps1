@@ -140,6 +140,7 @@ $metasJson
     elLanding.hidden = false;
 
     store.dropSubscribers();
+    desligarAssistente();
     if (!landingPronta) { initLanding(elLanding); landingPronta = true; }
 
     const alvo = ancora && elLanding.querySelector("#" + ancora);
@@ -155,6 +156,7 @@ $metasJson
     elApp.className = "";
     elApp.innerHTML = "";
     elApp.appendChild(document.querySelector('[data-tela="entrar"]').content.cloneNode(true));
+    desligarAssistente();
     initEntrar(elApp);
     window.scrollTo(0, 0);
   }
@@ -177,6 +179,9 @@ $metasJson
 
     renderIdentity();
     store.subscribe(renderIdentity);
+    // A previa monta a sidebar aqui, sem passar pelo renderShell: sem esta
+    // linha o assistente nunca era criado e o item da sidebar nao respondia.
+    ligarAssistente(elApp);
     INITS[nome](coluna.querySelector(".view"), opts);
 
     const alvo = opts.ancora && coluna.querySelector("#" + opts.ancora);

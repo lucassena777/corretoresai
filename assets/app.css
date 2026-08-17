@@ -1077,6 +1077,10 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
 /* Sem isto o display:flex acima vence o atributo hidden e o painel nasce aberto. */
 .assist-painel[hidden] { display: none; }
 
+/* Landing e login: o copiloto é da área logada e não aparece por lá. */
+body.fora-do-app .assist-botao,
+body.fora-do-app .assist-painel { display: none; }
+
 @keyframes assist-entra {
   from { opacity: 0; transform: translateX(-16px); }
   to { opacity: 1; transform: none; }
@@ -1606,6 +1610,25 @@ body.assist-aberto .assist-botao { transform: scale(0.92); opacity: 0.5; }
   background: rgba(201, 162, 39, 0.12);
   color: var(--gold-soft);
 }
+
+/* Aviso de que a prévia não alcança a IA. */
+.aviso-previa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 820px;
+  margin: 0 0 20px;
+  padding: 13px 16px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 12px;
+  background: rgba(201, 162, 39, 0.09);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.aviso-previa svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--gold-soft); }
+.aviso-previa a { color: var(--gold-soft); text-decoration: underline; }
 
 /* ---------- Espera da geração ---------- */
 
