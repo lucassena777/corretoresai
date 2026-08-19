@@ -294,6 +294,12 @@ const db = (() => {
       return sessao?.plano ?? "gratuito";
     },
 
+    // Token da sessão, para as funções que precisam saber quem está pedindo
+    // (checkout do pagamento, cota da IA).
+    tokenAtual() {
+      return sessao?.token ?? null;
+    },
+
     gravarPerfil(patch) {
       if (!sessao) return null;
       Object.assign(sessao.perfil, patch);

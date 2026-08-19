@@ -381,6 +381,57 @@ function briefingEmTexto(b: Record<string, unknown>) {
   ].filter(Boolean).join("\n");
 }
 
+/* ---------------- Cota ----------------
+   A conta é feita aqui, não no navegador. Antes, "gerações restantes" era um
+   número no localStorage: apagar a chave dava geração infinita, e cobrar por
+   isso não faria sentido. Agora quem conta é o banco, contra o plano que só o
+   webhook do pagamento pode escrever. */
+
+async function conferirCota(token: string) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const quem = await fetch(`${url}/auth/v1/user`, {
+    headers: { apikey: anon, authorization: `Bearer ${token}` },
+  });
+  if (!quem.ok) return { erro: "Faça login para usar a IA.", status: 401 };
+
+  const usuario = await quem.json();
+
+  const perfis = await fetch(
+    `${url}/rest/v1/profiles?id=eq.${usuario.id}&select=plano,cota_usada,cota_limite`,
+    { headers: { apikey: anon, authorization: `Bearer ${token}` } },
+  );
+  const linha = (await perfis.json())?.[0];
+  if (!linha) return { erro: "Perfil não encontrado. Entre de novo.", status: 401 };
+
+  if (linha.cota_usada >= linha.cota_limite) {
+    return {
+      erro: `Você usou as ${linha.cota_limite} gerações do plano ${linha.plano}. Abra Planos para liberar mais.`,
+      status: 402,
+    };
+  }
+
+  return { uid: usuario.id, usadas: linha.cota_usada };
+}
+
+// Só depois que a geração deu certo. Cobrar antes seria cobrar por erro nosso.
+async function consumirCota(uid: string, usadas: number) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const servico = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  await fetch(`${url}/rest/v1/profiles?id=eq.${uid}`, {
+    method: "PATCH",
+    headers: {
+      apikey: servico,
+      authorization: `Bearer ${servico}`,
+      "content-type": "application/json",
+      prefer: "return=minimal",
+    },
+    body: JSON.stringify({ cota_usada: usadas + 1 }),
+  }).catch((e) => console.error("[cota] não deu para somar:", e.message));
+}
+
 /* ---------------- Handler ---------------- */
 
 Deno.serve(async (req: Request) => {
@@ -424,6 +475,11 @@ Deno.serve(async (req: Request) => {
   /* ----- Roteiro: resposta única em JSON ----- */
 
   if (corpo.modo === "roteiro") {
+    // Gerar roteiro é o que consome cota. O chat não consome: perguntar ao
+    // copiloto não pode ficar caro para quem já paga.
+    const cota = await conferirCota(req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "");
+    if ("erro" in cota) return json({ erro: cota.erro }, cota.status);
+
     try {
       const resposta = await comRetentativa(() => chamar("generateContent", chave, {
         systemInstruction: { parts: [{ text: systemRoteiro(contexto) }] },
@@ -471,7 +527,8 @@ Deno.serve(async (req: Request) => {
       const ideias = Array.isArray(saida.ideias) ? saida.ideias.slice(0, 3) : [];
       if (!ideias.length) return json({ erro: "O modelo não devolveu nenhuma ideia." }, 502);
 
-      return json({ ideias });
+      await consumirCota(cota.uid, cota.usadas);
+      return json({ ideias, cotaUsada: cota.usadas + 1 });
     } catch (e) {
       const { mensagem, status } = traduzirExcecao(e);
       return json({ erro: mensagem }, status);

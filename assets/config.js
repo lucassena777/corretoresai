@@ -11,15 +11,20 @@ const CONFIG = {
   supabaseChave: "sb_publishable_O9vUtVfAvyVmC51gKk34pw_nVnHmhyY",
 
   assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
+  checkoutUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/checkout",
   assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo",
 
-  // Cabeçalhos de toda chamada ao back-end. A anon key vai nos dois formatos
-  // que o gateway do Supabase aceita.
+  // Cabeçalhos de toda chamada ao back-end.
+  //
+  // O `authorization` leva o token do corretor logado, não a chave anônima: é
+  // assim que a função sabe de quem é a cota que está gastando. Sem sessão,
+  // cai na chave anônima e a função recusa — que é o certo.
   cabecalhos() {
+    const token = (typeof db !== "undefined" && db.tokenAtual()) || this.supabaseChave;
     return {
       "content-type": "application/json",
-      "authorization": `Bearer ${this.assistenteChave}`,
-      "apikey": this.assistenteChave
+      "authorization": `Bearer ${token}`,
+      "apikey": this.supabaseChave
     };
   },
 

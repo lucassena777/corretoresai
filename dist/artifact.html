@@ -3863,15 +3863,20 @@ const CONFIG = {
   supabaseChave: "sb_publishable_O9vUtVfAvyVmC51gKk34pw_nVnHmhyY",
 
   assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
+  checkoutUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/checkout",
   assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo",
 
-  // Cabeçalhos de toda chamada ao back-end. A anon key vai nos dois formatos
-  // que o gateway do Supabase aceita.
+  // Cabeçalhos de toda chamada ao back-end.
+  //
+  // O `authorization` leva o token do corretor logado, não a chave anônima: é
+  // assim que a função sabe de quem é a cota que está gastando. Sem sessão,
+  // cai na chave anônima e a função recusa — que é o certo.
   cabecalhos() {
+    const token = (typeof db !== "undefined" && db.tokenAtual()) || this.supabaseChave;
     return {
       "content-type": "application/json",
-      "authorization": `Bearer ${this.assistenteChave}`,
-      "apikey": this.assistenteChave
+      "authorization": `Bearer ${token}`,
+      "apikey": this.supabaseChave
     };
   },
 
@@ -5160,6 +5165,12 @@ const db = (() => {
     // O plano que o banco conhece. Quem manda é a assinatura, não o navegador.
     planoDaConta() {
       return sessao?.plano ?? "gratuito";
+    },
+
+    // Token da sessão, para as funções que precisam saber quem está pedindo
+    // (checkout do pagamento, cota da IA).
+    tokenAtual() {
+      return sessao?.token ?? null;
     },
 
     gravarPerfil(patch) {
@@ -8090,12 +8101,18 @@ function initHistorico(root = document) {
 
 if (!SPA) initHistorico();
 
-// Planos dentro do app: troca imediata, com o plano atual marcado.
+// Planos dentro do app.
+//
+// Assinar não é mais um clique que muda um número aqui: abre o checkout do
+// Stripe. Quem libera o plano é o webhook, do outro lado — o banco nem deixa
+// esta tela escrever na coluna `plano`. É o que faz a cobrança valer alguma
+// coisa: sem isso, bastaria abrir o console para virar assinante.
 
 function initPlanos(root = document) {
   if (!auth.exigirLogin()) return;
 
   const alvo = root.querySelector("[data-planos]");
+  let ocupado = false;
 
   function render() {
     const atual = store.planoId;
@@ -8103,6 +8120,17 @@ function initPlanos(root = document) {
     alvo.innerHTML = Object.values(PLANOS).map((plano) => {
       const ativo = plano.id === atual;
       const popular = plano.id === "pro";
+      const gratuito = plano.id === "gratuito";
+
+      let acao;
+      if (ativo) {
+        acao = '<button class="btn btn-outline btn-block" type="button" disabled>Plano ativo</button>';
+      } else if (gratuito) {
+        // Descer de plano é cancelar assinatura, e isso se faz no Stripe.
+        acao = '<button class="btn btn-quiet btn-block" type="button" data-cancelar>Voltar para o gratuito</button>';
+      } else {
+        acao = `<button class="btn ${popular ? "btn-primary" : "btn-outline"} btn-block" type="button" data-assinar="${plano.id}">${plano.cta}</button>`;
+      }
 
       return `
         <article class="plano-card${ativo ? " is-ativo" : ""}${popular ? " is-popular" : ""}">
@@ -8124,36 +8152,92 @@ function initPlanos(root = document) {
               <li><svg><use href="#i-check-circle" /></svg>${b}</li>`).join("")}
           </ul>
 
-          ${ativo
-            ? '<button class="btn btn-outline btn-block" type="button" disabled>Plano ativo</button>'
-            : `<button class="btn ${popular ? "btn-primary" : "btn-outline"} btn-block" type="button" data-trocar="${plano.id}">${plano.cta}</button>`}
+          ${acao}
         </article>`;
     }).join("");
   }
 
-  alvo.addEventListener("click", async (event) => {
-    const btn = event.target.closest("[data-trocar]");
-    if (!btn) return;
+  async function assinar(planoId) {
+    if (ocupado) return;
+    const plano = PLANOS[planoId];
 
-    const novo = PLANOS[btn.dataset.trocar];
-    const descendo = novo.cota < store.plano.cota;
-
-    const aviso = descendo
-      ? `Mudar para o ${novo.label} reduz sua cota para ${novo.cota} gerações por mês. Seus conteúdos continuam salvos.`
-      : `Ativar o ${novo.label} por ${novo.preco}/mês? A cota entra valendo na hora.`;
-
-    const ok = await ui.confirmar(aviso, {
-      titulo: `Mudar para ${novo.label}`,
-      acao: descendo ? "Mudar mesmo assim" : "Ativar plano"
-    });
+    const ok = await ui.confirmar(
+      `Assinar o ${plano.label} por ${plano.preco}/mês? Você vai para o pagamento seguro do Stripe e volta para cá no fim.`,
+      { titulo: `Assinar ${plano.label}`, acao: "Ir para o pagamento" });
     if (!ok) return;
 
-    store.trocarPlano(novo.id);
-    ui.toast(`Plano ${novo.label} ativo. Cota renovada.`);
+    ocupado = true;
+    const botao = alvo.querySelector(`[data-assinar="${planoId}"]`);
+    if (botao) { botao.disabled = true; botao.textContent = "Abrindo o pagamento…"; }
+
+    try {
+      const resposta = await fetch(CONFIG.checkoutUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${db.tokenAtual()}`,
+          "apikey": CONFIG.supabaseChave
+        },
+        body: JSON.stringify({ plano: planoId })
+      });
+
+      if (!resposta.ok) throw await CONFIG.erroDaResposta(resposta);
+
+      const { url } = await resposta.json();
+      if (!url) throw new Error("O Stripe não devolveu o endereço do pagamento.");
+
+      location.href = url;
+    } catch (e) {
+      ocupado = false;
+      render();
+      ui.toast(e instanceof TypeError ? CONFIG.diagnosticar(e) : e.message, "erro");
+    }
+  }
+
+  alvo.addEventListener("click", async (event) => {
+    const assinatura = event.target.closest("[data-assinar]");
+    if (assinatura) return assinar(assinatura.dataset.assinar);
+
+    if (event.target.closest("[data-cancelar]")) {
+      await ui.confirmar(
+        "O cancelamento é feito no mesmo lugar do pagamento: procure o e-mail do Stripe com o recibo — " +
+        "ele traz o link para gerenciar ou cancelar a assinatura. Seus conteúdos continuam salvos.",
+        { titulo: "Voltar para o gratuito", acao: "Entendi" });
+    }
   });
+
+  // Voltando do Stripe: o plano só muda quando o webhook confirma o pagamento,
+  // e isso leva alguns segundos. Reler o banco algumas vezes evita mostrar
+  // "gratuito" para quem acabou de pagar.
+  async function conferirVoltaDoPagamento() {
+    const resultado = routeParams().get("pagamento");
+    if (!resultado) return;
+
+    if (resultado === "cancelado") {
+      ui.toast("Pagamento cancelado. Nada foi cobrado.");
+      return;
+    }
+
+    ui.toast("Pagamento recebido. Liberando seu plano…");
+
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        await db.sincronizar();
+        store.recarregar();
+        if (store.planoId !== "gratuito") {
+          ui.toast(`Plano ${store.plano.label} ativo. Bom proveito.`);
+          return;
+        }
+      } catch { /* tenta de novo */ }
+    }
+
+    ui.toast("O pagamento foi aprovado, mas o plano ainda não apareceu. Recarregue em instantes.", "erro");
+  }
 
   store.subscribe(render);
   render();
+  conferirVoltaDoPagamento();
 }
 
 if (!SPA) initPlanos();
