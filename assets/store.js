@@ -13,6 +13,10 @@ const store = (() => {
       db.gravarEstado(conta.estado);
     }
     state = { ...estadoSemente(), ...conta.estado, config: { ...CONFIG_PADRAO, ...(conta.estado.config || {}) } };
+
+    // O plano vem do banco, não do navegador: quem manda é a assinatura paga.
+    // Sem isto, apagar uma chave do localStorage viraria upgrade de graça.
+    state.plano = db.planoDaConta();
   }
 
   carregar();

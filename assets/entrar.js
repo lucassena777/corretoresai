@@ -27,6 +27,14 @@ function initEntrar(root = document) {
     alvo.scrollIntoView?.({ block: "nearest" });
   }
 
+  // Mesma faixa do erro, com cara de recado bom.
+  function avisar(form, mensagem) {
+    const alvo = form.querySelector("[data-erro]");
+    alvo.textContent = mensagem;
+    alvo.hidden = false;
+    alvo.classList.add("is-bom");
+  }
+
   // Primeiro campo vazio da lista, ou nada se estiver tudo preenchido.
   function faltando(form, nomes) {
     return nomes.map((n) => form[n]).find((c) => !c.value.trim());
@@ -79,7 +87,7 @@ function initEntrar(root = document) {
     if (vazio) return erro(f, "Preencha nome, e-mail, cidade e senha para criar a conta.", vazio);
 
     try {
-      await db.criarConta({
+      const conta = await db.criarConta({
         nome: f.nome.value,
         email: f.email.value,
         senha: f.senha.value,
@@ -87,6 +95,21 @@ function initEntrar(root = document) {
         creci: f.creci.value,
         telefone: f.telefone.value
       });
+
+      // Com confirmação de e-mail ligada, a conta nasce sem sessão: não dá
+      // para entrar antes de clicar no link.
+      //
+      // O texto não afirma que a conta é nova de propósito. O Supabase
+      // responde sucesso mesmo quando o e-mail já tem cadastro — é assim para
+      // não revelar quem é cliente — e prometer "conta criada" seria mentira
+      // na metade dos casos.
+      if (conta.confirmarEmail) {
+        mostrar("entrar");
+        avisar(formEntrar,
+          `Enviamos um link de confirmação para ${conta.email}. Confirme e entre por aqui — ` +
+          `se esse e-mail já tinha conta, use "Esqueci minha senha".`);
+        return;
+      }
 
       store.recarregar();
 
@@ -101,6 +124,18 @@ function initEntrar(root = document) {
       entrarNoApp();
     } catch (e) {
       erro(f, e.message);
+    }
+  });
+
+  root.querySelector("[data-esqueci]")?.addEventListener("click", async () => {
+    const email = formEntrar.email.value.trim();
+    if (!email) return erro(formEntrar, "Escreva seu e-mail acima para receber o link.", formEntrar.email);
+
+    try {
+      await db.recuperarSenha(email);
+      avisar(formEntrar, `Se existir conta com ${email}, o link de nova senha chega em instantes.`);
+    } catch (e) {
+      erro(formEntrar, e.message);
     }
   });
 

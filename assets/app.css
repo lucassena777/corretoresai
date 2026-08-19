@@ -1834,3 +1834,6 @@ body.fora-do-app .assist-painel { display: none; }
   .cal-day { min-height: auto; border-right: 0; }
   .calendar-head span { display: none; }
 }
+
+/* Recado bom usa a mesma faixa do erro, em dourado. */
+.auth-erro.is-bom { border-color: rgba(201, 162, 39, 0.4); background: rgba(201, 162, 39, 0.1); color: var(--gold-soft); }

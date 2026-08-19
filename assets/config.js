@@ -5,6 +5,11 @@
 // dentro da Edge Function e nunca chega ao navegador.
 
 const CONFIG = {
+  // Projeto Supabase: contas, perfis e planos. A "publishable key" é pública
+  // por definição — só identifica o projeto, e o RLS é quem protege os dados.
+  supabaseUrl: "https://cksboexpaegtdprkksix.supabase.co",
+  supabaseChave: "sb_publishable_O9vUtVfAvyVmC51gKk34pw_nVnHmhyY",
+
   assistenteUrl: "https://cksboexpaegtdprkksix.supabase.co/functions/v1/assistente",
   assistenteChave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrc2JvZXhwYWVndGRwcmtrc2l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NDMzNjEsImV4cCI6MjEwMDUxOTM2MX0.iOlA5LN5J3Og_XhVxbNXPT36voYQY194uH_MW5nGDRo",
 
