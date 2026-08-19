@@ -59,33 +59,27 @@ function initEntrar(root = document) {
   });
 
   formCadastro.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const f = formCadastro;
-    try {
-      await db.criarConta({
-        nome: f.nome.value,
-        email: f.email.value,
-        senha: f.senha.value,
-        cidade: f.cidade.value,
-        creci: f.creci.value,
-        telefone: f.telefone.value
-      });
+  event.preventDefault();
+  const f = formCadastro;
+  try {
+    await db.criarConta({
+      nome: f.nome.value,
+      email: f.email.value,
+      senha: f.senha.value,
+      cidade: f.cidade.value,
+      creci: f.creci ? f.creci.value : "",
+      telefone: f.telefone ? f.telefone.value : ""
+    });
 
-      store.recarregar();
-
-      // Plano escolhido lá na landing, se houver.
-      const escolhido = sessionStorage.getItem("corretoresai-plano-escolhido");
-      if (escolhido && PLANOS[escolhido]) {
-        store.trocarPlano(escolhido);
-        sessionStorage.removeItem("corretoresai-plano-escolhido");
-      }
-
-      if (f.exemplos.checked) store.carregarExemplos();
-      entrarNoApp();
-    } catch (e) {
-      erro(f, e.message);
+    if (f.exemplos && f.exemplos.checked) {
+      store.carregarExemplos();
     }
-  });
+
+    entrarNoApp();
+  } catch (e) {
+    erro(f, e.message);
+  }
+});
 
   root.querySelector("[data-demo]").addEventListener("click", async () => {
     try {
