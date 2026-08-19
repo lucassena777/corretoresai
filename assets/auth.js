@@ -1,8 +1,6 @@
-const SUPABASE_URL = "https://cksboexpaegtdprkksix.supabase.co"; 
-const SUPABASE_ANON_KEY = "sb_publishable_O9vUtVfAvyVmC51gKk34pw_nVnHmhyY"; 
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+window.SUPABASE_URL = window.SUPABASE_URL || "https://cksboexpaegtdprkksix.supabase.co";
+window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "sb_publishable_O9vUtVfAvyVmC51gKk34pw_nVnHmhyY";
+window.supabaseClient = window.supabaseClient || window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 // Login Real
 async function entrarComSupabase(email, password) {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
