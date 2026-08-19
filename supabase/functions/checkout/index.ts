@@ -78,6 +78,17 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
 
+  // Erro fácil de cometer: as duas chaves ficam lado a lado no painel do
+  // Stripe e só diferem por duas letras. Sem este aviso, o Stripe devolveria
+  // "Invalid API Key provided" e ninguém saberia que foi troca de chave.
+  if (chaveStripe.startsWith("pk_")) {
+    return json({
+      erro: "O secret STRIPE_SECRET_KEY está com a publishable key (pk_...). " +
+            "O servidor precisa da secret key (sk_...): Stripe → Developers → " +
+            "API keys → Secret key → Reveal test key.",
+    }, 503);
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
 
