@@ -4,7 +4,7 @@ auth.urlApp = function(page) { return page + ".html"; };
 function initEntrar(root = document) {
   const abas = root.querySelector("[data-modo]");
   const formEntrar = root.querySelector('[data-form="entrar"]');
-  const formCadastro = root.querySelector('[data-form="cadastro"]');
+  const formCadastro = root.querySelector('[data-form="cadastro"]') || root.querySelector('#formCadastro') || root.querySelector('form');
 
   db.garantirDemo();
 
@@ -45,7 +45,7 @@ function initEntrar(root = document) {
   function entrarNoApp() {
   store.recarregar();
   location.href = "dashboard.html";
-}
+
   }
 
   formEntrar.addEventListener("submit", async (event) => {
