@@ -1,4 +1,4 @@
-// Login e cadastro.
+const auth = supabaseClient.auth;
 
 function initEntrar(root = document) {
   const abas = root.querySelector("[data-modo]");
