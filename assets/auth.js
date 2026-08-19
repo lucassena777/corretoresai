@@ -1,24 +1,29 @@
-// Sessão: para onde ir quando não há login e para onde voltar depois dele.
+// Substitua pelas suas chaves do Supabase (Project Settings > API)
+const SUPABASE_URL = "https://SEU-PROJETO.supabase.co"; 
+const SUPABASE_ANON_KEY = "SUA-CHAVE-ANONIMA"; 
 
-const auth = {
-  urlEntrar(modo) {
-    const q = modo ? `?modo=${modo}` : "";
-    return SPA ? `#/entrar${q}` : `entrar.html${q}`;
-  },
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  urlApp(rota = "dashboard") {
-    return SPA ? `#/${rota}` : `${rota}.html`;
-  },
-
-  // Chamado por toda tela do app: sem sessão, manda para o login.
-  exigirLogin() {
-    if (db.sessao()) return true;
-    location.href = this.urlEntrar();
-    return false;
-  },
-
-  sair() {
-    db.sair();
-    location.href = SPA ? "#/" : "../index.html";
+// Login Real
+async function entrarComSupabase(email, password) {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    alert("Erro ao entrar: " + error.message);
+    return;
   }
-};
+  window.location.href = "dashboard.html";
+}
+
+// Cadastro Real
+async function cadastrarComSupabase(email, password, nome) {
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: { data: { nome } }
+  });
+  if (error) {
+    alert("Erro no cadastro: " + error.message);
+    return;
+  }
+  alert("Conta criada com sucesso! Faça login para continuar.");
+}
