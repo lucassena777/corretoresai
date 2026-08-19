@@ -71,7 +71,11 @@ Deno.serve(async (req: Request) => {
 
   const chaveStripe = (Deno.env.get("STRIPE_SECRET_KEY") ?? "").trim();
   if (!chaveStripe) {
-    return json({ erro: "O pagamento ainda não foi configurado: falta a chave do Stripe no projeto." }, 503);
+    return json({
+      erro: "O pagamento ainda não foi ligado: falta o secret STRIPE_SECRET_KEY " +
+            "no Supabase (Project Settings → Edge Functions → Secrets). " +
+            "Nenhuma mudança no site resolve isso — a chave só pode ser colada lá.",
+    }, 503);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
