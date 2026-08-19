@@ -36,6 +36,7 @@ const store = (() => {
     get state() { return state; },
     get itens() { return state?.itens ?? []; },
     get atividades() { return state?.atividades ?? []; },
+    get compromissos() { return state?.compromissos ?? []; },
     get config() { return state?.config ?? { ...CONFIG_PADRAO }; },
     get perfil() { return db.contaAtual()?.perfil ?? { ...PERFIL_PADRAO }; },
     get plano() { return PLANOS[state?.plano] ?? PLANOS.gratuito; },
@@ -138,6 +139,52 @@ const store = (() => {
       if (!item) return;
       state.itens = state.itens.filter((i) => i.id !== id);
       log("i-trash", `"${item.title}" foi excluído`);
+      persist();
+    },
+
+    /* ---- Compromissos ----
+       Agenda pessoal do corretor: visita, reunião, assinatura. Vive fora de
+       `itens` porque não é conteúdo — não entra na Biblioteca, no Kanban nem
+       nas métricas de publicação. */
+
+    acharCompromisso(id) { return state.compromissos.find((c) => c.id === id); },
+
+
+    criarCompromisso(dados) {
+      const compromisso = {
+        id: nextId(),
+        tipo: COMPROMISSO_PADRAO,
+        time: state.config.horarioPadrao,
+        local: "",
+        notas: "",
+        ...dados
+      };
+      state.compromissos.push(compromisso);
+      log("i-calendar-clock", `Compromisso "${compromisso.title}" foi marcado`);
+      persist();
+      return compromisso;
+    },
+
+    atualizarCompromisso(id, patch) {
+      const compromisso = this.acharCompromisso(id);
+      if (!compromisso) return null;
+
+      const antes = compromisso.date;
+      Object.assign(compromisso, patch);
+
+      log("i-calendar-clock", patch.date && patch.date !== antes
+        ? `Compromisso "${compromisso.title}" mudou de data`
+        : `Compromisso "${compromisso.title}" foi editado`);
+
+      persist();
+      return compromisso;
+    },
+
+    removerCompromisso(id) {
+      const compromisso = this.acharCompromisso(id);
+      if (!compromisso) return;
+      state.compromissos = state.compromissos.filter((c) => c.id !== id);
+      log("i-trash", `Compromisso "${compromisso.title}" foi cancelado`);
       persist();
     },
 

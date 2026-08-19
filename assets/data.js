@@ -33,6 +33,24 @@ const STATUSES = {
 // Colunas que aparecem no Kanban, nesta ordem.
 const KANBAN = ["aprovado", "agendado", "publicado"];
 
+
+/* ---------------- Compromissos ----------------
+   A agenda do corretor não é só conteúdo: visita, reunião e assinatura moram
+   no mesmo calendário. Compromisso é coisa separada de conteúdo de propósito —
+   não tem roteiro, funil nem Kanban, e misturar os dois sujaria a Biblioteca
+   e as métricas. */
+
+const TIPOS_COMPROMISSO = {
+  visita:     { label: "Visita",     icon: "i-eye",            color: "#5aa9e6" },
+  reuniao:    { label: "Reunião",    icon: "i-user",           color: "#c9a227" },
+  proposta:   { label: "Proposta",   icon: "i-check-circle",   color: "#6fbf73" },
+  assinatura: { label: "Assinatura", icon: "i-book",           color: "#b98cd6" },
+  captacao:   { label: "Captação",   icon: "i-building",       color: "#e0955c" },
+  pessoal:    { label: "Pessoal",    icon: "i-calendar-clock", color: "#9aa1a8" }
+};
+
+const COMPROMISSO_PADRAO = "visita";
+
 const PLANOS = {
   gratuito: {
     id: "gratuito", label: "Gratuito", cota: 5, preco: "R$ 0", icone: "i-sparkle",
@@ -176,6 +194,7 @@ const SEED_ATIVIDADES = [
 function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
   return {
     itens: comAcervo ? SEED_ITENS.map((i) => ({ ...i, tags: [...i.tags] })) : [],
+    compromissos: [],
     atividades: comAcervo
       ? SEED_ATIVIDADES.map((a) => ({ icon: a.icon, text: a.text, at: HOJE.getTime() - a.dias * 86400000 }))
       : [],

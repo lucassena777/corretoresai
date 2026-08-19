@@ -610,6 +610,84 @@ body.assist-aberto .side-assistente {
   font-weight: 700;
 }
 
+/* ---------- Compromissos no calendário ----------
+   Barra colorida à esquerda e ícone do tipo: o compromisso se distingue do
+   card de conteúdo antes da leitura, só pela silhueta. */
+
+.cal-day-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cal-daynum { margin-bottom: 0; }
+
+/* Só aparece ao passar o mouse no dia, para o mês não virar um mural de "+". */
+.cal-day-mais {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.cal-day-mais svg { width: 13px; height: 13px; }
+.cal-day:hover .cal-day-mais,
+.cal-day-mais:focus-visible { opacity: 1; }
+.cal-day-mais:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.cal-compromisso {
+  margin-bottom: 8px;
+  padding: 7px 9px 8px;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--cor-tipo, var(--gold));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cor-tipo, var(--gold)) 10%, var(--surface-2));
+  cursor: grab;
+}
+
+.cal-compromisso:active { cursor: grabbing; }
+.cal-compromisso.is-dragging { opacity: 0.45; }
+
+.cal-compromisso-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 3px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cal-compromisso-titulo svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--cor-tipo, var(--gold));
+}
+
+.cal-compromisso-meta {
+  margin: 0;
+  padding-left: 18px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cal-card {
   margin-bottom: 8px;
   padding: 8px 9px 9px;

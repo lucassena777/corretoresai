@@ -326,6 +326,122 @@ const ui = (() => {
     if (!event.target.closest(".pop-menu")) fecharMenus();
   });
 
+  // ---- Compromisso -------------------------------------------------------
+  // Agenda pessoal do corretor. `id` vazio cria; com `id` edita.
+
+  function openCompromisso(id, dataPadrao) {
+    const existente = id ? store.acharCompromisso(id) : null;
+    const c = existente ?? {
+      title: "",
+      tipo: COMPROMISSO_PADRAO,
+      date: dataPadrao || toIso(HOJE),
+      time: store.config.horarioPadrao,
+      local: "",
+      notas: ""
+    };
+
+    const atributo = (v) => String(v ?? "").replace(/"/g, "&quot;");
+    const tipos = Object.entries(TIPOS_COMPROMISSO)
+      .map(([chave, t]) => `<option value="${chave}"${chave === c.tipo ? " selected" : ""}>${t.label}</option>`)
+      .join("");
+
+    openModal(`
+      <header class="modal-head">
+        <div>
+          <span class="chip"><svg><use href="#i-calendar-clock" /></svg>Compromisso</span>
+          <h2>${existente ? "Editar compromisso" : "Novo compromisso"}</h2>
+        </div>
+        <button class="theme-btn" type="button" data-close aria-label="Fechar">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="k-title">O que é</label>
+          <input id="k-title" name="title" value="${atributo(c.title)}"
+                 placeholder="Ex: Visita com o casal Andrade no Cambuí" />
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="k-tipo">Tipo</label>
+            <select id="k-tipo" name="tipo">${tipos}</select>
+          </div>
+          <div>
+            <label for="k-local">Local <small>(opcional)</small></label>
+            <input id="k-local" name="local" value="${atributo(c.local)}" placeholder="Endereço ou link da reunião" />
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="k-date">Data</label>
+            <input id="k-date" name="date" type="date" value="${c.date}" />
+          </div>
+          <div>
+            <label for="k-time">Horário</label>
+            <input id="k-time" name="time" type="time" value="${c.time}" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="k-notas">Observações <small>(opcional)</small></label>
+          <textarea id="k-notas" name="notas" rows="3"
+                    placeholder="O que levar, o que combinar, telefone do cliente…">${String(c.notas ?? "")}</textarea>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        ${existente ? `<button class="btn btn-quiet" type="button" data-excluir>Excluir</button>` : ""}
+        <span class="spacer"></span>
+        <button class="btn btn-outline" type="button" data-close>Cancelar</button>
+        <button class="btn btn-primary" type="button" data-salvar>
+          <svg><use href="#i-check-circle" /></svg>${existente ? "Salvar" : "Marcar compromisso"}
+        </button>
+      </footer>`, (modal) => {
+
+      const campo = (nome) => modal.querySelector(`[name="${nome}"]`);
+      campo("title").focus();
+
+      modal.querySelector("[data-salvar]").addEventListener("click", () => {
+        const title = campo("title").value.trim();
+        if (!title) {
+          toast("Escreva o que é o compromisso.", "erro");
+          campo("title").focus();
+          return;
+        }
+
+        const dados = {
+          title,
+          tipo: campo("tipo").value,
+          date: campo("date").value,
+          time: campo("time").value,
+          local: campo("local").value.trim(),
+          notas: campo("notas").value.trim()
+        };
+
+        if (existente) {
+          store.atualizarCompromisso(existente.id, dados);
+          toast("Compromisso atualizado.");
+        } else {
+          store.criarCompromisso(dados);
+          toast(`Marcado para ${formatFull(dados.date)}, às ${dados.time}.`);
+        }
+        closeModal();
+      });
+
+      modal.querySelector("[data-excluir]")?.addEventListener("click", async () => {
+        const ok = await confirmar(`Cancelar "${existente.title}"? O compromisso sai da sua agenda.`,
+          { titulo: "Cancelar compromisso", acao: "Cancelar compromisso", perigo: true });
+        if (!ok) return;
+        store.removerCompromisso(existente.id);
+        toast("Compromisso cancelado.");
+        closeModal();
+      });
+    });
+  }
+
   // ---- Exportação --------------------------------------------------------
 
   function textoDoItem(item) {
@@ -342,6 +458,6 @@ const ui = (() => {
       .catch(() => toast("Não foi possível copiar.", "erro"));
   }
 
-  return { toast, openModal, closeModal, confirmar, openItem, itemCard, initials,
+  return { toast, openModal, closeModal, confirmar, openItem, openCompromisso, itemCard, initials,
     exportarTexto, textoDoItem, fecharMenus };
 })();

@@ -6,10 +6,18 @@ function initBoard(root = document, opts = {}) {
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
   let arrastou = false;
+  let arrastandoCompromisso = false;
 
   const elCalendar = root.querySelector("[data-calendar]");
   const elKanban = root.querySelector("[data-kanban]");
   const elMonthLabel = root.querySelector("[data-month-label]");
+
+  // Título e local do compromisso são digitados à mão: escapar antes de virar
+  // HTML, senão um "<" do corretor quebra a célula do dia.
+  const esc = (v) => String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 
   function renderCalendar() {
     elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
@@ -38,6 +46,7 @@ function initBoard(root = document, opts = {}) {
     }
 
     const itens = store.board();
+    const compromissos = store.compromissos;
 
     elCalendar.innerHTML = weeks.map((week) => `
       <div class="calendar-week">${week.map((date) => {
@@ -59,8 +68,32 @@ function initBoard(root = document, opts = {}) {
               <div class="cal-card-tags">${item.tags.slice(0, 2).map((t) => `<span class="tag">${t}</span>`).join("")}</div>
             </article>`).join("");
 
+        // Compromisso vem antes do conteúdo no dia: ele tem hora marcada com
+        // outra pessoa, o post não.
+        const agenda = compromissos
+          .filter((c) => c.date === key)
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .map((c) => {
+            const t = TIPOS_COMPROMISSO[c.tipo] || TIPOS_COMPROMISSO[COMPROMISSO_PADRAO];
+            return `
+            <article class="cal-compromisso" draggable="true" data-compromisso="${c.id}"
+                     style="--cor-tipo:${t.color}" title="${t.label} · ${c.time}">
+              <p class="cal-compromisso-titulo">
+                <svg><use href="#${t.icon}" /></svg>${esc(c.title)}
+              </p>
+              <p class="cal-compromisso-meta">${c.time}${c.local ? ` · ${esc(c.local)}` : ""}</p>
+            </article>`;
+          }).join("");
+
         return `<div class="${classes.join(" ")}" data-drop-date="${key}">
-          <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
+          <div class="cal-day-topo">
+            <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
+            <button class="cal-day-mais" type="button" data-novo-compromisso="${key}"
+                    title="Marcar compromisso neste dia" aria-label="Marcar compromisso neste dia">
+              <svg><use href="#i-plus" /></svg>
+            </button>
+          </div>
+          ${agenda}
           ${cards}
         </div>`;
       }).join("")}</div>`).join("");
@@ -99,9 +132,10 @@ function initBoard(root = document, opts = {}) {
   // ---- Arrastar-e-soltar -------------------------------------------------
 
   root.addEventListener("dragstart", (event) => {
-    const card = event.target.closest("[data-id]");
+    const card = event.target.closest("[data-id], [data-compromisso]");
     if (!card) return;
-    dragId = card.dataset.id;
+    dragId = card.dataset.id || card.dataset.compromisso;
+    arrastandoCompromisso = Boolean(card.dataset.compromisso);
     arrastou = true;
     card.classList.add("is-dragging");
     event.dataTransfer.effectAllowed = "move";
@@ -109,7 +143,7 @@ function initBoard(root = document, opts = {}) {
   });
 
   root.addEventListener("dragend", (event) => {
-    event.target.closest("[data-id]")?.classList.remove("is-dragging");
+    event.target.closest("[data-id], [data-compromisso]")?.classList.remove("is-dragging");
     document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
     dragId = null;
     setTimeout(() => { arrastou = false; }, 0);
@@ -135,8 +169,13 @@ function initBoard(root = document, opts = {}) {
     if (!id) return;
 
     if (zone.dataset.dropDate) {
-      store.mover(id, { date: zone.dataset.dropDate });
-      ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+      if (arrastandoCompromisso) {
+        store.atualizarCompromisso(id, { date: zone.dataset.dropDate });
+        ui.toast(`Compromisso movido para ${formatFull(zone.dataset.dropDate)}.`);
+      } else {
+        store.mover(id, { date: zone.dataset.dropDate });
+        ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+      }
     }
     if (zone.dataset.dropStatus) {
       store.mover(id, { status: zone.dataset.dropStatus });
@@ -147,6 +186,18 @@ function initBoard(root = document, opts = {}) {
   // ---- Cliques -----------------------------------------------------------
 
   root.addEventListener("click", (event) => {
+    const marcar = event.target.closest("[data-novo-compromisso]");
+    if (marcar) {
+      ui.openCompromisso(null, marcar.dataset.novoCompromisso);
+      return;
+    }
+
+    const compromisso = event.target.closest("[data-compromisso]");
+    if (compromisso && !arrastou) {
+      ui.openCompromisso(compromisso.dataset.compromisso);
+      return;
+    }
+
     const novo = event.target.closest("[data-new-on]");
     if (novo) {
       goCentral(novo.dataset.newOn);
@@ -164,6 +215,12 @@ function initBoard(root = document, opts = {}) {
       cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
       renderCalendar();
     });
+  });
+
+  root.querySelector("[data-novo-compromisso-barra]")?.addEventListener("click", () => {
+    // Sem dia escolhido, cai em hoje — é o que o corretor quer marcar na maioria
+    // das vezes, e a data continua editável no formulário.
+    ui.openCompromisso(null, toIso(HOJE));
   });
 
   root.querySelector("[data-today]").addEventListener("click", () => {

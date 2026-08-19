@@ -1510,6 +1510,84 @@ body.assist-aberto .side-assistente {
   font-weight: 700;
 }
 
+/* ---------- Compromissos no calendário ----------
+   Barra colorida à esquerda e ícone do tipo: o compromisso se distingue do
+   card de conteúdo antes da leitura, só pela silhueta. */
+
+.cal-day-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cal-daynum { margin-bottom: 0; }
+
+/* Só aparece ao passar o mouse no dia, para o mês não virar um mural de "+". */
+.cal-day-mais {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.cal-day-mais svg { width: 13px; height: 13px; }
+.cal-day:hover .cal-day-mais,
+.cal-day-mais:focus-visible { opacity: 1; }
+.cal-day-mais:hover { border-color: var(--gold-deep); color: var(--gold-soft); }
+
+.cal-compromisso {
+  margin-bottom: 8px;
+  padding: 7px 9px 8px;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--cor-tipo, var(--gold));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cor-tipo, var(--gold)) 10%, var(--surface-2));
+  cursor: grab;
+}
+
+.cal-compromisso:active { cursor: grabbing; }
+.cal-compromisso.is-dragging { opacity: 0.45; }
+
+.cal-compromisso-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 3px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cal-compromisso-titulo svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--cor-tipo, var(--gold));
+}
+
+.cal-compromisso-meta {
+  margin: 0;
+  padding-left: 18px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cal-card {
   margin-bottom: 8px;
   padding: 8px 9px 9px;
@@ -3244,6 +3322,10 @@ body.fora-do-app .assist-painel { display: none; }
       <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
 
       <span class="spacer"></span>
+      <button class="btn btn-outline" type="button" data-novo-compromisso-barra>
+        <svg><use href="#i-calendar-clock" /></svg>
+        Novo compromisso
+      </button>
       <span class="drag-hint"><i class="status-dot"></i> Arraste os cards para reagendar</span>
       <button class="btn btn-outline" type="button" data-today>Hoje</button>
     </div>
@@ -4098,6 +4180,24 @@ const STATUSES = {
 // Colunas que aparecem no Kanban, nesta ordem.
 const KANBAN = ["aprovado", "agendado", "publicado"];
 
+
+/* ---------------- Compromissos ----------------
+   A agenda do corretor não é só conteúdo: visita, reunião e assinatura moram
+   no mesmo calendário. Compromisso é coisa separada de conteúdo de propósito —
+   não tem roteiro, funil nem Kanban, e misturar os dois sujaria a Biblioteca
+   e as métricas. */
+
+const TIPOS_COMPROMISSO = {
+  visita:     { label: "Visita",     icon: "i-eye",            color: "#5aa9e6" },
+  reuniao:    { label: "Reunião",    icon: "i-user",           color: "#c9a227" },
+  proposta:   { label: "Proposta",   icon: "i-check-circle",   color: "#6fbf73" },
+  assinatura: { label: "Assinatura", icon: "i-book",           color: "#b98cd6" },
+  captacao:   { label: "Captação",   icon: "i-building",       color: "#e0955c" },
+  pessoal:    { label: "Pessoal",    icon: "i-calendar-clock", color: "#9aa1a8" }
+};
+
+const COMPROMISSO_PADRAO = "visita";
+
 const PLANOS = {
   gratuito: {
     id: "gratuito", label: "Gratuito", cota: 5, preco: "R$ 0", icone: "i-sparkle",
@@ -4241,6 +4341,7 @@ const SEED_ATIVIDADES = [
 function estadoSemente({ plano = "gratuito", comAcervo = false } = {}) {
   return {
     itens: comAcervo ? SEED_ITENS.map((i) => ({ ...i, tags: [...i.tags] })) : [],
+    compromissos: [],
     atividades: comAcervo
       ? SEED_ATIVIDADES.map((a) => ({ icon: a.icon, text: a.text, at: HOJE.getTime() - a.dias * 86400000 }))
       : [],
@@ -5006,6 +5107,7 @@ const store = (() => {
     get state() { return state; },
     get itens() { return state?.itens ?? []; },
     get atividades() { return state?.atividades ?? []; },
+    get compromissos() { return state?.compromissos ?? []; },
     get config() { return state?.config ?? { ...CONFIG_PADRAO }; },
     get perfil() { return db.contaAtual()?.perfil ?? { ...PERFIL_PADRAO }; },
     get plano() { return PLANOS[state?.plano] ?? PLANOS.gratuito; },
@@ -5108,6 +5210,52 @@ const store = (() => {
       if (!item) return;
       state.itens = state.itens.filter((i) => i.id !== id);
       log("i-trash", `"${item.title}" foi excluído`);
+      persist();
+    },
+
+    /* ---- Compromissos ----
+       Agenda pessoal do corretor: visita, reunião, assinatura. Vive fora de
+       `itens` porque não é conteúdo — não entra na Biblioteca, no Kanban nem
+       nas métricas de publicação. */
+
+    acharCompromisso(id) { return state.compromissos.find((c) => c.id === id); },
+
+
+    criarCompromisso(dados) {
+      const compromisso = {
+        id: nextId(),
+        tipo: COMPROMISSO_PADRAO,
+        time: state.config.horarioPadrao,
+        local: "",
+        notas: "",
+        ...dados
+      };
+      state.compromissos.push(compromisso);
+      log("i-calendar-clock", `Compromisso "${compromisso.title}" foi marcado`);
+      persist();
+      return compromisso;
+    },
+
+    atualizarCompromisso(id, patch) {
+      const compromisso = this.acharCompromisso(id);
+      if (!compromisso) return null;
+
+      const antes = compromisso.date;
+      Object.assign(compromisso, patch);
+
+      log("i-calendar-clock", patch.date && patch.date !== antes
+        ? `Compromisso "${compromisso.title}" mudou de data`
+        : `Compromisso "${compromisso.title}" foi editado`);
+
+      persist();
+      return compromisso;
+    },
+
+    removerCompromisso(id) {
+      const compromisso = this.acharCompromisso(id);
+      if (!compromisso) return;
+      state.compromissos = state.compromissos.filter((c) => c.id !== id);
+      log("i-trash", `Compromisso "${compromisso.title}" foi cancelado`);
       persist();
     },
 
@@ -5485,6 +5633,122 @@ const ui = (() => {
     if (!event.target.closest(".pop-menu")) fecharMenus();
   });
 
+  // ---- Compromisso -------------------------------------------------------
+  // Agenda pessoal do corretor. `id` vazio cria; com `id` edita.
+
+  function openCompromisso(id, dataPadrao) {
+    const existente = id ? store.acharCompromisso(id) : null;
+    const c = existente ?? {
+      title: "",
+      tipo: COMPROMISSO_PADRAO,
+      date: dataPadrao || toIso(HOJE),
+      time: store.config.horarioPadrao,
+      local: "",
+      notas: ""
+    };
+
+    const atributo = (v) => String(v ?? "").replace(/"/g, "&quot;");
+    const tipos = Object.entries(TIPOS_COMPROMISSO)
+      .map(([chave, t]) => `<option value="${chave}"${chave === c.tipo ? " selected" : ""}>${t.label}</option>`)
+      .join("");
+
+    openModal(`
+      <header class="modal-head">
+        <div>
+          <span class="chip"><svg><use href="#i-calendar-clock" /></svg>Compromisso</span>
+          <h2>${existente ? "Editar compromisso" : "Novo compromisso"}</h2>
+        </div>
+        <button class="theme-btn" type="button" data-close aria-label="Fechar">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="k-title">O que é</label>
+          <input id="k-title" name="title" value="${atributo(c.title)}"
+                 placeholder="Ex: Visita com o casal Andrade no Cambuí" />
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="k-tipo">Tipo</label>
+            <select id="k-tipo" name="tipo">${tipos}</select>
+          </div>
+          <div>
+            <label for="k-local">Local <small>(opcional)</small></label>
+            <input id="k-local" name="local" value="${atributo(c.local)}" placeholder="Endereço ou link da reunião" />
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="k-date">Data</label>
+            <input id="k-date" name="date" type="date" value="${c.date}" />
+          </div>
+          <div>
+            <label for="k-time">Horário</label>
+            <input id="k-time" name="time" type="time" value="${c.time}" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="k-notas">Observações <small>(opcional)</small></label>
+          <textarea id="k-notas" name="notas" rows="3"
+                    placeholder="O que levar, o que combinar, telefone do cliente…">${String(c.notas ?? "")}</textarea>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        ${existente ? `<button class="btn btn-quiet" type="button" data-excluir>Excluir</button>` : ""}
+        <span class="spacer"></span>
+        <button class="btn btn-outline" type="button" data-close>Cancelar</button>
+        <button class="btn btn-primary" type="button" data-salvar>
+          <svg><use href="#i-check-circle" /></svg>${existente ? "Salvar" : "Marcar compromisso"}
+        </button>
+      </footer>`, (modal) => {
+
+      const campo = (nome) => modal.querySelector(`[name="${nome}"]`);
+      campo("title").focus();
+
+      modal.querySelector("[data-salvar]").addEventListener("click", () => {
+        const title = campo("title").value.trim();
+        if (!title) {
+          toast("Escreva o que é o compromisso.", "erro");
+          campo("title").focus();
+          return;
+        }
+
+        const dados = {
+          title,
+          tipo: campo("tipo").value,
+          date: campo("date").value,
+          time: campo("time").value,
+          local: campo("local").value.trim(),
+          notas: campo("notas").value.trim()
+        };
+
+        if (existente) {
+          store.atualizarCompromisso(existente.id, dados);
+          toast("Compromisso atualizado.");
+        } else {
+          store.criarCompromisso(dados);
+          toast(`Marcado para ${formatFull(dados.date)}, às ${dados.time}.`);
+        }
+        closeModal();
+      });
+
+      modal.querySelector("[data-excluir]")?.addEventListener("click", async () => {
+        const ok = await confirmar(`Cancelar "${existente.title}"? O compromisso sai da sua agenda.`,
+          { titulo: "Cancelar compromisso", acao: "Cancelar compromisso", perigo: true });
+        if (!ok) return;
+        store.removerCompromisso(existente.id);
+        toast("Compromisso cancelado.");
+        closeModal();
+      });
+    });
+  }
+
   // ---- Exportação --------------------------------------------------------
 
   function textoDoItem(item) {
@@ -5501,7 +5765,7 @@ const ui = (() => {
       .catch(() => toast("Não foi possível copiar.", "erro"));
   }
 
-  return { toast, openModal, closeModal, confirmar, openItem, itemCard, initials,
+  return { toast, openModal, closeModal, confirmar, openItem, openCompromisso, itemCard, initials,
     exportarTexto, textoDoItem, fecharMenus };
 })();
 
@@ -7146,10 +7410,18 @@ function initBoard(root = document, opts = {}) {
   let cursor = new Date(HOJE.getFullYear(), HOJE.getMonth(), 1);
   let dragId = null;
   let arrastou = false;
+  let arrastandoCompromisso = false;
 
   const elCalendar = root.querySelector("[data-calendar]");
   const elKanban = root.querySelector("[data-kanban]");
   const elMonthLabel = root.querySelector("[data-month-label]");
+
+  // Título e local do compromisso são digitados à mão: escapar antes de virar
+  // HTML, senão um "<" do corretor quebra a célula do dia.
+  const esc = (v) => String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 
   function renderCalendar() {
     elMonthLabel.textContent = `${MESES[cursor.getMonth()]} de ${cursor.getFullYear()}`;
@@ -7178,6 +7450,7 @@ function initBoard(root = document, opts = {}) {
     }
 
     const itens = store.board();
+    const compromissos = store.compromissos;
 
     elCalendar.innerHTML = weeks.map((week) => `
       <div class="calendar-week">${week.map((date) => {
@@ -7199,8 +7472,32 @@ function initBoard(root = document, opts = {}) {
               <div class="cal-card-tags">${item.tags.slice(0, 2).map((t) => `<span class="tag">${t}</span>`).join("")}</div>
             </article>`).join("");
 
+        // Compromisso vem antes do conteúdo no dia: ele tem hora marcada com
+        // outra pessoa, o post não.
+        const agenda = compromissos
+          .filter((c) => c.date === key)
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .map((c) => {
+            const t = TIPOS_COMPROMISSO[c.tipo] || TIPOS_COMPROMISSO[COMPROMISSO_PADRAO];
+            return `
+            <article class="cal-compromisso" draggable="true" data-compromisso="${c.id}"
+                     style="--cor-tipo:${t.color}" title="${t.label} · ${c.time}">
+              <p class="cal-compromisso-titulo">
+                <svg><use href="#${t.icon}" /></svg>${esc(c.title)}
+              </p>
+              <p class="cal-compromisso-meta">${c.time}${c.local ? ` · ${esc(c.local)}` : ""}</p>
+            </article>`;
+          }).join("");
+
         return `<div class="${classes.join(" ")}" data-drop-date="${key}">
-          <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
+          <div class="cal-day-topo">
+            <button class="cal-daynum" type="button" data-new-on="${key}" title="Criar conteúdo neste dia">${date.getDate()}</button>
+            <button class="cal-day-mais" type="button" data-novo-compromisso="${key}"
+                    title="Marcar compromisso neste dia" aria-label="Marcar compromisso neste dia">
+              <svg><use href="#i-plus" /></svg>
+            </button>
+          </div>
+          ${agenda}
           ${cards}
         </div>`;
       }).join("")}</div>`).join("");
@@ -7239,9 +7536,10 @@ function initBoard(root = document, opts = {}) {
   // ---- Arrastar-e-soltar -------------------------------------------------
 
   root.addEventListener("dragstart", (event) => {
-    const card = event.target.closest("[data-id]");
+    const card = event.target.closest("[data-id], [data-compromisso]");
     if (!card) return;
-    dragId = card.dataset.id;
+    dragId = card.dataset.id || card.dataset.compromisso;
+    arrastandoCompromisso = Boolean(card.dataset.compromisso);
     arrastou = true;
     card.classList.add("is-dragging");
     event.dataTransfer.effectAllowed = "move";
@@ -7249,7 +7547,7 @@ function initBoard(root = document, opts = {}) {
   });
 
   root.addEventListener("dragend", (event) => {
-    event.target.closest("[data-id]")?.classList.remove("is-dragging");
+    event.target.closest("[data-id], [data-compromisso]")?.classList.remove("is-dragging");
     document.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
     dragId = null;
     setTimeout(() => { arrastou = false; }, 0);
@@ -7275,8 +7573,13 @@ function initBoard(root = document, opts = {}) {
     if (!id) return;
 
     if (zone.dataset.dropDate) {
-      store.mover(id, { date: zone.dataset.dropDate });
-      ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+      if (arrastandoCompromisso) {
+        store.atualizarCompromisso(id, { date: zone.dataset.dropDate });
+        ui.toast(`Compromisso movido para ${formatFull(zone.dataset.dropDate)}.`);
+      } else {
+        store.mover(id, { date: zone.dataset.dropDate });
+        ui.toast(`Reagendado para ${formatFull(zone.dataset.dropDate)}.`);
+      }
     }
     if (zone.dataset.dropStatus) {
       store.mover(id, { status: zone.dataset.dropStatus });
@@ -7287,6 +7590,18 @@ function initBoard(root = document, opts = {}) {
   // ---- Cliques -----------------------------------------------------------
 
   root.addEventListener("click", (event) => {
+    const marcar = event.target.closest("[data-novo-compromisso]");
+    if (marcar) {
+      ui.openCompromisso(null, marcar.dataset.novoCompromisso);
+      return;
+    }
+
+    const compromisso = event.target.closest("[data-compromisso]");
+    if (compromisso && !arrastou) {
+      ui.openCompromisso(compromisso.dataset.compromisso);
+      return;
+    }
+
     const novo = event.target.closest("[data-new-on]");
     if (novo) {
       goCentral(novo.dataset.newOn);
@@ -7304,6 +7619,12 @@ function initBoard(root = document, opts = {}) {
       cursor.setMonth(cursor.getMonth() + Number(btn.dataset.month));
       renderCalendar();
     });
+  });
+
+  root.querySelector("[data-novo-compromisso-barra]")?.addEventListener("click", () => {
+    // Sem dia escolhido, cai em hoje — é o que o corretor quer marcar na maioria
+    // das vezes, e a data continua editável no formulário.
+    ui.openCompromisso(null, toIso(HOJE));
   });
 
   root.querySelector("[data-today]").addEventListener("click", () => {
