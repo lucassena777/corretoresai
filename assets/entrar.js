@@ -15,10 +15,21 @@ function initEntrar(root = document) {
     root.querySelectorAll("[data-erro]").forEach((p) => { p.hidden = true; });
   }
 
-  function erro(form, mensagem) {
+  // A validação é nossa, não do navegador: dentro de iframe (a prévia, e o
+  // app aberto pelo iPad) o balão nativo do `required` não aparece, e o
+  // formulário só não envia — o clique parece morto. Aqui a mensagem sempre
+  // aparece na tela, e o foco vai para o campo que falta.
+  function erro(form, mensagem, campo) {
     const alvo = form.querySelector("[data-erro]");
     alvo.textContent = mensagem;
     alvo.hidden = false;
+    if (campo) campo.focus();
+    alvo.scrollIntoView?.({ block: "nearest" });
+  }
+
+  // Primeiro campo vazio da lista, ou nada se estiver tudo preenchido.
+  function faltando(form, nomes) {
+    return nomes.map((n) => form[n]).find((c) => !c.value.trim());
   }
 
   abas.addEventListener("click", (event) => {
@@ -48,6 +59,10 @@ function initEntrar(root = document) {
 
   formEntrar.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    const vazio = faltando(formEntrar, ["email", "senha"]);
+    if (vazio) return erro(formEntrar, "Preencha e-mail e senha para entrar.", vazio);
+
     try {
       await db.entrar(formEntrar.email.value, formEntrar.senha.value);
       entrarNoApp();
@@ -59,6 +74,10 @@ function initEntrar(root = document) {
   formCadastro.addEventListener("submit", async (event) => {
     event.preventDefault();
     const f = formCadastro;
+
+    const vazio = faltando(f, ["nome", "email", "cidade", "senha"]);
+    if (vazio) return erro(f, "Preencha nome, e-mail, cidade e senha para criar a conta.", vazio);
+
     try {
       await db.criarConta({
         nome: f.nome.value,
