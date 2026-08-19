@@ -96,8 +96,7 @@ function initEntrar(root = document) {
       erro(formEntrar, e.message);
     }
   });
-
-  mostrar(routeParams().get("modo") === "cadastro" ? "cadastro" : "entrar");
+mostrar(routeParams().get("modo") === "cadastro" ? "cadastro" : "entrar");
 }
 
-if (!SPA) initEntrar();
+initEntrar();
