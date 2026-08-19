@@ -42,8 +42,9 @@ function initEntrar(root = document) {
   });
 
   function entrarNoApp() {
-    store.recarregar();
-    location.href = auth.urlApp("dashboard");
+  store.recarregar();
+  location.href = "dashboard.html";
+}
   }
 
   formEntrar.addEventListener("submit", async (event) => {
