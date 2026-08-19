@@ -210,6 +210,9 @@ body.assist-aberto .side-assistente {
 .view-head .head-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; }
 .view-head .head-actions .btn { margin-left: 0; }
 
+/* Empilhado: o segundo botão desce sob o primeiro, ambos na mesma largura. */
+.view-head .head-actions.is-empilhado { flex-direction: column; align-items: stretch; }
+
 /* ---------- Filtros da biblioteca ---------- */
 
 .filtros {

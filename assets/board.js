@@ -217,7 +217,7 @@ function initBoard(root = document, opts = {}) {
     });
   });
 
-  root.querySelector("[data-novo-compromisso-barra]")?.addEventListener("click", () => {
+  root.querySelector("[data-marcar-compromisso]")?.addEventListener("click", () => {
     // Sem dia escolhido, cai em hoje — é o que o corretor quer marcar na maioria
     // das vezes, e a data continua editável no formulário.
     ui.openCompromisso(null, toIso(HOJE));

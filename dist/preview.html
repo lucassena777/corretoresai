@@ -1117,6 +1117,9 @@ body.assist-aberto .side-assistente {
 .view-head .head-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; }
 .view-head .head-actions .btn { margin-left: 0; }
 
+/* Empilhado: o segundo botão desce sob o primeiro, ambos na mesma largura. */
+.view-head .head-actions.is-empilhado { flex-direction: column; align-items: stretch; }
+
 /* ---------- Filtros da biblioteca ---------- */
 
 .filtros {
@@ -3310,10 +3313,16 @@ body.fora-do-app .assist-painel { display: none; }
       <h1>Calendário Editorial</h1>
       <p>Planeje o mês inteiro, arraste para reagendar e acompanhe cada card até a publicação. Tudo salva sozinho.</p>
     </div>
-    <a class="btn btn-primary" href="central.html">
-      <svg><use href="#i-plus" /></svg>
-      Criar novo conteúdo
-    </a>
+    <div class="head-actions is-empilhado">
+      <a class="btn btn-primary" href="central.html">
+        <svg><use href="#i-plus" /></svg>
+        Criar novo conteúdo
+      </a>
+      <button class="btn btn-outline" type="button" data-marcar-compromisso>
+        <svg><use href="#i-calendar-clock" /></svg>
+        Novo compromisso
+      </button>
+    </div>
   </div>
 
   <div class="segmented" data-view-switch>
@@ -3329,10 +3338,6 @@ body.fora-do-app .assist-painel { display: none; }
       <button class="nav-btn" type="button" data-month="1" aria-label="Próximo mês"><svg><use href="#i-chev-right" /></svg></button>
 
       <span class="spacer"></span>
-      <button class="btn btn-outline" type="button" data-novo-compromisso-barra>
-        <svg><use href="#i-calendar-clock" /></svg>
-        Novo compromisso
-      </button>
       <span class="drag-hint"><i class="status-dot"></i> Arraste os cards para reagendar</span>
       <button class="btn btn-outline" type="button" data-today>Hoje</button>
     </div>
@@ -7628,7 +7633,7 @@ function initBoard(root = document, opts = {}) {
     });
   });
 
-  root.querySelector("[data-novo-compromisso-barra]")?.addEventListener("click", () => {
+  root.querySelector("[data-marcar-compromisso]")?.addEventListener("click", () => {
     // Sem dia escolhido, cai em hoje — é o que o corretor quer marcar na maioria
     // das vezes, e a data continua editável no formulário.
     ui.openCompromisso(null, toIso(HOJE));
