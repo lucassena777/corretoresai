@@ -19,7 +19,7 @@ const roteiro = (() => {
   const TITULOS = {
     analise: {
       Topo: [
-        "{Lugar}: o que sustenta o metro quadrado da região",
+        "{Lugar}: o que sustenta o metro quadrado por aqui",
         "O que faz um endereço em {Lugar} valer o que vale",
         "{Lugar} sob análise: infraestrutura, metragem e liquidez"
       ],
@@ -87,7 +87,7 @@ const roteiro = (() => {
   const GANCHOS = {
     analise: [
       "{Lugar} exige um olhar atento para metragem e localização estratégica — e é aí que a maioria erra a conta.",
-      "Antes de discutir preço em {Lugar}, é preciso entender o que sustenta o metro quadrado da região.",
+      "Antes de discutir preço em {Lugar}, é preciso entender o que sustenta o metro quadrado ali.",
       "Dois imóveis com a mesma metragem em {Lugar} podem ter valores muito diferentes. E o motivo raramente está no anúncio."
     ],
     estilo: [
@@ -237,7 +237,7 @@ const roteiro = (() => {
 
   function preencher(modelo, c) {
     const texto = modelo
-      .replace(/\{Lugar\}/g, c.local.curto || "sua cidade")
+      .replace(/\{Lugar\}/g, c.local.curto || "sua região")
       .replace(/\{Ficha\}/g, c.fichaFrase || "a metragem certa")
       .replace(/\{Tipo\}/g, c.tipo);
 
@@ -375,7 +375,7 @@ const roteiro = (() => {
           },
           briefing: {
             area: dados.area,
-            local: c.local.completo,
+            local: c.local.completo || "não informado",
             funil: dados.funnel || "Topo",
             formato: dados.format || "Reels",
             ficha: c.fichaFrase,

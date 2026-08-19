@@ -40,17 +40,33 @@ function initCentral(root = document) {
     });
   });
 
+  // A cidade é opcional. Campo vazio é escolha do corretor, não descuido: o
+  // perfil só completa o que ele digitou (um bairro solto vira "Cidade -
+  // Bairro"), nunca preenche o que ele deixou em branco.
+  const cidadeDigitada = () => form.cidade.value.trim();
+  const localDoForm = () =>
+    texto.local(form.cidade.value, cidadeDigitada() ? store.perfil.cidade : "");
+
+  // Sem cidade, o perfil também não pode entrar por baixo na hora de gerar.
+  const perfilParaGerar = () =>
+    cidadeDigitada() ? store.perfil : { ...store.perfil, cidade: "" };
+
   // Mostra ao vivo como a cidade digitada vai sair no texto.
   const eco = root.querySelector("[data-eco-cidade]");
   function atualizarEco() {
     if (!eco) return;
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
-    eco.textContent = l.completo ? `Vai sair como: ${l.completo}` : "";
+    const l = localDoForm();
+    eco.textContent = l.completo
+      ? `Vai sair como: ${l.completo}`
+      : "Sem cidade: o roteiro sai sem citar lugar nenhum.";
   }
   form.cidade.addEventListener("input", atualizarEco);
   form.cidade.addEventListener("blur", () => {
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
-    if (l.completo) form.cidade.value = l.completo;
+    // Só normaliza o que foi digitado; campo vazio continua vazio.
+    if (cidadeDigitada()) {
+      const l = localDoForm();
+      if (l.completo) form.cidade.value = l.completo;
+    }
     atualizarEco();
   });
   atualizarEco();
@@ -146,9 +162,9 @@ function initCentral(root = document) {
     mostrarCarregando();
 
     try {
-      ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
+      ideias = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
     } catch (e) {
-      ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      ideias = roteiro.gerarIdeias(dados, perfilParaGerar(), Date.now());
       ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
       gerando = false;
@@ -162,7 +178,7 @@ function initCentral(root = document) {
   function render() {
     if (!ideias.length) { elIdeas.innerHTML = ""; return; }
 
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    const l = localDoForm();
     const f = texto.fatos(form.briefing.value);
     const ficha = texto.ficha(f);
 

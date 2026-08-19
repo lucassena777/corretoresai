@@ -3184,7 +3184,7 @@ body.fora-do-app .assist-painel { display: none; }
 
     <div class="field field-row">
       <div>
-        <label for="cidade">Cidade ou região</label>
+        <label for="cidade">Cidade ou região <small>(opcional)</small></label>
         <input id="cidade" name="cidade" placeholder="Ex: São Paulo, Higienópolis" />
         <p class="hint" data-eco-cidade></p>
       </div>
@@ -4324,7 +4324,7 @@ const roteiro = (() => {
   const TITULOS = {
     analise: {
       Topo: [
-        "{Lugar}: o que sustenta o metro quadrado da região",
+        "{Lugar}: o que sustenta o metro quadrado por aqui",
         "O que faz um endereço em {Lugar} valer o que vale",
         "{Lugar} sob análise: infraestrutura, metragem e liquidez"
       ],
@@ -4392,7 +4392,7 @@ const roteiro = (() => {
   const GANCHOS = {
     analise: [
       "{Lugar} exige um olhar atento para metragem e localização estratégica — e é aí que a maioria erra a conta.",
-      "Antes de discutir preço em {Lugar}, é preciso entender o que sustenta o metro quadrado da região.",
+      "Antes de discutir preço em {Lugar}, é preciso entender o que sustenta o metro quadrado ali.",
       "Dois imóveis com a mesma metragem em {Lugar} podem ter valores muito diferentes. E o motivo raramente está no anúncio."
     ],
     estilo: [
@@ -4542,7 +4542,7 @@ const roteiro = (() => {
 
   function preencher(modelo, c) {
     const texto = modelo
-      .replace(/\{Lugar\}/g, c.local.curto || "sua cidade")
+      .replace(/\{Lugar\}/g, c.local.curto || "sua região")
       .replace(/\{Ficha\}/g, c.fichaFrase || "a metragem certa")
       .replace(/\{Tipo\}/g, c.tipo);
 
@@ -4680,7 +4680,7 @@ const roteiro = (() => {
           },
           briefing: {
             area: dados.area,
-            local: c.local.completo,
+            local: c.local.completo || "não informado",
             funil: dados.funnel || "Topo",
             formato: dados.format || "Reels",
             ficha: c.fichaFrase,
@@ -6902,17 +6902,33 @@ function initCentral(root = document) {
     });
   });
 
+  // A cidade é opcional. Campo vazio é escolha do corretor, não descuido: o
+  // perfil só completa o que ele digitou (um bairro solto vira "Cidade -
+  // Bairro"), nunca preenche o que ele deixou em branco.
+  const cidadeDigitada = () => form.cidade.value.trim();
+  const localDoForm = () =>
+    texto.local(form.cidade.value, cidadeDigitada() ? store.perfil.cidade : "");
+
+  // Sem cidade, o perfil também não pode entrar por baixo na hora de gerar.
+  const perfilParaGerar = () =>
+    cidadeDigitada() ? store.perfil : { ...store.perfil, cidade: "" };
+
   // Mostra ao vivo como a cidade digitada vai sair no texto.
   const eco = root.querySelector("[data-eco-cidade]");
   function atualizarEco() {
     if (!eco) return;
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
-    eco.textContent = l.completo ? `Vai sair como: ${l.completo}` : "";
+    const l = localDoForm();
+    eco.textContent = l.completo
+      ? `Vai sair como: ${l.completo}`
+      : "Sem cidade: o roteiro sai sem citar lugar nenhum.";
   }
   form.cidade.addEventListener("input", atualizarEco);
   form.cidade.addEventListener("blur", () => {
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
-    if (l.completo) form.cidade.value = l.completo;
+    // Só normaliza o que foi digitado; campo vazio continua vazio.
+    if (cidadeDigitada()) {
+      const l = localDoForm();
+      if (l.completo) form.cidade.value = l.completo;
+    }
     atualizarEco();
   });
   atualizarEco();
@@ -7008,9 +7024,9 @@ function initCentral(root = document) {
     mostrarCarregando();
 
     try {
-      ideias = await roteiro.gerarIdeiasIA(dados, store.perfil);
+      ideias = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
     } catch (e) {
-      ideias = roteiro.gerarIdeias(dados, store.perfil, Date.now());
+      ideias = roteiro.gerarIdeias(dados, perfilParaGerar(), Date.now());
       ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
       gerando = false;
@@ -7024,7 +7040,7 @@ function initCentral(root = document) {
   function render() {
     if (!ideias.length) { elIdeas.innerHTML = ""; return; }
 
-    const l = texto.local(form.cidade.value, store.perfil.cidade);
+    const l = localDoForm();
     const f = texto.fatos(form.briefing.value);
     const ficha = texto.ficha(f);
 
