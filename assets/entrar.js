@@ -1,4 +1,5 @@
 const auth = supabaseClient.auth;
+auth.urlApp = function(page) { return page + ".html"; };
 
 function initEntrar(root = document) {
   const abas = root.querySelector("[data-modo]");
