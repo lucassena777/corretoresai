@@ -1837,3 +1837,14 @@ body.fora-do-app .assist-painel { display: none; }
 
 /* Recado bom usa a mesma faixa do erro, em dourado. */
 .auth-erro.is-bom { border-color: rgba(201, 162, 39, 0.4); background: rgba(201, 162, 39, 0.1); color: var(--gold-soft); }
+
+.auth-aceite {
+  margin: 14px 0 0;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.auth-aceite a { color: var(--text-muted); text-decoration: underline; }
+.auth-aceite a:hover { color: var(--gold-soft); }

@@ -898,6 +898,55 @@ button { font: inherit; }
   .callout { flex-direction: column; align-items: flex-start; }
 }
 
+/* ---------- Paginas legais (termos, privacidade) ---------- */
+
+.legal {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 48px 24px 80px;
+  color: var(--text-muted);
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+
+.legal-voltar { display: inline-block; margin-bottom: 32px; color: var(--gold-soft); font-size: 14px; }
+.legal-voltar:hover { text-decoration: underline; }
+
+.legal h1 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.legal-data { margin: 0 0 36px; color: var(--text-dim); font-size: 13.5px; }
+
+.legal h2 {
+  margin: 40px 0 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.legal h3 { margin: 26px 0 8px; color: var(--gold-soft); font-size: 15px; font-weight: 600; }
+.legal p { margin: 0 0 16px; }
+.legal ul { margin: 0 0 16px; padding-left: 22px; }
+.legal li { margin-bottom: 8px; }
+.legal strong { color: var(--text); font-weight: 600; }
+.legal a { color: var(--gold-soft); text-decoration: underline; }
+
+.legal-rodape {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 14px;
+}
+
 /* CorretoresAI — shell do aplicativo (dashboard, central, calendário, kanban) */
 
 .app {
@@ -2738,6 +2787,17 @@ body.fora-do-app .assist-painel { display: none; }
 /* Recado bom usa a mesma faixa do erro, em dourado. */
 .auth-erro.is-bom { border-color: rgba(201, 162, 39, 0.4); background: rgba(201, 162, 39, 0.1); color: var(--gold-soft); }
 
+.auth-aceite {
+  margin: 14px 0 0;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.auth-aceite a { color: var(--text-muted); text-decoration: underline; }
+.auth-aceite a:hover { color: var(--gold-soft); }
+
 </style>
 <script>
   const PREVIEW_SPA = true;
@@ -3165,6 +3225,8 @@ body.fora-do-app .assist-painel { display: none; }
       <a href="#recursos">Recursos</a>
       <a href="#planos">Planos</a>
       <a href="app/entrar.html">Entrar</a>
+      <a href="termos.html">Termos de Uso</a>
+      <a href="privacidade.html">Privacidade</a>
     </nav>
   </div>
 </footer>
@@ -3806,6 +3868,12 @@ body.fora-do-app .assist-painel { display: none; }
       <p class="auth-erro" data-erro hidden></p>
 
       <button class="btn btn-primary btn-block btn-lg" type="submit">Criar minha conta</button>
+
+      <p class="auth-aceite">
+        Ao criar a conta você concorda com os
+        <a href="../termos.html" target="_blank" rel="noopener">Termos de Uso</a> e com a
+        <a href="../privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
+      </p>
 
       <p class="auth-alt">
         Já tem conta?
@@ -4964,12 +5032,13 @@ const db = (() => {
     same_password: "A nova senha precisa ser diferente da atual."
   };
 
-  async function pedir(caminho, { metodo = "POST", corpo, token } = {}) {
+  async function pedir(caminho, { metodo = "POST", corpo, token, prefer, keepalive } = {}) {
     let resposta;
     try {
       resposta = await fetch(endereco(caminho), {
         method: metodo,
-        headers: cabecalhos(token),
+        headers: { ...cabecalhos(token), ...(prefer ? { prefer } : {}) },
+        keepalive,
         body: corpo === undefined ? undefined : JSON.stringify(corpo)
       });
     } catch (e) {
@@ -5058,7 +5127,52 @@ const db = (() => {
       plano
     };
     gravarJson(K_SESSAO, sessao);
+
+    // Puxa o acervo antes de devolver o controle: é isso que faz o corretor
+    // encontrar os conteúdos dele ao entrar de outro aparelho. Se a rede
+    // falhar aqui, fica o que já houver neste navegador — melhor abrir com o
+    // acervo local do que não abrir.
+    try {
+      const linhas = await pedir(`/rest/v1/estado_conta?user_id=eq.${usuario.id}&select=estado`, {
+        metodo: "GET", token
+      });
+      const doBanco = linhas?.[0]?.estado;
+      if (doBanco && Object.keys(doBanco).length) gravarJson(estadoDe(usuario.id), doBanco);
+    } catch (e) {
+      console.warn("[CorretoresAI] acervo não baixou:", e.message);
+    }
+
     return sessao;
+  }
+
+  // Gravação no banco com respiro: arrastar um card no calendário dispara
+  // várias mudanças seguidas, e cada uma não precisa virar uma requisição.
+  let timerAcervo = null;
+  let acervoPendente = null;
+
+  function agendarEnvioDoAcervo(estado) {
+    acervoPendente = estado;
+    clearTimeout(timerAcervo);
+    timerAcervo = setTimeout(enviarAcervo, 1200);
+  }
+
+  async function enviarAcervo() {
+    if (!sessao || !acervoPendente) return;
+    const estado = acervoPendente;
+    acervoPendente = null;
+
+    try {
+      const token = await renovarSePreciso();
+      await pedir("/rest/v1/estado_conta", {
+        metodo: "POST",
+        token,
+        corpo: { user_id: sessao.uid, estado, atualizado_em: new Date().toISOString() },
+        prefer: "resolution=merge-duplicates,return=minimal",
+        keepalive: true
+      });
+    } catch (e) {
+      console.warn("[CorretoresAI] acervo não sincronizado:", e.message);
+    }
   }
 
   // Renova quando o token está perto de vencer. Se a renovação falhar, a
@@ -5090,6 +5204,18 @@ const db = (() => {
     renovarSePreciso().then((token) =>
       pedir(`/rest/v1/profiles?id=eq.${uid}`, { metodo: "PATCH", token, corpo })
     ).catch((e) => console.warn("[CorretoresAI] não sincronizou com o banco:", e.message));
+  }
+
+  // Trocar de aba, minimizar ou fechar: manda o que estiver pendente antes que
+  // a página suma. `visibilitychange` é o gancho confiável para isso — o
+  // `beforeunload` costuma ser cortado no meio no celular.
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && acervoPendente) {
+        clearTimeout(timerAcervo);
+        enviarAcervo();
+      }
+    });
   }
 
   return {
@@ -5125,6 +5251,10 @@ const db = (() => {
     },
 
     sair() {
+      // Sai com o que estava pendente já a caminho do banco.
+      clearTimeout(timerAcervo);
+      if (acervoPendente) enviarAcervo();
+
       const token = sessao?.token;
       sessao = null;
       storage.remove(K_SESSAO);
@@ -5156,10 +5286,19 @@ const db = (() => {
 
     gravarEstado(estado) {
       if (!sessao) return;
+
+      // Grava local primeiro: a tela não espera a rede para responder.
       gravarJson(estadoDe(sessao.uid), estado);
+      agendarEnvioDoAcervo(estado);
 
       // O plano NÃO é gravado daqui: o banco revoga UPDATE nessa coluna para
       // o usuário, e quem a altera é o webhook do pagamento. Ver planoDaConta.
+    },
+
+    // Força o envio pendente. Usado ao sair, para não perder o último clique.
+    async salvarAgora() {
+      clearTimeout(timerAcervo);
+      await enviarAcervo();
     },
 
     // O plano que o banco conhece. Quem manda é a assinatura, não o navegador.
@@ -8428,7 +8567,7 @@ if (!SPA) initConfiguracoes();
 </script>
 
 <script>
-// Roteador por hash: #/ Ã© a landing, o resto monta uma tela dentro do shell.
+// Roteador por hash: #/ abre a landing, o resto monta uma tela dentro do shell.
 (function router() {
   const elLanding = document.querySelector("[data-landing]");
   const elApp = document.querySelector("[data-app]");

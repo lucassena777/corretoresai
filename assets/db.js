@@ -91,12 +91,13 @@ const db = (() => {
     same_password: "A nova senha precisa ser diferente da atual."
   };
 
-  async function pedir(caminho, { metodo = "POST", corpo, token } = {}) {
+  async function pedir(caminho, { metodo = "POST", corpo, token, prefer, keepalive } = {}) {
     let resposta;
     try {
       resposta = await fetch(endereco(caminho), {
         method: metodo,
-        headers: cabecalhos(token),
+        headers: { ...cabecalhos(token), ...(prefer ? { prefer } : {}) },
+        keepalive,
         body: corpo === undefined ? undefined : JSON.stringify(corpo)
       });
     } catch (e) {
@@ -185,7 +186,52 @@ const db = (() => {
       plano
     };
     gravarJson(K_SESSAO, sessao);
+
+    // Puxa o acervo antes de devolver o controle: é isso que faz o corretor
+    // encontrar os conteúdos dele ao entrar de outro aparelho. Se a rede
+    // falhar aqui, fica o que já houver neste navegador — melhor abrir com o
+    // acervo local do que não abrir.
+    try {
+      const linhas = await pedir(`/rest/v1/estado_conta?user_id=eq.${usuario.id}&select=estado`, {
+        metodo: "GET", token
+      });
+      const doBanco = linhas?.[0]?.estado;
+      if (doBanco && Object.keys(doBanco).length) gravarJson(estadoDe(usuario.id), doBanco);
+    } catch (e) {
+      console.warn("[CorretoresAI] acervo não baixou:", e.message);
+    }
+
     return sessao;
+  }
+
+  // Gravação no banco com respiro: arrastar um card no calendário dispara
+  // várias mudanças seguidas, e cada uma não precisa virar uma requisição.
+  let timerAcervo = null;
+  let acervoPendente = null;
+
+  function agendarEnvioDoAcervo(estado) {
+    acervoPendente = estado;
+    clearTimeout(timerAcervo);
+    timerAcervo = setTimeout(enviarAcervo, 1200);
+  }
+
+  async function enviarAcervo() {
+    if (!sessao || !acervoPendente) return;
+    const estado = acervoPendente;
+    acervoPendente = null;
+
+    try {
+      const token = await renovarSePreciso();
+      await pedir("/rest/v1/estado_conta", {
+        metodo: "POST",
+        token,
+        corpo: { user_id: sessao.uid, estado, atualizado_em: new Date().toISOString() },
+        prefer: "resolution=merge-duplicates,return=minimal",
+        keepalive: true
+      });
+    } catch (e) {
+      console.warn("[CorretoresAI] acervo não sincronizado:", e.message);
+    }
   }
 
   // Renova quando o token está perto de vencer. Se a renovação falhar, a
@@ -217,6 +263,18 @@ const db = (() => {
     renovarSePreciso().then((token) =>
       pedir(`/rest/v1/profiles?id=eq.${uid}`, { metodo: "PATCH", token, corpo })
     ).catch((e) => console.warn("[CorretoresAI] não sincronizou com o banco:", e.message));
+  }
+
+  // Trocar de aba, minimizar ou fechar: manda o que estiver pendente antes que
+  // a página suma. `visibilitychange` é o gancho confiável para isso — o
+  // `beforeunload` costuma ser cortado no meio no celular.
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && acervoPendente) {
+        clearTimeout(timerAcervo);
+        enviarAcervo();
+      }
+    });
   }
 
   return {
@@ -252,6 +310,10 @@ const db = (() => {
     },
 
     sair() {
+      // Sai com o que estava pendente já a caminho do banco.
+      clearTimeout(timerAcervo);
+      if (acervoPendente) enviarAcervo();
+
       const token = sessao?.token;
       sessao = null;
       storage.remove(K_SESSAO);
@@ -283,10 +345,19 @@ const db = (() => {
 
     gravarEstado(estado) {
       if (!sessao) return;
+
+      // Grava local primeiro: a tela não espera a rede para responder.
       gravarJson(estadoDe(sessao.uid), estado);
+      agendarEnvioDoAcervo(estado);
 
       // O plano NÃO é gravado daqui: o banco revoga UPDATE nessa coluna para
       // o usuário, e quem a altera é o webhook do pagamento. Ver planoDaConta.
+    },
+
+    // Força o envio pendente. Usado ao sair, para não perder o último clique.
+    async salvarAgora() {
+      clearTimeout(timerAcervo);
+      await enviarAcervo();
     },
 
     // O plano que o banco conhece. Quem manda é a assinatura, não o navegador.

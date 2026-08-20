@@ -1,6 +1,10 @@
 # Gera dist/preview.html: o site inteiro num arquivo só, com rotas por hash.
 # Serve para publicar a prévia como link. Rode depois de qualquer mudança:
 #   powershell -ExecutionPolicy Bypass -File tools\build-preview.ps1
+#
+# Codificacao: o PowerShell le este arquivo como ANSI, entao acento dentro de
+# string que vai para o HTML sai como mojibake no dist. Comentario de PowerShell
+# pode ter acento; texto emitido para o arquivo gerado, nao.
 
 $ErrorActionPreference = "Stop"
 $raiz = Split-Path -Parent $PSScriptRoot
@@ -106,7 +110,7 @@ $($js -join "`n")
 </script>
 
 <script>
-// Roteador por hash: #/ é a landing, o resto monta uma tela dentro do shell.
+// Roteador por hash: #/ abre a landing, o resto monta uma tela dentro do shell.
 (function router() {
   const elLanding = document.querySelector("[data-landing]");
   const elApp = document.querySelector("[data-app]");
