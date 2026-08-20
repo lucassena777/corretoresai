@@ -3,7 +3,7 @@
 Central de conteúdo imobiliário: a IA escreve os roteiros, o calendário editorial
 organiza as datas e o Kanban acompanha cada publicação até o ar.
 
-**No ar:** https://lucassena777.github.io/corretoresai/
+**No ar:** https://corretoresai.com.br
 
 O site publica sozinho: todo `git push` na `main` reconstrói o GitHub Pages em
 cerca de um minuto.

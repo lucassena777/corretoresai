@@ -19,6 +19,7 @@ const MODELO = "gemini-3.5-flash";
 const BASE_API = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const ORIGENS = [
+  /^https:\/\/(www\.)?corretoresai\.com\.br$/,
   /^https:\/\/lucassena777\.github\.io$/,
   /^https:\/\/[a-z0-9-]+\.frame\.claudeusercontent\.com$/,
   /^http:\/\/localhost:\d+$/,

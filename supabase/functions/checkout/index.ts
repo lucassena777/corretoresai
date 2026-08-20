@@ -14,9 +14,10 @@ const PRODUTOS: Record<string, string> = {
   ilimitado: "prod_V6TJwWKzsWvFjD",
 };
 
-const SITE = "https://lucassena777.github.io/corretoresai";
+const SITE = "https://corretoresai.com.br";
 
 const ORIGENS = [
+  /^https:\/\/(www\.)?corretoresai\.com\.br$/,
   /^https:\/\/lucassena777\.github\.io$/,
   /^https:\/\/[a-z0-9-]+\.frame\.claudeusercontent\.com$/,
   /^http:\/\/localhost:\d+$/,
