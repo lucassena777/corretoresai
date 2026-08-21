@@ -1848,3 +1848,52 @@ body.fora-do-app .assist-painel { display: none; }
 
 .auth-aceite a { color: var(--text-muted); text-decoration: underline; }
 .auth-aceite a:hover { color: var(--gold-soft); }
+
+/* ---------- Celular (até 768px) ----------
+   Complementa as faixas de 900px e 1100px que já existiam: aqui ficam só os
+   ajustes que a tela de mão pede, e nada disso alcança o desktop. */
+
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; }
+
+  /* Campos em 16px pelo mesmo motivo do base.css: abaixo disso o iPhone
+     amplia a página ao focar, e o corretor acha que o site quebrou. */
+  .busca input { font-size: 16px; padding: 14px 16px 14px 44px; }
+  .filtros-linha select { font-size: 16px; padding: 13px 38px 13px 14px; }
+  .assist-envio textarea { font-size: 16px; }
+
+  /* Cinco filtros lado a lado não cabem em 390px de largura. */
+  .filtros { padding: 16px 14px; }
+  .filtros-linha { grid-template-columns: 1fr; gap: 10px; }
+  .filtros-rodape { flex-wrap: wrap; gap: 12px; }
+  .filtros-rodape .link { margin-left: 0; }
+
+  .view { padding: 20px 16px 44px; }
+
+  /* O título e os botões deixam de disputar a mesma linha. */
+  .view-head { flex-direction: column; align-items: stretch; gap: 14px; margin-bottom: 22px; }
+  .view-head h1 { font-size: 25px; }
+  .view-head .btn { margin-left: 0; }
+  .view-head .head-actions { flex-direction: column; align-items: stretch; margin-left: 0; }
+  .view-head .head-actions .btn { width: 100%; }
+
+  /* Barra de cima: sobra o essencial, para o nome não empurrar o resto. */
+  .topbar { gap: 12px; padding: 12px 16px; }
+  .topbar-title strong { font-size: 14px; }
+  .topbar-title span { display: none; }
+  .topbar-actions { gap: 10px; }
+  .user-chip { padding: 5px 6px 5px 12px; gap: 9px; }
+  .user-chip span { display: none; }
+
+  .cards-grid { grid-template-columns: 1fr; }
+
+  /* O cartão de login já empilha a 900px; aqui ele só ganha respiro lateral,
+     que é o que faz os campos aparecerem inteiros. */
+  .auth { padding: 32px 16px; gap: 28px; }
+  .auth-card { padding: 24px 20px 26px; }
+  .auth-card h1 { font-size: 23px; }
+  .auth-tema { top: 14px; right: 16px; }
+
+  .modal-corpo { padding: 20px 18px; }
+  .toast { left: 16px; right: 16px; bottom: 16px; transform: none; max-width: none; }
+}

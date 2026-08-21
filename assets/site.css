@@ -508,3 +508,24 @@
   border-top: 1px solid var(--border-soft);
   font-size: 14px;
 }
+
+/* ---------- Celular (até 768px) ---------- */
+
+@media (max-width: 768px) {
+  /* Rede de proteção: nada empurra a página para o lado. Fica aqui, e não no
+     desktop, porque esconder overflow em tela grande mascararia defeito real. */
+  html, body { overflow-x: hidden; }
+
+  .section { padding: 56px 0; }
+  .section-head h2 { font-size: 26px; }
+
+  /* "R$ 39,90" a 37px cabia, mas dominava o cartão inteiro no celular. */
+  .plan-price { font-size: 31px; margin-bottom: 20px; }
+  .plan { padding: 24px 20px; }
+
+  .legal { padding: 32px 18px 60px; }
+  .legal h1 { font-size: 27px; }
+  .legal h2 { font-size: 19px; margin-top: 32px; }
+
+  .site-footer { text-align: center; }
+}

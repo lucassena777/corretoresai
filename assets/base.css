@@ -581,3 +581,24 @@ body.instalar-aberto { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .instalar-fundo, .instalar-cartao { animation: none; }
 }
+
+/* ---------- Celular (até 768px) ----------
+   Tudo daqui para baixo vive dentro da media query: o desktop não é tocado.
+
+   O ajuste mais importante é o menos óbvio. O Safari do iPhone DÁ ZOOM na
+   página sozinho quando o dedo toca um campo cuja fonte é menor que 16px — e
+   uma vez ampliada, ela não volta. O corretor digita o e-mail, a tela salta,
+   metade do formulário sai de vista, e a impressão é de layout quebrado. Não
+   é: é o navegador tentando ajudar. 16px é o limite exato que o desliga. */
+
+@media (max-width: 768px) {
+  .field input,
+  .field select,
+  .field textarea { font-size: 16px; }
+
+  /* Alvo de toque confortável. O botão tinha 41px de altura; o dedo pede 44. */
+  .btn { min-height: 44px; }
+  .btn-lg { padding: 15px 24px; }
+
+  .container { padding-inline: 18px; }
+}
