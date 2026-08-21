@@ -3993,7 +3993,13 @@ const CONFIG = {
     } catch { /* corpo não era JSON */ }
 
     console.error(`[CorretoresAI] HTTP ${resposta.status} em ${resposta.url}:`, detalhe);
-    return new Error(detalhe);
+
+    // O status viaja junto: quem chamou precisa distinguir "a IA falhou" de
+    // "acabou sua cota" e de "sua sessão venceu". São três desfechos diferentes
+    // para o corretor, e sem o número todos viravam a mesma mensagem.
+    const erro = new Error(detalhe);
+    erro.status = resposta.status;
+    return erro;
   }
 };
 
@@ -4896,7 +4902,7 @@ const roteiro = (() => {
     const vindas = Array.isArray(corpo.ideias) ? corpo.ideias : [];
     if (!vindas.length) throw new Error("O back-end não devolveu nenhuma ideia.");
 
-    return ANGULOS.map((angulo, n) => {
+    const ideias = ANGULOS.map((angulo, n) => {
       const bruta = vindas.find((i) => i.angulo === angulo) ?? vindas[n] ?? {};
 
       const base = {
@@ -4929,6 +4935,11 @@ const roteiro = (() => {
         origem: "ia"
       };
     });
+
+    // `cotaUsada` vem do servidor, que é quem de fato cobra — e cobra só
+    // quando a geração deu certo. Devolver junto é o que permite à tela parar
+    // de contar por conta própria e mostrar o número verdadeiro.
+    return { ideias, cotaUsada: corpo.cotaUsada };
   }
 
   return { gerarIdeias, gerarIdeiasIA, montar, ANGULOS };
@@ -5115,7 +5126,8 @@ const db = (() => {
     const linhas = await pedir(`/rest/v1/profiles?id=eq.${uid}&select=*`, { metodo: "GET", token });
     return {
       perfil: perfilDoBanco(linhas?.[0], email),
-      plano: linhas?.[0]?.plano || "gratuito"
+      plano: linhas?.[0]?.plano || "gratuito",
+      cotaUsada: typeof linhas?.[0]?.cota_usada === "number" ? linhas[0].cota_usada : null
     };
   }
 
@@ -5125,10 +5137,12 @@ const db = (() => {
 
     let perfil = perfilDoBanco(null, usuario.email);
     let plano = "gratuito";
+    let cotaUsada = null;
     try {
       const vindo = await buscarPerfil(usuario.id, token, usuario.email);
       perfil = vindo.perfil;
       plano = vindo.plano;
+      cotaUsada = vindo.cotaUsada;
     } catch (e) {
       console.warn("[CorretoresAI] perfil ainda não disponível:", e.message);
     }
@@ -5140,7 +5154,8 @@ const db = (() => {
       refresh: resposta.refresh_token,
       expiraEm: Date.now() + (resposta.expires_in ?? 3600) * 1000,
       perfil,
-      plano
+      plano,
+      cotaUsada
     };
     gravarJson(K_SESSAO, sessao);
 
@@ -5412,6 +5427,13 @@ const db = (() => {
       return sessao?.plano ?? "gratuito";
     },
 
+    // Quantas gerações o banco já contou neste ciclo. Devolve null quando não
+    // se sabe — aí a tela fica com o número que já tinha em vez de fingir zero,
+    // que anunciaria cota cheia para quem não tem.
+    cotaUsadaDaConta() {
+      return typeof sessao?.cotaUsada === "number" ? sessao.cotaUsada : null;
+    },
+
     // Token da sessão, para as funções que precisam saber quem está pedindo
     // (checkout do pagamento, cota da IA).
     tokenAtual() {
@@ -5433,6 +5455,7 @@ const db = (() => {
       const vindo = await buscarPerfil(sessao.uid, token, sessao.email);
       sessao.perfil = vindo.perfil;
       sessao.plano = vindo.plano;
+      sessao.cotaUsada = vindo.cotaUsada;
       gravarJson(K_SESSAO, sessao);
       return sessao;
     },
@@ -5524,6 +5547,13 @@ const store = (() => {
     // O plano vem do banco, não do navegador: quem manda é a assinatura paga.
     // Sem isto, apagar uma chave do localStorage viraria upgrade de graça.
     state.plano = db.planoDaConta();
+
+    // O mesmo vale para as gerações já gastas. Elas são contadas no servidor;
+    // o número guardado aqui é só o que a tela mostra enquanto ninguém
+    // pergunta. Ao entrar, o do banco prevalece — inclusive quando o corretor
+    // gerou de outro aparelho.
+    const doBanco = db.cotaUsadaDaConta();
+    if (doBanco !== null) state.usadas = doBanco;
   }
 
   carregar();
@@ -5571,11 +5601,23 @@ const store = (() => {
       return cota === Infinity ? Infinity : Math.max(0, cota - state.usadas);
     },
 
-    consumirGeracao() {
-      if (this.restantes() <= 0) return false;
-      if (this.plano.cota !== Infinity) state.usadas += 1;
+    // Só uma leitura: evita gastar uma requisição que o servidor já vai
+    // recusar. Quem decide de verdade é o servidor.
+    podeGerar() {
+      return this.restantes() > 0;
+    },
+
+    // A contagem que vale é a do servidor. Ele cobra depois que a geração deu
+    // certo, e é ele que recusa quando acaba.
+    //
+    // Antes o número era incrementado aqui, ANTES da chamada. Toda falha de
+    // rede, timeout ou erro do modelo queimava uma geração que o servidor
+    // nunca cobrou: o corretor perdia cota por defeito nosso, e os dois
+    // contadores iam se afastando um do outro sem nada reconciliá-los.
+    sincronizarCota(usadas) {
+      if (typeof usadas !== "number" || !Number.isFinite(usadas) || usadas < 0) return;
+      state.usadas = usadas;
       persist();
-      return true;
     },
 
     criar(dados) {
@@ -5711,13 +5753,9 @@ const store = (() => {
       persist();
     },
 
-    trocarPlano(id) {
-      if (!PLANOS[id] || id === state.plano) return;
-      state.plano = id;
-      state.usadas = 0;
-      log("i-card", `Plano alterado para ${PLANOS[id].label}`);
-      persist();
-    },
+    // Não existe mais um "trocar plano" pelo navegador. O plano mora numa
+    // coluna que só o webhook do pagamento pode escrever, e a tela lê de lá.
+    // Quem quiser mudar de plano passa pelo Stripe — ver assets/planos.js.
 
     roteiro(item) {
       if (!item.script) {
@@ -7454,15 +7492,22 @@ function initEntrar(root = document) {
       }
 
       store.recarregar();
+      if (f.exemplos.checked) store.carregarExemplos();
 
-      // Plano escolhido lá na landing, se houver.
+      // Plano clicado lá na landing: leva para o pagamento, não concede.
+      //
+      // Antes isto marcava o plano pago direto no estado local. Não dava
+      // acesso de verdade — o servidor sempre cobrou pela coluna `plano` do
+      // banco, que só o webhook escreve — mas a tela passava a anunciar
+      // "Corretor Pro" para quem não pagou, até o primeiro recarregamento
+      // desmentir. Prometer plano que não existe é pior do que não prometer.
       const escolhido = sessionStorage.getItem("corretoresai-plano-escolhido");
-      if (escolhido && PLANOS[escolhido]) {
-        store.trocarPlano(escolhido);
+      if (escolhido && PLANOS[escolhido] && escolhido !== "gratuito") {
         sessionStorage.removeItem("corretoresai-plano-escolhido");
+        location.href = auth.urlApp("planos");
+        return;
       }
 
-      if (f.exemplos.checked) store.carregarExemplos();
       entrarNoApp();
     } catch (e) {
       erro(f, e.message);
@@ -7835,8 +7880,35 @@ function initCentral(root = document) {
     mostrarCarregando();
 
     try {
-      ideias = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
+      const vindo = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
+      ideias = vindo.ideias;
+      store.sincronizarCota(vindo.cotaUsada);
     } catch (e) {
+      // Cota esgotada e sessão vencida não são falha da IA, e cair no modelo
+      // local nesses dois casos é pior do que não gerar: o corretor recebe um
+      // texto mais fraco sem entender por quê, e o aviso que ele precisava ler
+      // some dentro de uma mensagem sobre o gerador local.
+      if (e.status === 402) {
+        gerando = false;
+        botaoGerar.disabled = false;
+        clearInterval(timerEtapa);
+        ui.toast(e.message, "erro");
+        setTimeout(() => { location.href = auth.urlApp("planos"); }, 1800);
+        return;
+      }
+
+      if (e.status === 401) {
+        gerando = false;
+        botaoGerar.disabled = false;
+        clearInterval(timerEtapa);
+        ui.toast("Sua sessão venceu. Entre de novo para continuar gerando.", "erro");
+        setTimeout(() => { location.href = auth.urlEntrar(); }, 1800);
+        return;
+      }
+
+      // O resto — rede, timeout, modelo fora do ar, chave ausente — é falha
+      // nossa ou do provedor. Aí sim o gerador local entra, para a Central
+      // nunca ficar sem entregar nada.
       ideias = roteiro.gerarIdeias(dados, perfilParaGerar(), Date.now());
       ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
@@ -7928,7 +8000,9 @@ function initCentral(root = document) {
     event.preventDefault();
     if (gerando) return;
 
-    if (!store.consumirGeracao()) {
+    // Checagem só para não gastar uma requisição fadada ao 402. Nada é
+    // debitado aqui: quem cobra é o servidor, e só depois de entregar.
+    if (!store.podeGerar()) {
       ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");
       return;
     }

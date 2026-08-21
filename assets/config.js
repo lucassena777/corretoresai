@@ -66,6 +66,12 @@ const CONFIG = {
     } catch { /* corpo não era JSON */ }
 
     console.error(`[CorretoresAI] HTTP ${resposta.status} em ${resposta.url}:`, detalhe);
-    return new Error(detalhe);
+
+    // O status viaja junto: quem chamou precisa distinguir "a IA falhou" de
+    // "acabou sua cota" e de "sua sessão venceu". São três desfechos diferentes
+    // para o corretor, e sem o número todos viravam a mesma mensagem.
+    const erro = new Error(detalhe);
+    erro.status = resposta.status;
+    return erro;
   }
 };

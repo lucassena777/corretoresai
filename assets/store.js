@@ -17,6 +17,13 @@ const store = (() => {
     // O plano vem do banco, não do navegador: quem manda é a assinatura paga.
     // Sem isto, apagar uma chave do localStorage viraria upgrade de graça.
     state.plano = db.planoDaConta();
+
+    // O mesmo vale para as gerações já gastas. Elas são contadas no servidor;
+    // o número guardado aqui é só o que a tela mostra enquanto ninguém
+    // pergunta. Ao entrar, o do banco prevalece — inclusive quando o corretor
+    // gerou de outro aparelho.
+    const doBanco = db.cotaUsadaDaConta();
+    if (doBanco !== null) state.usadas = doBanco;
   }
 
   carregar();
@@ -64,11 +71,23 @@ const store = (() => {
       return cota === Infinity ? Infinity : Math.max(0, cota - state.usadas);
     },
 
-    consumirGeracao() {
-      if (this.restantes() <= 0) return false;
-      if (this.plano.cota !== Infinity) state.usadas += 1;
+    // Só uma leitura: evita gastar uma requisição que o servidor já vai
+    // recusar. Quem decide de verdade é o servidor.
+    podeGerar() {
+      return this.restantes() > 0;
+    },
+
+    // A contagem que vale é a do servidor. Ele cobra depois que a geração deu
+    // certo, e é ele que recusa quando acaba.
+    //
+    // Antes o número era incrementado aqui, ANTES da chamada. Toda falha de
+    // rede, timeout ou erro do modelo queimava uma geração que o servidor
+    // nunca cobrou: o corretor perdia cota por defeito nosso, e os dois
+    // contadores iam se afastando um do outro sem nada reconciliá-los.
+    sincronizarCota(usadas) {
+      if (typeof usadas !== "number" || !Number.isFinite(usadas) || usadas < 0) return;
+      state.usadas = usadas;
       persist();
-      return true;
     },
 
     criar(dados) {
@@ -204,13 +223,9 @@ const store = (() => {
       persist();
     },
 
-    trocarPlano(id) {
-      if (!PLANOS[id] || id === state.plano) return;
-      state.plano = id;
-      state.usadas = 0;
-      log("i-card", `Plano alterado para ${PLANOS[id].label}`);
-      persist();
-    },
+    // Não existe mais um "trocar plano" pelo navegador. O plano mora numa
+    // coluna que só o webhook do pagamento pode escrever, e a tela lê de lá.
+    // Quem quiser mudar de plano passa pelo Stripe — ver assets/planos.js.
 
     roteiro(item) {
       if (!item.script) {

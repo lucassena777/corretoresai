@@ -142,15 +142,22 @@ function initEntrar(root = document) {
       }
 
       store.recarregar();
+      if (f.exemplos.checked) store.carregarExemplos();
 
-      // Plano escolhido lá na landing, se houver.
+      // Plano clicado lá na landing: leva para o pagamento, não concede.
+      //
+      // Antes isto marcava o plano pago direto no estado local. Não dava
+      // acesso de verdade — o servidor sempre cobrou pela coluna `plano` do
+      // banco, que só o webhook escreve — mas a tela passava a anunciar
+      // "Corretor Pro" para quem não pagou, até o primeiro recarregamento
+      // desmentir. Prometer plano que não existe é pior do que não prometer.
       const escolhido = sessionStorage.getItem("corretoresai-plano-escolhido");
-      if (escolhido && PLANOS[escolhido]) {
-        store.trocarPlano(escolhido);
+      if (escolhido && PLANOS[escolhido] && escolhido !== "gratuito") {
         sessionStorage.removeItem("corretoresai-plano-escolhido");
+        location.href = auth.urlApp("planos");
+        return;
       }
 
-      if (f.exemplos.checked) store.carregarExemplos();
       entrarNoApp();
     } catch (e) {
       erro(f, e.message);

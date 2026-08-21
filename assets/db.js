@@ -167,7 +167,8 @@ const db = (() => {
     const linhas = await pedir(`/rest/v1/profiles?id=eq.${uid}&select=*`, { metodo: "GET", token });
     return {
       perfil: perfilDoBanco(linhas?.[0], email),
-      plano: linhas?.[0]?.plano || "gratuito"
+      plano: linhas?.[0]?.plano || "gratuito",
+      cotaUsada: typeof linhas?.[0]?.cota_usada === "number" ? linhas[0].cota_usada : null
     };
   }
 
@@ -177,10 +178,12 @@ const db = (() => {
 
     let perfil = perfilDoBanco(null, usuario.email);
     let plano = "gratuito";
+    let cotaUsada = null;
     try {
       const vindo = await buscarPerfil(usuario.id, token, usuario.email);
       perfil = vindo.perfil;
       plano = vindo.plano;
+      cotaUsada = vindo.cotaUsada;
     } catch (e) {
       console.warn("[CorretoresAI] perfil ainda não disponível:", e.message);
     }
@@ -192,7 +195,8 @@ const db = (() => {
       refresh: resposta.refresh_token,
       expiraEm: Date.now() + (resposta.expires_in ?? 3600) * 1000,
       perfil,
-      plano
+      plano,
+      cotaUsada
     };
     gravarJson(K_SESSAO, sessao);
 
@@ -464,6 +468,13 @@ const db = (() => {
       return sessao?.plano ?? "gratuito";
     },
 
+    // Quantas gerações o banco já contou neste ciclo. Devolve null quando não
+    // se sabe — aí a tela fica com o número que já tinha em vez de fingir zero,
+    // que anunciaria cota cheia para quem não tem.
+    cotaUsadaDaConta() {
+      return typeof sessao?.cotaUsada === "number" ? sessao.cotaUsada : null;
+    },
+
     // Token da sessão, para as funções que precisam saber quem está pedindo
     // (checkout do pagamento, cota da IA).
     tokenAtual() {
@@ -485,6 +496,7 @@ const db = (() => {
       const vindo = await buscarPerfil(sessao.uid, token, sessao.email);
       sessao.perfil = vindo.perfil;
       sessao.plano = vindo.plano;
+      sessao.cotaUsada = vindo.cotaUsada;
       gravarJson(K_SESSAO, sessao);
       return sessao;
     },

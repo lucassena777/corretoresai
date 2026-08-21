@@ -162,8 +162,35 @@ function initCentral(root = document) {
     mostrarCarregando();
 
     try {
-      ideias = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
+      const vindo = await roteiro.gerarIdeiasIA(dados, perfilParaGerar());
+      ideias = vindo.ideias;
+      store.sincronizarCota(vindo.cotaUsada);
     } catch (e) {
+      // Cota esgotada e sessão vencida não são falha da IA, e cair no modelo
+      // local nesses dois casos é pior do que não gerar: o corretor recebe um
+      // texto mais fraco sem entender por quê, e o aviso que ele precisava ler
+      // some dentro de uma mensagem sobre o gerador local.
+      if (e.status === 402) {
+        gerando = false;
+        botaoGerar.disabled = false;
+        clearInterval(timerEtapa);
+        ui.toast(e.message, "erro");
+        setTimeout(() => { location.href = auth.urlApp("planos"); }, 1800);
+        return;
+      }
+
+      if (e.status === 401) {
+        gerando = false;
+        botaoGerar.disabled = false;
+        clearInterval(timerEtapa);
+        ui.toast("Sua sessão venceu. Entre de novo para continuar gerando.", "erro");
+        setTimeout(() => { location.href = auth.urlEntrar(); }, 1800);
+        return;
+      }
+
+      // O resto — rede, timeout, modelo fora do ar, chave ausente — é falha
+      // nossa ou do provedor. Aí sim o gerador local entra, para a Central
+      // nunca ficar sem entregar nada.
       ideias = roteiro.gerarIdeias(dados, perfilParaGerar(), Date.now());
       ui.toast(`Roteiro montado pelo modelo local: ${e.message}.`, "erro");
     } finally {
@@ -255,7 +282,9 @@ function initCentral(root = document) {
     event.preventDefault();
     if (gerando) return;
 
-    if (!store.consumirGeracao()) {
+    // Checagem só para não gastar uma requisição fadada ao 402. Nada é
+    // debitado aqui: quem cobra é o servidor, e só depois de entregar.
+    if (!store.podeGerar()) {
       ui.toast("Você usou todas as gerações do plano. Faça upgrade para continuar.", "erro");
       return;
     }

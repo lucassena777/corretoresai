@@ -401,7 +401,7 @@ const roteiro = (() => {
     const vindas = Array.isArray(corpo.ideias) ? corpo.ideias : [];
     if (!vindas.length) throw new Error("O back-end não devolveu nenhuma ideia.");
 
-    return ANGULOS.map((angulo, n) => {
+    const ideias = ANGULOS.map((angulo, n) => {
       const bruta = vindas.find((i) => i.angulo === angulo) ?? vindas[n] ?? {};
 
       const base = {
@@ -434,6 +434,11 @@ const roteiro = (() => {
         origem: "ia"
       };
     });
+
+    // `cotaUsada` vem do servidor, que é quem de fato cobra — e cobra só
+    // quando a geração deu certo. Devolver junto é o que permite à tela parar
+    // de contar por conta própria e mostrar o número verdadeiro.
+    return { ideias, cotaUsada: corpo.cotaUsada };
   }
 
   return { gerarIdeias, gerarIdeiasIA, montar, ANGULOS };
