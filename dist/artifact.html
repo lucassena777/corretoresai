@@ -7593,8 +7593,34 @@ function initEntrar(root = document) {
       // esta saída, o corretor fica preso — o primeiro link pode ter sumido no
       // spam ou nem ter sido entregue, e não havia como pedir outro.
       if (/confirmad/i.test(e.message)) ofereceReenvio(formEntrar.email.value.trim());
+      else if (/incorretos/i.test(e.message)) ofereceCadastro(formEntrar.email.value.trim());
     }
   });
+
+  // O Supabase devolve o mesmo "credenciais inválidas" para senha errada e para
+  // e-mail que nunca teve conta — de propósito, para não revelar quem é
+  // cliente. O efeito colateral é cruel: quem tentou se cadastrar num momento
+  // em que o cadastro falhou acha que tem conta, digita a senha certa, e recebe
+  // "e-mail ou senha incorretos" para sempre, sem nunca desconfiar de que a
+  // conta não existe. Este atalho é a saída dessa armadilha.
+  function ofereceCadastro(email) {
+    const alvo = formEntrar.querySelector("[data-erro]");
+    if (alvo.querySelector("[data-criar]")) return;
+
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.dataset.criar = "";
+    botao.className = "link";
+    botao.textContent = "Ainda não tenho conta — criar agora";
+
+    botao.addEventListener("click", () => {
+      mostrar("cadastro");
+      if (email) formCadastro.email.value = email;
+      formCadastro.nome.focus();
+    });
+
+    alvo.append(" ", botao);
+  }
 
   function ofereceReenvio(email) {
     const alvo = formEntrar.querySelector("[data-erro]");
