@@ -86,7 +86,13 @@ const db = (() => {
     user_already_exists: "Já existe uma conta com esse e-mail.",
     weak_password: "A senha precisa de pelo menos 6 caracteres.",
     email_address_invalid: "Esse e-mail não parece válido.",
-    over_email_send_rate_limit: "Muitas tentativas seguidas. Espere alguns minutos.",
+    // Este não é culpa de quem está tentando: é o teto de envio de e-mail do
+    // projeto que estourou. Dizer "muitas tentativas suas" manda a pessoa
+    // esperar por um motivo que não existe, e esconde de nós que o servidor de
+    // e-mail precisa ser trocado.
+    over_email_send_rate_limit:
+      "Não conseguimos enviar o e-mail de confirmação: o limite de envios do servidor foi atingido. " +
+      "Não é problema com os seus dados. Tente de novo em alguns minutos.",
     over_request_rate_limit: "Muitas tentativas seguidas. Espere alguns minutos.",
     same_password: "A nova senha precisa ser diferente da atual."
   };
