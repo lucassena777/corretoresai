@@ -509,7 +509,7 @@ body.instalar-aberto { overflow: hidden; }
 .instalar-topo h2 {
   margin: 2px 0 6px;
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.012em;
   line-height: 1.15;
@@ -518,7 +518,7 @@ body.instalar-aberto { overflow: hidden; }
 .instalar-topo p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.55;
 }
 
@@ -544,25 +544,25 @@ body.instalar-aberto { overflow: hidden; }
 .instalar-numero {
   display: grid;
   place-items: center;
-  width: 23px;
-  height: 23px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: linear-gradient(150deg, var(--gold-bright), var(--gold-deep));
   color: var(--on-gold);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .instalar-icone { display: grid; place-items: center; color: var(--gold-soft); }
-.instalar-icone svg { width: 21px; height: 21px; }
+.instalar-icone svg { width: 23px; height: 23px; }
 
 .instalar-texto { display: grid; gap: 3px; }
-.instalar-texto strong { font-size: 14.5px; font-weight: 600; line-height: 1.35; }
-.instalar-texto span { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.instalar-texto strong { font-size: 16px; font-weight: 600; line-height: 1.35; }
+.instalar-texto span { color: var(--text-muted); font-size: 14.5px; line-height: 1.5; }
 
 .instalar-rodape { display: grid; gap: 10px; justify-items: center; }
-.instalar-nunca { font-size: 13px; color: var(--text-dim); }
+.instalar-nunca { font-size: 14px; color: var(--text-dim); }
 
 /* Tablet e desktop: deixa de ser folha de baixo e vira cartão centralizado. */
 @media (min-width: 640px) {

@@ -11,11 +11,16 @@
 //   1. Só em iPhone ou iPad. Em Android o navegador já tem o botão próprio.
 //   2. Nunca quando o site já está rodando instalado — seria convidar quem já
 //      aceitou.
-//   3. Uma dispensa vale por seis meses. Não é "para sempre" porque quem trocar
-//      de aparelho perde o atalho e não teria como reencontrar o caminho.
+//   3. Uma vez por sessão. Quem fechou não vê de novo enquanto estiver
+//      navegando; ao voltar outro dia, vê — porque instalar é decisão que
+//      muitos adiam e depois não sabem reencontrar.
+//   4. Quem clicar em "Não mostrar novamente" não vê mais por seis meses. Não é
+//      "para sempre" porque quem troca de aparelho perde o atalho e ficaria sem
+//      caminho de volta.
 
 const instalar = (() => {
   const CHAVE = "corretoresai-instalar-dispensado";
+  const CHAVE_SESSAO = "corretoresai-instalar-visto";
   const SEIS_MESES = 1000 * 60 * 60 * 24 * 180;
   const ESPERA = 2500;
 
@@ -44,6 +49,17 @@ const instalar = (() => {
 
   function dispensar() {
     try { localStorage.setItem(CHAVE, String(Date.now())); } catch { /* modo privado */ }
+  }
+
+  // Uma vez por sessão: quem fechou não é abordado de novo enquanto continua
+  // navegando pelo site. Fica em sessionStorage justamente porque some quando a
+  // aba fecha — que é o comportamento desejado.
+  function jaVistoNestaSessao() {
+    try { return sessionStorage.getItem(CHAVE_SESSAO) === "1"; } catch { return false; }
+  }
+
+  function marcarVistoNestaSessao() {
+    try { sessionStorage.setItem(CHAVE_SESSAO, "1"); } catch { /* modo privado */ }
   }
 
   const PASSOS = [
@@ -108,8 +124,8 @@ const instalar = (() => {
         <ol class="instalar-passos">${passos}</ol>
 
         <div class="instalar-rodape">
-          <button class="btn btn-primary btn-block" type="button" data-fechar>Entendi</button>
-          <button class="link instalar-nunca" type="button" data-nunca>Não mostrar de novo</button>
+          <button class="btn btn-primary btn-block btn-lg" type="button" data-fechar>Entendi, fechar</button>
+          <button class="link instalar-nunca" type="button" data-nunca>Não mostrar novamente</button>
         </div>
       </div>`;
 
@@ -132,6 +148,7 @@ const instalar = (() => {
     devolverFoco = document.activeElement;
     caixa.removeAttribute("hidden");
     document.body.classList.add("instalar-aberto");
+    marcarVistoNestaSessao();
     caixa.querySelector("[data-fechar]")?.focus();
   }
 
@@ -151,12 +168,12 @@ const instalar = (() => {
   }
 
   function talvezMostrar() {
-    if (!noIphone() || jaInstalado() || dispensadoRecentemente()) return;
+    if (!noIphone() || jaInstalado() || dispensadoRecentemente() || jaVistoNestaSessao()) return;
     ligar();
     setTimeout(abrir, ESPERA);
   }
 
-  return { abrir, fechar, talvezMostrar, noIphone, jaInstalado };
+  return { abrir, fechar, talvezMostrar, noIphone, jaInstalado, jaVistoNestaSessao };
 })();
 
 // SPA é a prévia de arquivo único, que não tem ícone nem manifesto para instalar.
