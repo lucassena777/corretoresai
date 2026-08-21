@@ -4850,6 +4850,19 @@ const roteiro = (() => {
     "legenda", "hashtags", "objetivo", "publico", "formatoNota", "gravacao"
   ];
 
+  // O modelo às vezes escapa a quebra de linha duas vezes e o texto chega com
+  // "\n" literal no meio da frase — dois caracteres, não uma quebra. Na tela
+  // isso aparece cru, dentro do roteiro que o corretor ia gravar. Desfazemos
+  // aqui, na entrada, em vez de no servidor: assim vale para qualquer provedor
+  // de IA que venha depois, sem republicar função nenhuma.
+  function limpar(bruto) {
+    return String(bruto)
+      .replace(/\\r\\n|\\n|\\r/g, "\n")
+      .replace(/\\t/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   async function gerarIdeiasIA(dados, perfil, { timeoutMs = 90000 } = {}) {
     if (typeof CONFIG === "undefined" || !CONFIG.assistenteUrl || !CONFIG.assistenteChave) {
       throw new Error("O back-end de IA ainda não está configurado.");
@@ -4922,7 +4935,7 @@ const roteiro = (() => {
       const local = montar(base, perfil, angulo, hashTexto(c.local.completo + angulo));
       const script = {};
       for (const campo of CAMPOS) {
-        const valor = typeof bruta[campo] === "string" ? bruta[campo].trim() : "";
+        const valor = typeof bruta[campo] === "string" ? limpar(bruta[campo]) : "";
         script[campo] = valor || local[campo];
       }
 

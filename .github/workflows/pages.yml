@@ -33,7 +33,8 @@ jobs:
           for arquivo in index.html app/entrar.html app/dashboard.html \
             app/central.html app/calendario.html app/biblioteca.html \
             app/historico.html app/planos.html app/perfil.html \
-            app/configuracoes.html; do
+            app/configuracoes.html app/redefinir.html \
+            termos.html privacidade.html; do
             test -f "$arquivo" || { echo "Faltando: $arquivo"; exit 1; }
           done
           echo "Todas as telas presentes."
