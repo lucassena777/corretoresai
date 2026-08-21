@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nova senha — CorretoresAI</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="../assets/app.css" />
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem("corretoresai-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
+</head>
+<body data-page="redefinir">
+
+<button class="theme-btn auth-tema" type="button" data-theme-toggle aria-label="Alternar tema">
+  <svg class="icon-sun"><use href="#i-sun" /></svg>
+  <svg class="icon-moon"><use href="#i-moon" /></svg>
+</button>
+
+<main class="auth" data-auth>
+  <section class="auth-card">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark"><svg><use href="#i-building" /></svg></span>
+      <span class="brand-stack">
+        <span>Corretores<span class="brand-ai">AI</span></span>
+        <span class="brand-tag">Central de conteúdo imobiliário</span>
+      </span>
+    </a>
+
+    <!-- Enquanto o link é conferido. Some sozinho nos dois desfechos. -->
+    <div data-checando>
+      <h1>Conferindo seu link</h1>
+      <p class="auth-sub">Um instante.</p>
+    </div>
+
+    <!-- ---------- Nova senha ---------- -->
+    <form data-form="redefinir" novalidate hidden>
+      <h1>Escolha uma nova senha</h1>
+      <p class="auth-sub" data-para></p>
+
+      <div class="field">
+        <label for="r-senha">Nova senha</label>
+        <div class="input-acao">
+          <input id="r-senha" name="senha" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" required />
+          <button type="button" data-ver-senha aria-label="Mostrar senha"><svg><use href="#i-eye" /></svg></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="r-repetir">Repita a nova senha</label>
+        <input id="r-repetir" name="repetir" type="password" autocomplete="new-password" placeholder="A mesma senha de novo" required />
+      </div>
+
+      <p class="auth-erro" data-erro hidden></p>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Salvar e entrar</button>
+    </form>
+
+    <!-- ---------- Link inválido ---------- -->
+    <div data-invalido hidden>
+      <h1>Esse link não vale mais</h1>
+      <p class="auth-sub" data-motivo></p>
+
+      <p class="auth-alt">
+        Links de nova senha valem por pouco tempo e só podem ser usados uma vez —
+        é o que impede que alguém que veja seu e-mail depois entre na sua conta.
+      </p>
+
+      <a class="btn btn-primary btn-block btn-lg" href="entrar.html">Pedir um novo link</a>
+    </div>
+  </section>
+</main>
+
+<script src="../assets/theme.js"></script>
+<script src="../assets/texto.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/roteiro.js"></script>
+<script src="../assets/db.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/config.js"></script>
+<script src="../assets/ui.js"></script>
+<script src="../assets/auth.js"></script>
+<script src="../assets/redefinir.js"></script>
+</body>
+</html>

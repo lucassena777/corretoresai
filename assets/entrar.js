@@ -23,6 +23,9 @@ function initEntrar(root = document) {
     const alvo = form.querySelector("[data-erro]");
     alvo.textContent = mensagem;
     alvo.hidden = false;
+    // Sem isto, uma faixa que antes foi recado bom continua verde ao virar
+    // erro — e o corretor lê "deu errado" com cara de "deu certo".
+    alvo.classList.remove("is-bom");
     if (campo) campo.focus();
     alvo.scrollIntoView?.({ block: "nearest" });
   }
@@ -76,8 +79,35 @@ function initEntrar(root = document) {
       entrarNoApp();
     } catch (e) {
       erro(formEntrar, e.message);
+      // A conta existe e a senha está certa: o que falta é a confirmação. Sem
+      // esta saída, o corretor fica preso — o primeiro link pode ter sumido no
+      // spam ou nem ter sido entregue, e não havia como pedir outro.
+      if (/confirmad/i.test(e.message)) ofereceReenvio(formEntrar.email.value.trim());
     }
   });
+
+  function ofereceReenvio(email) {
+    const alvo = formEntrar.querySelector("[data-erro]");
+    if (!email || alvo.querySelector("[data-reenviar]")) return;
+
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.dataset.reenviar = "";
+    botao.className = "link";
+    botao.textContent = "Reenviar confirmação";
+
+    botao.addEventListener("click", async () => {
+      botao.disabled = true;
+      try {
+        await db.reenviarConfirmacao(email);
+        avisar(formEntrar, `Novo link enviado para ${email}. Confira também a caixa de spam.`);
+      } catch (e) {
+        erro(formEntrar, e.message);
+      }
+    });
+
+    alvo.append(" ", botao);
+  }
 
   formCadastro.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -149,7 +179,37 @@ function initEntrar(root = document) {
     }
   });
 
+  // Volta do link de confirmação de e-mail. Ver o bloco em db.js: o token
+  // chega no fragmento do endereço e desaparece se ninguém ler — era isso que
+  // fazia o corretor cair aqui sem sinal nenhum de que a conta foi confirmada.
+  async function conferirVoltaDoEmail() {
+    let volta;
+    try {
+      volta = await db.absorverRetornoDoEmail();
+    } catch (e) {
+      return erro(formEntrar, e.message);
+    }
+    if (!volta) return;
+
+    if (volta.tipo === "erro") {
+      mostrar("entrar");
+      erro(formEntrar, volta.mensagem);
+      return;
+    }
+
+    // Link de nova senha que caiu aqui por engano (um destino antigo, guardado
+    // na Site URL do projeto): manda para a tela que sabe concluir a troca.
+    if (volta.tipo === "recovery") {
+      location.href = "redefinir.html";
+      return;
+    }
+
+    // Confirmação: a conta acabou de ser validada e a sessão já está aberta.
+    entrarNoApp();
+  }
+
   mostrar(routeParams().get("modo") === "cadastro" ? "cadastro" : "entrar");
+  conferirVoltaDoEmail();
 }
 
 if (!SPA) initEntrar();

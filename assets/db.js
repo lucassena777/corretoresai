@@ -81,7 +81,7 @@ const db = (() => {
   // Código do Supabase vira frase em português.
   const RECADOS = {
     invalid_credentials: "E-mail ou senha incorretos.",
-    email_not_confirmed: "Confirme seu e-mail antes de entrar. A mensagem está na sua caixa de entrada.",
+    email_not_confirmed: "Sua conta existe, mas o e-mail ainda não foi confirmado. Clique em \"Reenviar confirmação\" abaixo.",
     email_exists: "Já existe uma conta com esse e-mail.",
     user_already_exists: "Já existe uma conta com esse e-mail.",
     weak_password: "A senha precisa de pelo menos 6 caracteres.",
@@ -89,6 +89,15 @@ const db = (() => {
     over_email_send_rate_limit: "Muitas tentativas seguidas. Espere alguns minutos.",
     over_request_rate_limit: "Muitas tentativas seguidas. Espere alguns minutos.",
     same_password: "A nova senha precisa ser diferente da atual."
+  };
+
+  // Erros que chegam no endereço, na volta de um link de e-mail. Vêm com nome
+  // diferente dos de cima porque não são resposta de requisição: o Supabase os
+  // devolve como parâmetro na URL.
+  const RECADOS_DO_LINK = {
+    otp_expired: "Esse link já expirou. Peça um novo abaixo — os links valem por pouco tempo, de propósito.",
+    access_denied: "Esse link não vale mais. Ou já foi usado, ou expirou. Peça um novo abaixo.",
+    server_error: "O servidor de contas recusou o link. Tente pedir outro."
   };
 
   async function pedir(caminho, { metodo = "POST", corpo, token, prefer, keepalive } = {}) {
@@ -204,6 +213,93 @@ const db = (() => {
     return sessao;
   }
 
+  /* ---------------- Volta dos links de e-mail ----------------
+
+     Aqui estava o buraco que quebrava confirmação de conta e "esqueci minha
+     senha" ao mesmo tempo.
+
+     O Supabase confirma o e-mail no servidor dele e então devolve o navegador
+     para o site com a sessão no FRAGMENTO do endereço:
+
+       https://corretoresai.com.br/app/entrar.html#access_token=...&type=signup
+
+     Fragmento nunca é enviado a servidor nenhum — só o JavaScript da página
+     consegue ler. Como nada nesta biblioteca lia, acontecia o seguinte: o
+     corretor clicava no link, o token de uso único era gasto, a conta ficava
+     de fato confirmada, e ele caía numa tela de login sem nenhum sinal de que
+     algo tinha acontecido. Achando que falhou, clicava no link de novo — e aí
+     vinha "Email link is invalid or has expired", porque o token já tinha
+     sido usado na primeira vez.
+
+     Com "esqueci minha senha" era pior: o link de recuperação nunca teve tela
+     para onde ir, então era impossível concluir. */
+
+  async function lerUsuario(token) {
+    return pedir("/auth/v1/user", { metodo: "GET", token });
+  }
+
+  // Tira o token da barra de endereço assim que ele é consumido. Não é
+  // enfeite: sem isso a credencial fica no histórico do navegador e viaja em
+  // qualquer link que o corretor copie e mande para alguém.
+  function limparEndereco() {
+    try {
+      history.replaceState(null, "", location.pathname + location.search);
+    } catch { /* navegador antigo: o token some no próximo passo mesmo */ }
+  }
+
+  // Para onde o Supabase deve mandar o corretor depois de validar o link.
+  // Calculado a partir da página atual em vez de fixado: assim o endereço
+  // acompanha o domínio sem ninguém precisar lembrar de trocar.
+  function destinoDoEmail(pagina) {
+    try {
+      return new URL(pagina, location.href).href.split("#")[0];
+    } catch {
+      return "";
+    }
+  }
+
+  function comDestino(caminho, pagina) {
+    const destino = destinoDoEmail(pagina);
+    return destino ? `${caminho}?redirect_to=${encodeURIComponent(destino)}` : caminho;
+  }
+
+  async function absorverRetornoDoEmail() {
+    if (typeof location === "undefined") return null;
+
+    const cru = location.hash.startsWith("#") ? location.hash.slice(1) : "";
+    if (!cru) return null;
+
+    const p = new URLSearchParams(cru);
+    const acesso = p.get("access_token");
+    const erro = p.get("error_description") || p.get("error");
+
+    // Um "#/calendario" da navegação interna também cai aqui. Se não houver
+    // token nem erro, não é volta de e-mail: sai sem tocar no endereço.
+    if (!acesso && !erro) return null;
+
+    limparEndereco();
+
+    if (erro) {
+      const codigo = p.get("error_code") || p.get("error");
+      return { tipo: "erro", mensagem: RECADOS_DO_LINK[codigo] || decodeURIComponent(erro.replace(/\+/g, " ")) };
+    }
+
+    const tipo = p.get("type") || "signup";
+
+    try {
+      const usuario = await lerUsuario(acesso);
+      await abrirSessao({
+        access_token: acesso,
+        refresh_token: p.get("refresh_token") || "",
+        expires_in: Number(p.get("expires_in")) || 3600,
+        user: usuario
+      });
+      return { tipo, email: usuario.email };
+    } catch (e) {
+      return { tipo: "erro", mensagem: `O link foi aceito, mas a sessão não abriu: ${e.message}` };
+    }
+  }
+
   // Gravação no banco com respiro: arrastar um card no calendário dispara
   // várias mudanças seguidas, e cada uma não precisa virar uma requisição.
   let timerAcervo = null;
@@ -286,7 +382,10 @@ const db = (() => {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(chave)) throw new Error("E-mail inválido.");
       if ((senha || "").length < 6) throw new Error("A senha precisa de pelo menos 6 caracteres.");
 
-      const resposta = await pedir("/auth/v1/signup", {
+      // O redirect_to diz ao Supabase para onde devolver o corretor depois de
+      // validar o link. Sem ele, o destino é a Site URL do projeto — que fica
+      // desatualizada toda vez que o endereço do site muda.
+      const resposta = await pedir(comDestino("/auth/v1/signup", "entrar.html"), {
         corpo: {
           email: chave,
           password: senha,
@@ -408,9 +507,36 @@ const db = (() => {
       await pedir("/auth/v1/user", { metodo: "PUT", token, corpo: { password: nova } });
     },
 
+    // O link de recuperação vai para a tela de nova senha, não para o login:
+    // é lá que existe o formulário que conclui a troca.
     async recuperarSenha(email) {
-      await pedir("/auth/v1/recover", { corpo: { email: normalizar(email) } });
+      await pedir(comDestino("/auth/v1/recover", "redefinir.html"), {
+        corpo: { email: normalizar(email) }
+      });
     },
+
+    async reenviarConfirmacao(email) {
+      await pedir(comDestino("/auth/v1/resend", "entrar.html"), {
+        corpo: { type: "signup", email: normalizar(email) }
+      });
+    },
+
+    // Troca de senha vinda do link de recuperação. Diferente de trocarSenha:
+    // aqui não se pede a senha atual, porque quem chegou até aqui provou ter
+    // acesso à caixa de entrada — que é justamente a prova de quem esqueceu a
+    // senha consegue dar.
+    async definirSenha(nova) {
+      if (!sessao) throw new Error("A sessão do link expirou. Peça um novo link de nova senha.");
+      if ((nova || "").length < 6) throw new Error("A nova senha precisa de pelo menos 6 caracteres.");
+
+      const token = await renovarSePreciso();
+      await pedir("/auth/v1/user", { metodo: "PUT", token, corpo: { password: nova } });
+    },
+
+    // Lê a volta de um link de e-mail. Devolve null quando não há nada a ler,
+    // { tipo: "signup" | "recovery", email } quando a sessão abriu, ou
+    // { tipo: "erro", mensagem } quando o link não vale mais.
+    absorverRetornoDoEmail,
 
     async excluirConta() {
       if (!sessao) return;
